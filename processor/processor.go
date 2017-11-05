@@ -85,21 +85,27 @@ func readTextTable(f *os.File) []vputils.NameValue {
 	return nameValues
 }
 
+func read2ByteLength(f *os.File) int {
+	bytes := make([]byte, 2)
+	_, err := f.Read(bytes)
+	check(err)
+
+	length := int(bytes[1])<<8 + int(bytes[0])
+
+	return length
+}
+
 func readBinaryBlock(f *os.File) []byte {
-	count := make([]byte, 2)
-	f.Read(count)
-	countBytes := int(count[1])<<8 + int(count[0])
+	countBytes := read2ByteLength(f)
 
 	code := make([]byte, countBytes)
 	_, err := f.Read(code)
 	check(err)
 
-	checkCount := make([]byte, 2)
-	f.Read(checkCount)
-	checkCountBytes := int(checkCount[1])<<8 + int(checkCount[0])
+	checkCountBytes := read2ByteLength(f)
 
 	if checkCountBytes != countBytes {
-		panic("Block count error")
+		showErrorAndStop("Block count error")
 	}
 
 	return code

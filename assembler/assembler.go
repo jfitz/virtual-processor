@@ -194,8 +194,8 @@ func writeBlockName(f *os.File, text string) {
 	check(err)
 }
 
-// if length is greater than 64K (65535) then error
-func writeLength(f *os.File, length int) {
+// if length is greater than 65535 then error
+func write2ByteLength(f *os.File, length int) {
 	lHigh := byte(length & 0xff00 >> 8)
 	lLow := byte(length & 0x00ff)
 	lenBytes := []byte{lLow, lHigh}
@@ -206,12 +206,12 @@ func writeLength(f *os.File, length int) {
 
 func writeBinaryBlock(name string, bytes []byte, f *os.File) {
 	writeBlockName(f, name)
-	writeLength(f, len(bytes))
+	write2ByteLength(f, len(bytes))
 
 	_, err := f.Write(bytes)
 	check(err)
 
-	writeLength(f, len(bytes))
+	write2ByteLength(f, len(bytes))
 }
 
 func writeTextTable(name string, table []vputils.NameValue, f *os.File) {
@@ -287,7 +287,9 @@ func main() {
 	properties = append(properties, vputils.NameValue{"STACK WIDTH", "1"})
 	properties = append(properties, vputils.NameValue{"DATA WIDTH", "1"})
 	properties = append(properties, vputils.NameValue{"ADDRESS WIDTH", "1"})
-	properties = append(properties, vputils.NameValue{"BYTE", "8"})
+	properties = append(properties, vputils.NameValue{"CODE ADDRESS WIDTH", "1"})
+	properties = append(properties, vputils.NameValue{"DATA ADDRESS WIDTH", "1"})
+	properties = append(properties, vputils.NameValue{"CALL STACK SIZE", "1"})
 
 	source := readSource(sourceFile)
 	code := generateCode(source)
