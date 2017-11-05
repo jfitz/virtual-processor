@@ -51,23 +51,42 @@ func Split(s string, max int) []string {
 	return parts
 }
 
-func Read2ByteLength(f *os.File) int {
+func read1ByteInt(f *os.File) int {
+	bytes := make([]byte, 1)
+	_, err := f.Read(bytes)
+	Check(err)
+
+	value := int(bytes[0])
+
+	return value
+}
+
+func read2ByteInt(f *os.File) int {
 	bytes := make([]byte, 2)
 	_, err := f.Read(bytes)
 	Check(err)
 
-	length := int(bytes[1])<<8 + int(bytes[0])
+	value := int(bytes[1])<<8 + int(bytes[0])
 
-	return length
+	return value
 }
 
-// if length is greater than 65535 then error
-func Write2ByteLength(f *os.File, length int) {
-	lHigh := byte(length & 0xff00 >> 8)
-	lLow := byte(length & 0x00ff)
-	lenBytes := []byte{lLow, lHigh}
+// if value is greater than 255 then error
+func write1ByteInt(f *os.File, value int) {
+	low := byte(value & 0x00ff)
+	bytes := []byte{low}
 
-	_, err := f.Write(lenBytes)
+	_, err := f.Write(bytes)
+	Check(err)
+}
+
+// if value is greater than 65535 then error
+func write2ByteInt(f *os.File, value int) {
+	high := byte(value & 0xff00 >> 8)
+	low := byte(value & 0x00ff)
+	bytes := []byte{low, high}
+
+	_, err := f.Write(bytes)
 	Check(err)
 }
 
@@ -99,13 +118,13 @@ func WriteString(f *os.File, text string) {
 }
 
 func ReadBinaryBlock(f *os.File) []byte {
-	countBytes := Read2ByteLength(f)
+	countBytes := read2ByteInt(f)
 
 	code := make([]byte, countBytes)
 	_, err := f.Read(code)
 	Check(err)
 
-	checkCountBytes := Read2ByteLength(f)
+	checkCountBytes := read2ByteInt(f)
 
 	if checkCountBytes != countBytes {
 		ShowErrorAndStop("Block count error")
@@ -116,12 +135,12 @@ func ReadBinaryBlock(f *os.File) []byte {
 
 func WriteBinaryBlock(name string, bytes []byte, f *os.File) {
 	WriteString(f, name)
-	Write2ByteLength(f, len(bytes))
+	write2ByteInt(f, len(bytes))
 
 	_, err := f.Write(bytes)
 	Check(err)
 
-	Write2ByteLength(f, len(bytes))
+	write2ByteInt(f, len(bytes))
 }
 
 func ReadTextTable(f *os.File) []NameValue {
