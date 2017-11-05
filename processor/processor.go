@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/jfitz/virtual-processor/vputils"
 	"os"
+	"strings"
 )
 
 func executeCode(code []byte) {
@@ -83,8 +84,17 @@ func main() {
 
 	properties := vputils.ReadTextTable(f)
 
+	codeWidth := 0
+	dataWidth := 0
 	for _, nameValue := range properties {
 		fmt.Printf("%s: %s\n", nameValue.Name, nameValue.Value)
+		shortName := strings.Replace(nameValue.Name, " ", "", -1)
+		if shortName == "CODEADDRESSWIDTH" {
+			codeWidth = 1
+		}
+		if shortName == "DATAADDRESSWIDTH" {
+			dataWidth = 1
+		}
 	}
 
 	header = vputils.ReadString(f)
@@ -93,7 +103,7 @@ func main() {
 		return
 	}
 
-	code := vputils.ReadBinaryBlock(f)
+	code := vputils.ReadBinaryBlock(f, codeWidth)
 
 	fmt.Printf("Code length: %04x\n", len(code))
 
@@ -103,7 +113,7 @@ func main() {
 		return
 	}
 
-	data := vputils.ReadBinaryBlock(f)
+	data := vputils.ReadBinaryBlock(f, dataWidth)
 
 	fmt.Printf("Data length: %04x\n", len(data))
 

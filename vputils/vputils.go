@@ -28,6 +28,12 @@ func ShowErrorAndStop(message string) {
 	}
 }
 
+func checkWidth(width int) {
+	if width != 1 && width != 2 {
+		ShowErrorAndStop("Invalid width")
+	}
+}
+
 func Split(s string, max int) []string {
 	parts := []string{}
 	current := ""
@@ -117,14 +123,28 @@ func WriteString(f *os.File, text string) {
 	Check(err)
 }
 
-func ReadBinaryBlock(f *os.File) []byte {
-	countBytes := read2ByteInt(f)
+func ReadBinaryBlock(f *os.File, width int) []byte {
+	checkWidth(width)
+
+	countBytes := 0
+	switch width {
+	case 1:
+		countBytes = read1ByteInt(f)
+	case 2:
+		countBytes = read2ByteInt(f)
+	}
 
 	code := make([]byte, countBytes)
 	_, err := f.Read(code)
 	Check(err)
 
-	checkCountBytes := read2ByteInt(f)
+	checkCountBytes := 0
+	switch width {
+	case 1:
+		checkCountBytes = read1ByteInt(f)
+	case 2:
+		checkCountBytes = read2ByteInt(f)
+	}
 
 	if checkCountBytes != countBytes {
 		ShowErrorAndStop("Block count error")
@@ -133,14 +153,26 @@ func ReadBinaryBlock(f *os.File) []byte {
 	return code
 }
 
-func WriteBinaryBlock(name string, bytes []byte, f *os.File) {
+func WriteBinaryBlock(name string, bytes []byte, f *os.File, width int) {
+	checkWidth(width)
+
 	WriteString(f, name)
-	write2ByteInt(f, len(bytes))
+	switch width {
+	case 1:
+		write1ByteInt(f, len(bytes))
+	case 2:
+		write2ByteInt(f, len(bytes))
+	}
 
 	_, err := f.Write(bytes)
 	Check(err)
 
-	write2ByteInt(f, len(bytes))
+	switch width {
+	case 1:
+		write1ByteInt(f, len(bytes))
+	case 2:
+		write2ByteInt(f, len(bytes))
+	}
 }
 
 func ReadTextTable(f *os.File) []NameValue {

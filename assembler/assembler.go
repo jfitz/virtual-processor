@@ -136,7 +136,7 @@ func generateCode(source []string) []byte {
 	return code
 }
 
-func write(properties []vputils.NameValue, code []byte, data []byte, filename string) {
+func write(properties []vputils.NameValue, code []byte, data []byte, filename string, codeWidth int, dataWidth int) {
 	fmt.Printf("Writing file %s...\n", filename)
 
 	f, err := os.Create(filename)
@@ -147,8 +147,8 @@ func write(properties []vputils.NameValue, code []byte, data []byte, filename st
 	vputils.WriteString(f, "module")
 
 	vputils.WriteTextTable("properties", properties, f)
-	vputils.WriteBinaryBlock("code", code, f)
-	vputils.WriteBinaryBlock("data", data, f)
+	vputils.WriteBinaryBlock("code", code, f, codeWidth)
+	vputils.WriteBinaryBlock("data", data, f, dataWidth)
 
 	f.Sync()
 }
@@ -183,5 +183,5 @@ func main() {
 	code := generateCode(source)
 	data := []byte{}
 
-	write(properties, code, data, moduleFile)
+	write(properties, code, data, moduleFile, 1, 1)
 }
