@@ -34,22 +34,60 @@ func checkWidth(width int) {
 	}
 }
 
-func Split(s string, max int) []string {
+func IsSpace(c byte) bool {
+	return c == ' ' || c == '\t'
+}
+
+func IsDigit(c byte) bool {
+	return c >= '0' && c <= '9'
+}
+
+func IsAlpha(c byte) bool {
+	return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')
+}
+
+func IsAlnum(c byte) bool {
+	return IsDigit(c) || IsAlpha(c)
+}
+
+// test for compatible character
+func compatible(token string, c byte) bool {
+	if token == "" {
+		// empty token accepts anything
+		return true
+	}
+
+	if IsSpace(token[0]) {
+		// space token accepts spaces
+		return IsSpace(c)
+	}
+
+	if IsDigit(token[0]) {
+		// numeric token accepts digits
+		return IsDigit(c)
+	}
+
+	if IsAlpha(token[0]) {
+		// text token accepts alpha and digit
+		return IsAlnum(c)
+	}
+
+	return false
+}
+
+func Split(s string) []string {
 	parts := []string{}
 	current := ""
-	mode := true
 	for _, c := range s {
-		if (c == ' ' || c == '\t') && len(parts)+1 < max {
-			if mode {
-				parts = append(parts, current)
-				current = ""
-				mode = false
-			}
-		} else {
+		if compatible(current, byte(c)) {
 			current += string(c)
-			mode = true
+		} else {
+			// incompatible character requires a new token
+			parts = append(parts, current)
+			current = string(c)
 		}
 	}
+
 	if current != "" {
 		parts = append(parts, current)
 	}

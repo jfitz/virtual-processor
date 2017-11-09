@@ -11,23 +11,67 @@ import (
 	"strings"
 )
 
-func parseLine(line string) (string, string, string) {
+func parseLine(line string) (string, string, string, string, string) {
 	trimmedLine := strings.TrimRight(line, " ")
 	upcaseLine := strings.ToUpper(trimmedLine)
-	parts := vputils.Split(upcaseLine, 3)
+	parts := vputils.Split(upcaseLine)
 	label := ""
 	opcode := ""
-	args := ""
-	if len(parts) > 0 {
+	width := ""
+	target := ""
+	params := ""
+
+	// get the label (if any)
+	if len(parts) > 0 && len(parts[0]) > 0 && vputils.IsAlpha(parts[0][0]) {
 		label = parts[0]
+		parts = parts[1:]
 	}
-	if len(parts) > 1 {
-		opcode = parts[1]
+
+	// skip the whitespace
+	if len(parts) > 0 && len(parts[0]) > 0 && vputils.IsSpace(parts[0][0]) {
+		parts = parts[1:]
 	}
-	if len(parts) > 2 {
-		args = parts[2]
+
+	// get the opcode/directive
+	if len(parts) > 0 && len(parts[0]) > 0 && vputils.IsAlpha(parts[0][0]) {
+		opcode = parts[0]
+		parts = parts[1:]
 	}
-	return label, opcode, args
+
+	// skip the whitespace
+	if len(parts) > 0 && len(parts[0]) > 0 && vputils.IsSpace(parts[0][0]) {
+		parts = parts[1:]
+	}
+
+	// get the width
+	if len(parts) > 0 && len(parts[0]) > 0 && vputils.IsAlpha(parts[0][0]) {
+		width = parts[0]
+		parts = parts[1:]
+	}
+
+	// skip the whitespace
+	if len(parts) > 0 && len(parts[0]) > 0 && vputils.IsSpace(parts[0][0]) {
+		parts = parts[1:]
+	}
+
+	// get the target
+	if len(parts) > 0 && len(parts[0]) > 0 && vputils.IsAlnum(parts[0][0]) {
+		target = parts[0]
+		parts = parts[1:]
+	}
+
+	// skip the whitespace
+	if len(parts) > 0 && len(parts[0]) > 0 && vputils.IsSpace(parts[0][0]) {
+		parts = parts[1:]
+	}
+
+	// get the params
+	if len(parts) > 0 && len(parts[0]) > 0 && vputils.IsAlnum(parts[0][0]) {
+		params = parts[0]
+		parts = parts[1:]
+	}
+
+	return label, opcode, width, target, params
 }
 
 func isDirective(s string) bool {
@@ -96,7 +140,7 @@ func generateCode(source []string) []byte {
 			// first line must have op == 'START'
 
 			// split line into label, op, args
-			label, opcode, rest := parseLine(line)
+			label, opcode, width, target, params := parseLine(line)
 
 			// write the label on a line by itself
 			if len(label) > 0 {
@@ -112,19 +156,6 @@ func generateCode(source []string) []byte {
 				}
 				fmt.Println("\t" + opcode)
 			} else {
-				width := ""
-				target := ""
-				params := ""
-				args := vputils.Split(rest, 3)
-				if len(args) > 0 {
-					width = args[0]
-				}
-				if len(args) > 1 {
-					target = args[1]
-				}
-				if len(args) > 2 {
-					params = args[2]
-				}
 				instruction, err := getInstruction(opcode, width, target)
 				vputils.ShowErrorAndStop(err)
 				code = append(code, instruction...)
