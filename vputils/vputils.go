@@ -50,6 +50,10 @@ func IsAlnum(c byte) bool {
 	return IsDigit(c) || IsAlpha(c)
 }
 
+func IsText(c byte) bool {
+	return IsAlnum(c) || c == '.'
+}
+
 // test for compatible character
 func compatible(token string, c byte) bool {
 	if token == "" {
@@ -69,7 +73,7 @@ func compatible(token string, c byte) bool {
 
 	if IsAlpha(token[0]) {
 		// text token accepts alpha and digit
-		return IsAlnum(c)
+		return IsText(c)
 	}
 
 	return false

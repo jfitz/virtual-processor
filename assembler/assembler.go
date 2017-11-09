@@ -11,13 +11,12 @@ import (
 	"strings"
 )
 
-func parseLine(line string) (string, string, string, string, string) {
+func parseLine(line string) (string, string, string, string) {
 	trimmedLine := strings.TrimRight(line, " ")
 	upcaseLine := strings.ToUpper(trimmedLine)
 	parts := vputils.Split(upcaseLine)
 	label := ""
 	opcode := ""
-	width := ""
 	target := ""
 	params := ""
 
@@ -43,17 +42,6 @@ func parseLine(line string) (string, string, string, string, string) {
 		parts = parts[1:]
 	}
 
-	// get the width
-	if len(parts) > 0 && len(parts[0]) > 0 && vputils.IsAlpha(parts[0][0]) {
-		width = parts[0]
-		parts = parts[1:]
-	}
-
-	// skip the whitespace
-	if len(parts) > 0 && len(parts[0]) > 0 && vputils.IsSpace(parts[0][0]) {
-		parts = parts[1:]
-	}
-
 	// get the target
 	if len(parts) > 0 && len(parts[0]) > 0 && vputils.IsAlnum(parts[0][0]) {
 		target = parts[0]
@@ -71,7 +59,7 @@ func parseLine(line string) (string, string, string, string, string) {
 		parts = parts[1:]
 	}
 
-	return label, opcode, width, target, params
+	return label, opcode, target, params
 }
 
 func isDirective(s string) bool {
@@ -95,7 +83,7 @@ func evaluateByte(expression string) byte {
 	return byteValue
 }
 
-func getInstruction(opcode string, width string, target string) ([]byte, string) {
+func getInstruction(opcode string, target string) ([]byte, string) {
 	instruction := []byte{}
 	status := ""
 
@@ -103,25 +91,21 @@ func getInstruction(opcode string, width string, target string) ([]byte, string)
 	case "EXIT":
 		instruction = []byte{0x00}
 		status = ""
-	case "PUSH":
-		if width == "B" {
-			// PUSH B V
-			value := evaluateByte(target)
-			instruction = []byte{0x40, value}
-			status = ""
-		}
-	case "POP":
+	case "PUSH.B":
+		// PUSH B V
+		value := evaluateByte(target)
+		instruction = []byte{0x40, value}
+		status = ""
+	case "POP.B":
 		// POP B A
 		instruction = []byte{0x51}
 		status = ""
-	case "OUT":
-		if width == "B" {
-			// OUT B S
-			instruction = []byte{0x13}
-			status = ""
-		}
+	case "OUT.B":
+		// OUT B S
+		instruction = []byte{0x13}
+		status = ""
 	default:
-		status = "Invalid opcode: '" + opcode + "' " + width
+		status = "Invalid opcode: '" + opcode + "' "
 	}
 
 	return instruction, status
@@ -140,7 +124,7 @@ func generateCode(source []string) []byte {
 			// first line must have op == 'START'
 
 			// split line into label, op, args
-			label, opcode, width, target, params := parseLine(line)
+			label, opcode, target, params := parseLine(line)
 
 			// write the label on a line by itself
 			if len(label) > 0 {
@@ -156,10 +140,10 @@ func generateCode(source []string) []byte {
 				}
 				fmt.Printf("\t\t%s\n", opcode)
 			} else {
-				instruction, err := getInstruction(opcode, width, target)
+				instruction, err := getInstruction(opcode, target)
 				vputils.ShowErrorAndStop(err)
 				code = append(code, instruction...)
-				fmt.Printf("\t\t%s\t%s\t%s\t%s\n", opcode, width, target, params)
+				fmt.Printf("\t\t%s\t%s\t%s\n", opcode, target, params)
 				fmt.Printf("% X\n", instruction)
 			}
 		}
