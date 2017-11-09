@@ -144,7 +144,7 @@ func generateCode(source []string) []byte {
 
 			// write the label on a line by itself
 			if len(label) > 0 {
-				fmt.Println(label + ":")
+				fmt.Printf("\t%s:\n", label)
 			}
 
 			// write the directive or instruction
@@ -154,12 +154,13 @@ func generateCode(source []string) []byte {
 				if opcode == "DB" {
 					code = append(code, 65)
 				}
-				fmt.Println("\t" + opcode)
+				fmt.Printf("\t\t%s\n", opcode)
 			} else {
 				instruction, err := getInstruction(opcode, width, target)
 				vputils.ShowErrorAndStop(err)
 				code = append(code, instruction...)
-				fmt.Printf("% X\t%s\t%s\t%s\t%s\n", instruction, opcode, width, target, params)
+				fmt.Printf("\t\t%s\t%s\t%s\t%s\n", opcode, width, target, params)
+				fmt.Printf("% X\n", instruction)
 			}
 		}
 	}
