@@ -98,7 +98,7 @@ func generateCode(source []string) ([]byte, []byte) {
 
 			// write the label on a line by itself
 			if len(label) > 0 {
-				fmt.Printf("\t%s:\n", label)
+				fmt.Printf("%s:\n", label)
 			}
 
 			opcode, tokens := first(tokens)
@@ -116,20 +116,18 @@ func generateCode(source []string) ([]byte, []byte) {
 				default:
 					vputils.ShowErrorAndStop("Invalid directive")
 				}
-				fmt.Printf("\t\t%s\n", opcode)
-
-				if len(values) > 0 {
-					fmt.Printf("% X\n", values)
+				if len(values) == 0 {
+					fmt.Printf("\t%s\n", opcode)
+				} else {
+					fmt.Printf("\t%s\t\t% X\n", opcode, values)
 					data = append(data, values...)
 				}
 			} else {
-				target, tokens := first(tokens)
-				params, tokens := first(tokens)
+				target, _ := first(tokens)
 				instruction, err := getInstruction(opcode, target)
 				vputils.ShowErrorAndStop(err)
 
-				fmt.Printf("\t\t%s\t%s\t%s\n", opcode, target, params)
-				fmt.Printf("% X\n", instruction)
+				fmt.Printf("\t%s\t%s\t% X\n", opcode, target, instruction)
 
 				code = append(code, instruction...)
 			}
