@@ -11,12 +11,12 @@ import (
 	"strings"
 )
 
-func getLabel(tokens []string) (string, []string) {
-	label := ""
+func first(tokens []string) (string, []string) {
+	firstToken := ""
 
-	// get the label (if any)
-	if len(tokens) > 0 && len(tokens[0]) > 0 && vputils.IsAlpha(tokens[0][0]) {
-		label = tokens[0]
+	// get the leading token if it is not whitespace
+	if len(tokens) > 0 && len(tokens[0]) > 0 && !vputils.IsSpace(tokens[0][0]) {
+		firstToken = tokens[0]
 		tokens = tokens[1:]
 	}
 
@@ -25,43 +25,7 @@ func getLabel(tokens []string) (string, []string) {
 		tokens = tokens[1:]
 	}
 
-	return label, tokens
-}
-
-func parseLine(tokens []string) (string, string, string) {
-	opcode := ""
-	target := ""
-	params := ""
-
-	// get the opcode/directive
-	if len(tokens) > 0 && len(tokens[0]) > 0 && vputils.IsAlpha(tokens[0][0]) {
-		opcode = tokens[0]
-		tokens = tokens[1:]
-	}
-
-	// skip the whitespace
-	if len(tokens) > 0 && len(tokens[0]) > 0 && vputils.IsSpace(tokens[0][0]) {
-		tokens = tokens[1:]
-	}
-
-	// get the target
-	if len(tokens) > 0 && len(tokens[0]) > 0 && vputils.IsAlnum(tokens[0][0]) {
-		target = tokens[0]
-		tokens = tokens[1:]
-	}
-
-	// skip the whitespace
-	if len(tokens) > 0 && len(tokens[0]) > 0 && vputils.IsSpace(tokens[0][0]) {
-		tokens = tokens[1:]
-	}
-
-	// get the params
-	if len(tokens) > 0 && len(tokens[0]) > 0 && vputils.IsAlnum(tokens[0][0]) {
-		params = tokens[0]
-		tokens = tokens[1:]
-	}
-
-	return opcode, target, params
+	return firstToken, tokens
 }
 
 func isDirective(s string) bool {
@@ -71,15 +35,17 @@ func isDirective(s string) bool {
 	if s == "END" {
 		return true
 	}
-	if s == "DB" {
+	if s == "BYTE" {
 		return true
 	}
+
 	return false
 }
 
 func evaluateByte(expression string) byte {
 	value, err := strconv.Atoi(expression)
 	vputils.Check(err)
+
 	byteValue := byte(value)
 
 	return byteValue
@@ -94,16 +60,16 @@ func getInstruction(opcode string, target string) ([]byte, string) {
 		instruction = []byte{0x00}
 		status = ""
 	case "PUSH.B":
-		// PUSH B V
+		// PUSH B Value
 		value := evaluateByte(target)
 		instruction = []byte{0x40, value}
 		status = ""
 	case "POP.B":
-		// POP B A
+		// POP B Address
 		instruction = []byte{0x51}
 		status = ""
 	case "OUT.B":
-		// OUT B S
+		// OUT B
 		instruction = []byte{0x13}
 		status = ""
 	default:
@@ -113,10 +79,11 @@ func getInstruction(opcode string, target string) ([]byte, string) {
 	return instruction, status
 }
 
-func generateCode(source []string) []byte {
+func generateCode(source []string) ([]byte, []byte) {
 	// for each line (while not done)
 
 	code := []byte{}
+	data := []byte{}
 	for _, line := range source {
 		// remove comment from line
 		// remove trailing whitespace
@@ -127,34 +94,49 @@ func generateCode(source []string) []byte {
 
 			// first line must have op == 'START'
 
-			// split line into label, op, args
-			label, tokens := getLabel(tokens)
-			opcode, target, params := parseLine(tokens)
+			label, tokens := first(tokens)
 
 			// write the label on a line by itself
 			if len(label) > 0 {
 				fmt.Printf("\t%s:\n", label)
 			}
 
+			opcode, tokens := first(tokens)
+
 			// write the directive or instruction
 			if isDirective(opcode) {
-				// if op == 'END' then add byte 0
-				// when op == 'END' then flag as done
-				if opcode == "DB" {
-					code = append(code, 65)
+				values := []byte{}
+				switch opcode {
+				case "START":
+				case "END":
+				case "BYTE":
+					target, _ := first(tokens)
+					value := evaluateByte(target)
+					values = append(values, value)
+				default:
+					vputils.ShowErrorAndStop("Invalid directive")
 				}
 				fmt.Printf("\t\t%s\n", opcode)
+
+				if len(values) > 0 {
+					fmt.Printf("% X\n", values)
+					data = append(data, values...)
+				}
 			} else {
+				target, tokens := first(tokens)
+				params, tokens := first(tokens)
 				instruction, err := getInstruction(opcode, target)
 				vputils.ShowErrorAndStop(err)
-				code = append(code, instruction...)
+
 				fmt.Printf("\t\t%s\t%s\t%s\n", opcode, target, params)
 				fmt.Printf("% X\n", instruction)
+
+				code = append(code, instruction...)
 			}
 		}
 	}
 
-	return code
+	return code, data
 }
 
 func write(properties []vputils.NameValue, code []byte, data []byte, filename string, codeWidth int, dataWidth int) {
@@ -201,8 +183,7 @@ func main() {
 	properties = append(properties, vputils.NameValue{"CALL STACK SIZE", "1"})
 
 	source := vputils.ReadFile(sourceFile)
-	code := generateCode(source)
-	data := []byte{}
+	code, data := generateCode(source)
 
 	write(properties, code, data, moduleFile, 1, 1)
 }
