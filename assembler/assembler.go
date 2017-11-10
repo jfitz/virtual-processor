@@ -11,55 +11,57 @@ import (
 	"strings"
 )
 
-func parseLine(line string) (string, string, string, string) {
-	trimmedLine := strings.TrimRight(line, " ")
-	upcaseLine := strings.ToUpper(trimmedLine)
-	parts := vputils.Split(upcaseLine)
+func getLabel(tokens []string) (string, []string) {
 	label := ""
+
+	// get the label (if any)
+	if len(tokens) > 0 && len(tokens[0]) > 0 && vputils.IsAlpha(tokens[0][0]) {
+		label = tokens[0]
+		tokens = tokens[1:]
+	}
+
+	// skip the whitespace
+	if len(tokens) > 0 && len(tokens[0]) > 0 && vputils.IsSpace(tokens[0][0]) {
+		tokens = tokens[1:]
+	}
+
+	return label, tokens
+}
+
+func parseLine(tokens []string) (string, string, string) {
 	opcode := ""
 	target := ""
 	params := ""
 
-	// get the label (if any)
-	if len(parts) > 0 && len(parts[0]) > 0 && vputils.IsAlpha(parts[0][0]) {
-		label = parts[0]
-		parts = parts[1:]
-	}
-
-	// skip the whitespace
-	if len(parts) > 0 && len(parts[0]) > 0 && vputils.IsSpace(parts[0][0]) {
-		parts = parts[1:]
-	}
-
 	// get the opcode/directive
-	if len(parts) > 0 && len(parts[0]) > 0 && vputils.IsAlpha(parts[0][0]) {
-		opcode = parts[0]
-		parts = parts[1:]
+	if len(tokens) > 0 && len(tokens[0]) > 0 && vputils.IsAlpha(tokens[0][0]) {
+		opcode = tokens[0]
+		tokens = tokens[1:]
 	}
 
 	// skip the whitespace
-	if len(parts) > 0 && len(parts[0]) > 0 && vputils.IsSpace(parts[0][0]) {
-		parts = parts[1:]
+	if len(tokens) > 0 && len(tokens[0]) > 0 && vputils.IsSpace(tokens[0][0]) {
+		tokens = tokens[1:]
 	}
 
 	// get the target
-	if len(parts) > 0 && len(parts[0]) > 0 && vputils.IsAlnum(parts[0][0]) {
-		target = parts[0]
-		parts = parts[1:]
+	if len(tokens) > 0 && len(tokens[0]) > 0 && vputils.IsAlnum(tokens[0][0]) {
+		target = tokens[0]
+		tokens = tokens[1:]
 	}
 
 	// skip the whitespace
-	if len(parts) > 0 && len(parts[0]) > 0 && vputils.IsSpace(parts[0][0]) {
-		parts = parts[1:]
+	if len(tokens) > 0 && len(tokens[0]) > 0 && vputils.IsSpace(tokens[0][0]) {
+		tokens = tokens[1:]
 	}
 
 	// get the params
-	if len(parts) > 0 && len(parts[0]) > 0 && vputils.IsAlnum(parts[0][0]) {
-		params = parts[0]
-		parts = parts[1:]
+	if len(tokens) > 0 && len(tokens[0]) > 0 && vputils.IsAlnum(tokens[0][0]) {
+		params = tokens[0]
+		tokens = tokens[1:]
 	}
 
-	return label, opcode, target, params
+	return opcode, target, params
 }
 
 func isDirective(s string) bool {
@@ -121,10 +123,13 @@ func generateCode(source []string) []byte {
 		line = strings.TrimRight(line, " \t")
 		// only lines with content
 		if len(line) > 0 {
+			tokens := vputils.Split(line)
+
 			// first line must have op == 'START'
 
 			// split line into label, op, args
-			label, opcode, target, params := parseLine(line)
+			label, tokens := getLabel(tokens)
+			opcode, target, params := parseLine(tokens)
 
 			// write the label on a line by itself
 			if len(label) > 0 {
