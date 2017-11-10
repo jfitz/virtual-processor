@@ -82,7 +82,6 @@ func getInstruction(opcode string, target string) ([]byte, string) {
 func generateCode(source []string) ([]byte, []byte) {
 	// for each line (while not done)
 
-	code := []byte{}
 	data := []byte{}
 	for _, line := range source {
 		// remove comment from line
@@ -96,15 +95,15 @@ func generateCode(source []string) ([]byte, []byte) {
 
 			label, tokens := first(tokens)
 
-			// write the label on a line by itself
-			if len(label) > 0 {
-				fmt.Printf("%s:\n", label)
-			}
-
 			opcode, tokens := first(tokens)
 
 			// write the directive or instruction
 			if isDirective(opcode) {
+				// write the label on a line by itself
+				if len(label) > 0 {
+					fmt.Printf("%s:\n", label)
+				}
+
 				values := []byte{}
 				switch opcode {
 				case "START":
@@ -122,7 +121,32 @@ func generateCode(source []string) ([]byte, []byte) {
 					fmt.Printf("\t%s\t\t% X\n", opcode, values)
 					data = append(data, values...)
 				}
-			} else {
+			}
+		}
+	}
+
+	code := []byte{}
+	for _, line := range source {
+		// remove comment from line
+		// remove trailing whitespace
+		line = strings.TrimRight(line, " \t")
+		// only lines with content
+		if len(line) > 0 {
+			tokens := vputils.Split(line)
+
+			// first line must have op == 'START'
+
+			label, tokens := first(tokens)
+
+			opcode, tokens := first(tokens)
+
+			// write the directive or instruction
+			if !isDirective(opcode) {
+				// write the label on a line by itself
+				if len(label) > 0 {
+					fmt.Printf("%s:\n", label)
+				}
+
 				target, _ := first(tokens)
 				instruction, err := getInstruction(opcode, target)
 				vputils.ShowErrorAndStop(err)
