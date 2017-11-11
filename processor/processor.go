@@ -10,10 +10,19 @@ import (
 	"strings"
 )
 
-func executeCode(code []byte) {
+func checkStack(sp int, stack []byte) {
+	if sp == len(stack) {
+		vputils.ShowErrorAndStop("Stack overflow")
+	}
+}
+
+func executeCode(code []byte, data []byte) {
 	pc := 0
-	stack := [1024]byte{}
+	stack := make([]byte, 1024)
 	sp := 0
+	value := byte(0)
+	codeAddress := byte(0)
+	dataAddress := byte(0)
 
 	fmt.Printf("Execution started at %04x\n", pc)
 	halt := false
@@ -26,17 +35,26 @@ func executeCode(code []byte) {
 			halt = true
 			pc += 1
 		case 0x40:
-			// PUSH B V
-			stack[sp] = code[pc+1]
+			// PUSH.B Value
+			codeAddress = byte(pc + 1)
+			value = code[codeAddress]
+			stack[sp] = value
 			sp += 1
-			if sp == len(stack) {
-				fmt.Printf("Stack overflow at %04x\n", pc)
-			}
+			checkStack(sp, stack)
+			pc += 2
+		case 0x41:
+			// PUSH.B Address
+			codeAddress = byte(pc + 1)
+			dataAddress = code[codeAddress]
+			value = data[dataAddress]
+			stack[sp] = value
+			sp += 1
+			checkStack(sp, stack)
 			pc += 2
 		case 0x51:
-			// POP B A
+			// POP.B A
 		case 0x13:
-			// OUT B S
+			// OUT.B
 			if sp == 0 {
 				fmt.Printf("Stack underflow at %04x\n", pc)
 			}
@@ -117,5 +135,5 @@ func main() {
 
 	fmt.Printf("Data length: %04x\n", len(data))
 
-	executeCode(code)
+	executeCode(code, data)
 }

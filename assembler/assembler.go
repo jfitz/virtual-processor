@@ -45,7 +45,7 @@ func evaluateByte(expression string) byte {
 	return byteValue
 }
 
-func getInstruction(opcode string, target string) ([]byte, string) {
+func getInstruction(opcode string, target string, dataLabels map[string]byte) ([]byte, string) {
 	instruction := []byte{}
 	status := ""
 
@@ -54,10 +54,18 @@ func getInstruction(opcode string, target string) ([]byte, string) {
 		instruction = []byte{0x00}
 		status = ""
 	case "PUSH.B":
-		// PUSH B Value
-		value := evaluateByte(target)
-		instruction = []byte{0x40, value}
-		status = ""
+		status = "Invalid target"
+		if vputils.IsDigit(target[0]) {
+			// PUSH B Value
+			value := evaluateByte(target)
+			instruction = []byte{0x40, value}
+			status = ""
+		}
+		if vputils.IsAlpha(target[0]) {
+			value := dataLabels[target]
+			instruction = []byte{0x41, value}
+			status = ""
+		}
 	case "POP.B":
 		// POP B Address
 		instruction = []byte{0x51}
@@ -73,7 +81,7 @@ func getInstruction(opcode string, target string) ([]byte, string) {
 	return instruction, status
 }
 
-func checkDataLabel(label string, labels map[string]int) {
+func checkDataLabel(label string, labels map[string]byte) {
 	if label == "" {
 		vputils.ShowErrorAndStop("Data declaration requires label")
 	}
@@ -83,24 +91,24 @@ func checkDataLabel(label string, labels map[string]int) {
 	}
 }
 
-func checkCodeLabel(label string, labels map[string]int) {
+func checkCodeLabel(label string, labels map[string]byte) {
 	if _, ok := labels[label]; ok {
 		vputils.ShowErrorAndStop("Duplicate label " + label)
 	}
 }
 
-func printLabels(labels map[string]int) {
+func printLabels(labels map[string]byte) {
 	for k, v := range labels {
 		fmt.Printf("%s\t%d\n", k, v)
 	}
 }
 
-func generateData(source []string) []byte {
+func generateData(source []string) ([]byte, map[string]byte) {
 	fmt.Println("Data segment:")
 
 	data := []byte{}
-	var data_labels map[string]int
-	data_labels = make(map[string]int)
+	var dataLabels map[string]byte
+	dataLabels = make(map[string]byte)
 
 	for _, line := range source {
 		// remove comment from line
@@ -118,10 +126,14 @@ func generateData(source []string) []byte {
 
 			// write the directive or instruction
 			if isDirective(opcode) {
-				checkDataLabel(label, data_labels)
+				checkDataLabel(label, dataLabels)
 
 				// add the label to our table
-				data_labels[label] = len(data_labels)
+				address := len(dataLabels)
+				if address > 255 {
+					vputils.ShowErrorAndStop("Exceeded data label table size")
+				}
+				dataLabels[label] = byte(address)
 
 				// write the label on a line by itself
 				if len(label) > 0 {
@@ -149,18 +161,18 @@ func generateData(source []string) []byte {
 	fmt.Println()
 
 	fmt.Println("Data labels:")
-	printLabels(data_labels)
+	printLabels(dataLabels)
 	fmt.Println()
 
-	return data
+	return data, dataLabels
 }
 
-func generateCode(source []string) []byte {
+func generateCode(source []string, dataLabels map[string]byte) []byte {
 	fmt.Println("Code segment:")
 
 	code := []byte{}
-	var code_labels map[string]int
-	code_labels = make(map[string]int)
+	var codeLabels map[string]byte
+	codeLabels = make(map[string]byte)
 
 	for _, line := range source {
 		// remove comment from line
@@ -179,17 +191,21 @@ func generateCode(source []string) []byte {
 			// write the directive or instruction
 			if !isDirective(opcode) {
 				if len(label) > 0 {
-					checkCodeLabel(label, code_labels)
+					checkCodeLabel(label, codeLabels)
 
 					// add the label to our table
-					code_labels[label] = len(code_labels)
+					address := len(codeLabels)
+					if address > 255 {
+						vputils.ShowErrorAndStop("Exceeded code label table size")
+					}
+					codeLabels[label] = byte(address)
 
 					// write the label on a line by itself
 					fmt.Printf("%s:\n", label)
 				}
 
 				target, _ := first(tokens)
-				instruction, err := getInstruction(opcode, target)
+				instruction, err := getInstruction(opcode, target, dataLabels)
 				vputils.ShowErrorAndStop(err)
 
 				fmt.Printf("\t%s\t%s\t% X\n", opcode, target, instruction)
@@ -201,7 +217,7 @@ func generateCode(source []string) []byte {
 	fmt.Println()
 
 	fmt.Println("Code labels:")
-	printLabels(code_labels)
+	printLabels(codeLabels)
 	fmt.Println()
 
 	return code
@@ -251,8 +267,8 @@ func main() {
 	properties = append(properties, vputils.NameValue{"CALL STACK SIZE", "1"})
 
 	source := vputils.ReadFile(sourceFile)
-	data := generateData(source)
-	code := generateCode(source)
+	data, dataLabels := generateData(source)
+	code := generateCode(source, dataLabels)
 
 	write(properties, code, data, moduleFile, 1, 1)
 }
