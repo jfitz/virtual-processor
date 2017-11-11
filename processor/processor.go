@@ -35,40 +35,59 @@ func (s stack) pop() (stack, error) {
 	return s[:last], nil
 }
 
-func executeCode(code []byte, data []byte) {
+type vector []byte
+
+func (v vector) get(offset int) (byte, error) {
+	if offset < 0 || offset >= len(v) {
+		return 0, errors.New("Index out of range")
+	}
+
+	return v[offset], nil
+}
+
+func executeCode(code vector, data vector) {
 	pc := 0
 	vStack := make(stack, 1024)
-	value := byte(0)
-	codeAddress := byte(0)
-	dataAddress := byte(0)
+	// bytesPerCodeAddress := 1
+	bytesPerDataAddress := 1
 
 	fmt.Printf("Execution started at %04x\n", pc)
 	halt := false
 	for !halt {
-		opcode := code[pc]
+		opcode, err := code.get(pc)
+		vputils.Check(err)
 
 		switch opcode {
 		case 0x00:
 			// EXIT
 			halt = true
-			pc += 1
+			pc += 1 // the opcode
 		case 0x40:
 			// PUSH.B Value
-			codeAddress = byte(pc + 1)
-			value = code[codeAddress]
+			codeAddress := pc + 1
+			value, err := code.get(codeAddress)
+			vputils.Check(err)
+
 			vStack = vStack.push(value)
-			pc += 2
+			pc += 1 // the opcode
+			pc += 1 // the target value
 		case 0x41:
 			// PUSH.B Address
-			codeAddress = byte(pc + 1)
-			dataAddress = code[codeAddress]
-			value = data[dataAddress]
+			codeAddress := pc + 1
+			dataAddr, err := code.get(codeAddress)
+			dataAddress := int(dataAddr)
+			vputils.Check(err)
+
+			value, err := data.get(dataAddress)
+			vputils.Check(err)
+
 			vStack = vStack.push(value)
-			pc += 2
+			pc += 1                   // the opcode
+			pc += bytesPerDataAddress // the target address
 		case 0x51:
-			// POP.B A
+			// POP.B Address
 		case 0x13:
-			// OUT.B
+			// OUT.B (implied stack)
 			c, err := vStack.top()
 			vputils.Check(err)
 
@@ -76,7 +95,7 @@ func executeCode(code []byte, data []byte) {
 			vputils.Check(err)
 
 			fmt.Print(string(c))
-			pc += 1
+			pc += 1 // the opcode
 		default:
 			// invalid opcode
 			fmt.Printf("Invalid opcode %02x at %04x\n", opcode, pc)
