@@ -4,22 +4,40 @@ package main of vcpu
 package main
 
 import (
+	"errors"
 	"fmt"
 	"github.com/jfitz/virtual-processor/vputils"
 	"os"
 	"strings"
 )
 
-func checkStack(sp int, stack []byte) {
-	if sp == len(stack) {
-		vputils.ShowErrorAndStop("Stack overflow")
+type stack []byte
+
+func (s stack) push(v byte) stack {
+	return append(s, v)
+}
+
+func (s stack) top() (byte, error) {
+	if len(s) == 0 {
+		return 0, errors.New("Stack underflow")
 	}
+
+	last := len(s) - 1
+	return s[last], nil
+}
+
+func (s stack) pop() (stack, error) {
+	if len(s) == 0 {
+		return s, errors.New("Stack underflow")
+	}
+
+	last := len(s) - 1
+	return s[:last], nil
 }
 
 func executeCode(code []byte, data []byte) {
 	pc := 0
-	stack := make([]byte, 1024)
-	sp := 0
+	vStack := make(stack, 1024)
 	value := byte(0)
 	codeAddress := byte(0)
 	dataAddress := byte(0)
@@ -38,28 +56,25 @@ func executeCode(code []byte, data []byte) {
 			// PUSH.B Value
 			codeAddress = byte(pc + 1)
 			value = code[codeAddress]
-			stack[sp] = value
-			sp += 1
-			checkStack(sp, stack)
+			vStack = vStack.push(value)
 			pc += 2
 		case 0x41:
 			// PUSH.B Address
 			codeAddress = byte(pc + 1)
 			dataAddress = code[codeAddress]
 			value = data[dataAddress]
-			stack[sp] = value
-			sp += 1
-			checkStack(sp, stack)
+			vStack = vStack.push(value)
 			pc += 2
 		case 0x51:
 			// POP.B A
 		case 0x13:
 			// OUT.B
-			if sp == 0 {
-				fmt.Printf("Stack underflow at %04x\n", pc)
-			}
-			sp -= 1
-			c := stack[sp]
+			c, err := vStack.top()
+			vputils.Check(err)
+
+			vStack, err = vStack.pop()
+			vputils.Check(err)
+
 			fmt.Print(string(c))
 			pc += 1
 		default:
