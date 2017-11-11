@@ -29,12 +29,6 @@ func first(tokens []string) (string, []string) {
 }
 
 func isDirective(s string) bool {
-	if s == "START" {
-		return true
-	}
-	if s == "END" {
-		return true
-	}
 	if s == "BYTE" {
 		return true
 	}
@@ -79,10 +73,35 @@ func getInstruction(opcode string, target string) ([]byte, string) {
 	return instruction, status
 }
 
-func generateCode(source []string) ([]byte, []byte) {
-	// for each line (while not done)
+func checkDataLabel(label string, labels map[string]int) {
+	if label == "" {
+		vputils.ShowErrorAndStop("Data declaration requires label")
+	}
+
+	if _, ok := labels[label]; ok {
+		vputils.ShowErrorAndStop("Duplicate label " + label)
+	}
+}
+
+func checkCodeLabel(label string, labels map[string]int) {
+	if _, ok := labels[label]; ok {
+		vputils.ShowErrorAndStop("Duplicate label " + label)
+	}
+}
+
+func printLabels(labels map[string]int) {
+	for k, v := range labels {
+		fmt.Printf("%s\t%d\n", k, v)
+	}
+}
+
+func generateData(source []string) []byte {
+	fmt.Println("Data segment:")
 
 	data := []byte{}
+	var data_labels map[string]int
+	data_labels = make(map[string]int)
+
 	for _, line := range source {
 		// remove comment from line
 		// remove trailing whitespace
@@ -99,6 +118,11 @@ func generateCode(source []string) ([]byte, []byte) {
 
 			// write the directive or instruction
 			if isDirective(opcode) {
+				checkDataLabel(label, data_labels)
+
+				// add the label to our table
+				data_labels[label] = len(data_labels)
+
 				// write the label on a line by itself
 				if len(label) > 0 {
 					fmt.Printf("%s:\n", label)
@@ -106,8 +130,6 @@ func generateCode(source []string) ([]byte, []byte) {
 
 				values := []byte{}
 				switch opcode {
-				case "START":
-				case "END":
 				case "BYTE":
 					target, _ := first(tokens)
 					value := evaluateByte(target)
@@ -124,8 +146,22 @@ func generateCode(source []string) ([]byte, []byte) {
 			}
 		}
 	}
+	fmt.Println()
+
+	fmt.Println("Data labels:")
+	printLabels(data_labels)
+	fmt.Println()
+
+	return data
+}
+
+func generateCode(source []string) []byte {
+	fmt.Println("Code segment:")
 
 	code := []byte{}
+	var code_labels map[string]int
+	code_labels = make(map[string]int)
+
 	for _, line := range source {
 		// remove comment from line
 		// remove trailing whitespace
@@ -142,8 +178,13 @@ func generateCode(source []string) ([]byte, []byte) {
 
 			// write the directive or instruction
 			if !isDirective(opcode) {
-				// write the label on a line by itself
 				if len(label) > 0 {
+					checkCodeLabel(label, code_labels)
+
+					// add the label to our table
+					code_labels[label] = len(code_labels)
+
+					// write the label on a line by itself
 					fmt.Printf("%s:\n", label)
 				}
 
@@ -157,8 +198,13 @@ func generateCode(source []string) ([]byte, []byte) {
 			}
 		}
 	}
+	fmt.Println()
 
-	return code, data
+	fmt.Println("Code labels:")
+	printLabels(code_labels)
+	fmt.Println()
+
+	return code
 }
 
 func write(properties []vputils.NameValue, code []byte, data []byte, filename string, codeWidth int, dataWidth int) {
@@ -205,7 +251,8 @@ func main() {
 	properties = append(properties, vputils.NameValue{"CALL STACK SIZE", "1"})
 
 	source := vputils.ReadFile(sourceFile)
-	code, data := generateCode(source)
+	data := generateData(source)
+	code := generateCode(source)
 
 	write(properties, code, data, moduleFile, 1, 1)
 }
