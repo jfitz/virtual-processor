@@ -131,7 +131,7 @@ func printLabels(labels map[string]byte) {
 }
 
 func generateData(source []string) ([]byte, map[string]byte, map[string]byte) {
-	fmt.Println("Data segment:")
+	fmt.Println("\tDATA")
 
 	code := []byte{}
 	codeLabels := make(map[string]byte)
@@ -177,10 +177,13 @@ func generateData(source []string) ([]byte, map[string]byte, map[string]byte) {
 				default:
 					vputils.ShowErrorAndStop("Invalid directive")
 				}
+
+				location := len(data)
+
 				if len(values) == 0 {
-					fmt.Printf("\t%s\n", opcode)
+					fmt.Printf("%02x\t%s\n", location, opcode)
 				} else {
-					fmt.Printf("\t%s\t\t% X\n", opcode, values)
+					fmt.Printf("%02x\t%s\t\t% X\n", location, opcode, values)
 					data = append(data, values...)
 				}
 			} else {
@@ -202,17 +205,14 @@ func generateData(source []string) ([]byte, map[string]byte, map[string]byte) {
 			}
 		}
 	}
-	fmt.Println()
-
-	fmt.Println("Data labels:")
-	printLabels(dataLabels)
+	fmt.Println("\tENDSEGMENT")
 	fmt.Println()
 
 	return data, dataLabels, codeLabels
 }
 
 func generateCode(source []string, dataLabels map[string]byte, codeLabels map[string]byte) []byte {
-	fmt.Println("Code segment:")
+	fmt.Println("\tCODE")
 
 	code := []byte{}
 
@@ -240,16 +240,15 @@ func generateCode(source []string, dataLabels map[string]byte, codeLabels map[st
 				target, _ := first(tokens)
 				instruction := getInstruction(opcode, target, dataLabels)
 
-				fmt.Printf("\t%s\t%s\t% X\n", opcode, target, instruction)
+				location := len(code)
+
+				fmt.Printf("%02x\t%s\t%s\t% X\n", location, opcode, target, instruction)
 
 				code = append(code, instruction...)
 			}
 		}
 	}
-	fmt.Println()
-
-	fmt.Println("Code labels:")
-	printLabels(codeLabels)
+	fmt.Println("\tENDSEGMENT")
 	fmt.Println()
 
 	return code

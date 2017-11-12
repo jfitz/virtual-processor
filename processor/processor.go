@@ -139,7 +139,6 @@ func main() {
 	codeWidth := 0
 	dataWidth := 0
 	for _, nameValue := range properties {
-		fmt.Printf("%s: %s\n", nameValue.Name, nameValue.Value)
 		shortName := strings.Replace(nameValue.Name, " ", "", -1)
 		if shortName == "CODEADDRESSWIDTH" {
 			codeWidth = 1
@@ -157,8 +156,6 @@ func main() {
 
 	code := vputils.ReadBinaryBlock(f, codeWidth)
 
-	fmt.Printf("Code length: %04x\n", len(code))
-
 	header = vputils.ReadString(f)
 	if header != "data" {
 		fmt.Println("Did not find data header")
@@ -166,8 +163,6 @@ func main() {
 	}
 
 	data := vputils.ReadBinaryBlock(f, dataWidth)
-
-	fmt.Printf("Data length: %04x\n", len(data))
 
 	executeCode(code, data)
 }
