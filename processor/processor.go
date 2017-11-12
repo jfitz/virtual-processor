@@ -47,7 +47,7 @@ func (v vector) get(offset int) (byte, error) {
 
 func executeCode(code vector, data vector) {
 	pc := 0
-	vStack := make(stack, 1024)
+	vStack := make(stack, 0)
 	// bytesPerCodeAddress := 1
 	bytesPerDataAddress := 1
 
