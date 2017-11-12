@@ -46,29 +46,7 @@ func evaluateByte(expression string) byte {
 	return byteValue
 }
 
-func buildInstruction(opcodes []byte, target string) ([]byte, error) {
-	instruction := []byte{}
-
-	if vputils.IsDigit(target[0]) {
-		opcode := opcodes[0]
-		value := evaluateByte(target)
-		instruction = []byte{opcode, value}
-	}
-
-	if vputils.IsAlpha(target[0]) {
-		opcode := opcodes[1]
-		value := byte(0)
-		instruction = []byte{opcode, value}
-	}
-
-	if len(instruction) == 0 {
-		return instruction, errors.New("Invalid opcode")
-	}
-
-	return instruction, nil
-}
-
-func buildInstructionLabels(opcodes []byte, target string, dataLabels map[string]byte) ([]byte, error) {
+func buildInstruction(opcodes []byte, target string, dataLabels map[string]byte) ([]byte, error) {
 	instruction := []byte{}
 
 	if vputils.IsDigit(target[0]) {
@@ -110,9 +88,8 @@ func decodeOpcode(text string) (byte, []byte, error) {
 	return opcode, opcodes, nil
 }
 
-func getInstructionNoLabels(text string, target string) ([]byte, string) {
+func getInstruction(text string, target string, dataLabels map[string]byte) []byte {
 	instruction := []byte{}
-	status := ""
 
 	opcode, opcodes, err := decodeOpcode(text)
 	vputils.Check(err)
@@ -122,34 +99,13 @@ func getInstructionNoLabels(text string, target string) ([]byte, string) {
 	}
 
 	if len(opcodes) > 0 {
-		instr, err := buildInstruction(opcodes, target)
+		instr, err := buildInstruction(opcodes, target, dataLabels)
 		vputils.Check(err)
 
 		instruction = instr
 	}
 
-	return instruction, status
-}
-
-func getInstruction(text string, target string, dataLabels map[string]byte) ([]byte, string) {
-	instruction := []byte{}
-	status := ""
-
-	opcode, opcodes, err := decodeOpcode(text)
-	vputils.Check(err)
-
-	if len(opcodes) == 0 {
-		instruction = []byte{opcode}
-	}
-
-	if len(opcodes) > 0 {
-		instr, err := buildInstructionLabels(opcodes, target, dataLabels)
-		vputils.Check(err)
-
-		instruction = instr
-	}
-
-	return instruction, status
+	return instruction
 }
 
 func checkDataLabel(label string, labels map[string]byte) {
@@ -240,8 +196,7 @@ func generateData(source []string) ([]byte, map[string]byte, map[string]byte) {
 				}
 
 				target, _ := first(tokens)
-				instruction, err := getInstruction(opcode, target, dataLabels)
-				vputils.ShowErrorAndStop(err)
+				instruction := getInstruction(opcode, target, dataLabels)
 
 				code = append(code, instruction...)
 			}
@@ -283,8 +238,7 @@ func generateCode(source []string, dataLabels map[string]byte, codeLabels map[st
 				}
 
 				target, _ := first(tokens)
-				instruction, err := getInstruction(opcode, target, dataLabels)
-				vputils.ShowErrorAndStop(err)
+				instruction := getInstruction(opcode, target, dataLabels)
 
 				fmt.Printf("\t%s\t%s\t% X\n", opcode, target, instruction)
 
