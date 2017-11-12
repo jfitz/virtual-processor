@@ -72,7 +72,7 @@ func getInstructionNoLabels(opcode string, target string) ([]byte, string) {
 		status = ""
 	case "OUT.B":
 		// OUT B
-		instruction = []byte{0x13}
+		instruction = []byte{0x08}
 		status = ""
 	default:
 		status = "Invalid opcode: '" + opcode + "' "
@@ -108,7 +108,7 @@ func getInstruction(opcode string, target string, dataLabels map[string]byte) ([
 		status = ""
 	case "OUT.B":
 		// OUT B
-		instruction = []byte{0x13}
+		instruction = []byte{0x08}
 		status = ""
 	default:
 		status = "Invalid opcode: '" + opcode + "' "

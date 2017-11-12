@@ -86,7 +86,7 @@ func executeCode(code vector, data vector) {
 			pc += bytesPerDataAddress // the target address
 		case 0x51:
 			// POP.B Address
-		case 0x13:
+		case 0x08:
 			// OUT.B (implied stack)
 			c, err := vStack.top()
 			vputils.Check(err)
