@@ -145,11 +145,7 @@ func generateData(source []string) ([]byte, map[string]byte, map[string]byte) {
 		// only lines with content
 		if len(line) > 0 {
 			tokens := vputils.Split(line)
-
-			// first line must have op == 'START'
-
 			label, tokens := first(tokens)
-
 			opcode, tokens := first(tokens)
 
 			// write the directive or instruction
@@ -178,6 +174,7 @@ func generateData(source []string) ([]byte, map[string]byte, map[string]byte) {
 					vputils.ShowErrorAndStop("Invalid directive")
 				}
 
+				// print offset, directive, and contents
 				location := len(data)
 
 				if len(values) == 0 {
@@ -187,6 +184,8 @@ func generateData(source []string) ([]byte, map[string]byte, map[string]byte) {
 					data = append(data, values...)
 				}
 			} else {
+				// process instruction
+
 				if len(label) > 0 {
 					checkCodeLabel(label, codeLabels)
 
@@ -198,7 +197,14 @@ func generateData(source []string) ([]byte, map[string]byte, map[string]byte) {
 					codeLabels[label] = byte(address)
 				}
 
-				target, _ := first(tokens)
+				target, tokens := first(tokens)
+
+				// check there are no more tokens
+				if len(tokens) > 0 {
+					vputils.ShowErrorAndStop("Extra tokens on line")
+				}
+
+				// decode the instruction
 				instruction := getInstruction(opcode, target, dataLabels)
 
 				code = append(code, instruction...)
@@ -223,11 +229,7 @@ func generateCode(source []string, dataLabels map[string]byte, codeLabels map[st
 		// only lines with content
 		if len(line) > 0 {
 			tokens := vputils.Split(line)
-
-			// first line must have op == 'START'
-
 			label, tokens := first(tokens)
-
 			opcode, tokens := first(tokens)
 
 			// write the directive or instruction
@@ -237,7 +239,14 @@ func generateCode(source []string, dataLabels map[string]byte, codeLabels map[st
 					fmt.Printf("%s:\n", label)
 				}
 
-				target, _ := first(tokens)
+				target, tokens := first(tokens)
+
+				// check that there are no more tokens
+				if len(tokens) > 0 {
+					vputils.ShowErrorAndStop("Extra tokens on line")
+				}
+
+				// decode the instruction
 				instruction := getInstruction(opcode, target, dataLabels)
 
 				location := len(code)
