@@ -90,64 +90,62 @@ func buildInstructionLabels(opcodes []byte, target string, dataLabels map[string
 	return instruction, nil
 }
 
-func getInstructionNoLabels(opcode string, target string) ([]byte, string) {
+func decodeOpcode(text string) (byte, []byte, error) {
+	opcode := byte(0)
 	opcodes := []byte{}
-	instruction := []byte{}
-	needTarget := false
-	status := ""
 
-	switch opcode {
+	switch text {
 	case "EXIT":
-		instruction = []byte{0x00}
-		status = ""
+		opcode = byte(0x00)
 	case "PUSH.B":
 		opcodes = []byte{0x40, 0x41}
-		needTarget = true
 	case "POP.B":
-		instruction = []byte{0x51}
-		status = ""
+		opcode = byte(0x51)
 	case "OUT.B":
-		instruction = []byte{0x08}
-		status = ""
+		opcode = byte(0x08)
 	default:
-		status = "Invalid opcode: '" + opcode + "' "
+		return 0, []byte{}, errors.New("Invalid opcode: '" + text + "' ")
 	}
 
-	if needTarget {
+	return opcode, opcodes, nil
+}
+
+func getInstructionNoLabels(text string, target string) ([]byte, string) {
+	instruction := []byte{}
+	status := ""
+
+	opcode, opcodes, err := decodeOpcode(text)
+	vputils.Check(err)
+
+	if len(opcodes) == 0 {
+		instruction = []byte{opcode}
+	}
+
+	if len(opcodes) > 0 {
 		instr, err := buildInstruction(opcodes, target)
 		vputils.Check(err)
+
 		instruction = instr
 	}
 
 	return instruction, status
 }
 
-func getInstruction(opcode string, target string, dataLabels map[string]byte) ([]byte, string) {
-	opcodes := []byte{}
+func getInstruction(text string, target string, dataLabels map[string]byte) ([]byte, string) {
 	instruction := []byte{}
-	needTarget := false
 	status := ""
 
-	switch opcode {
-	case "EXIT":
-		instruction = []byte{0x00}
-		status = ""
-	case "PUSH.B":
-		opcodes = []byte{0x40, 0x41}
-		needTarget = true
-	case "POP.B":
-		instruction = []byte{0x51}
-		status = ""
-	case "OUT.B":
-		instruction = []byte{0x08}
-		status = ""
-	default:
-		status = "Invalid opcode: '" + opcode + "' "
+	opcode, opcodes, err := decodeOpcode(text)
+	vputils.Check(err)
+
+	if len(opcodes) == 0 {
+		instruction = []byte{opcode}
 	}
 
-	if needTarget {
+	if len(opcodes) > 0 {
 		instr, err := buildInstructionLabels(opcodes, target, dataLabels)
 		vputils.Check(err)
+
 		instruction = instr
 	}
 
