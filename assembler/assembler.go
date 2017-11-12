@@ -4,6 +4,7 @@ package main of assembler
 package main
 
 import (
+	"errors"
 	"fmt"
 	"github.com/jfitz/virtual-processor/vputils"
 	"os"
@@ -45,8 +46,54 @@ func evaluateByte(expression string) byte {
 	return byteValue
 }
 
-func getInstructionNoLabels(opcode string, target string) ([]byte, string) {
+func buildInstruction(opcodes []byte, target string) ([]byte, error) {
 	instruction := []byte{}
+
+	if vputils.IsDigit(target[0]) {
+		opcode := opcodes[0]
+		value := evaluateByte(target)
+		instruction = []byte{opcode, value}
+	}
+
+	if vputils.IsAlpha(target[0]) {
+		opcode := opcodes[1]
+		value := byte(0)
+		instruction = []byte{opcode, value}
+	}
+
+	if len(instruction) == 0 {
+		return instruction, errors.New("Invalid opcode")
+	}
+
+	return instruction, nil
+}
+
+func buildInstructionLabels(opcodes []byte, target string, dataLabels map[string]byte) ([]byte, error) {
+	instruction := []byte{}
+
+	if vputils.IsDigit(target[0]) {
+		opcode := opcodes[0]
+		value := evaluateByte(target)
+		instruction = []byte{opcode, value}
+	}
+
+	if vputils.IsAlpha(target[0]) {
+		opcode := opcodes[1]
+		value := dataLabels[target]
+		instruction = []byte{opcode, value}
+	}
+
+	if len(instruction) == 0 {
+		return instruction, errors.New("Invalid opcode")
+	}
+
+	return instruction, nil
+}
+
+func getInstructionNoLabels(opcode string, target string) ([]byte, string) {
+	opcodes := []byte{}
+	instruction := []byte{}
+	needTarget := false
 	status := ""
 
 	switch opcode {
@@ -54,35 +101,31 @@ func getInstructionNoLabels(opcode string, target string) ([]byte, string) {
 		instruction = []byte{0x00}
 		status = ""
 	case "PUSH.B":
-		status = "Invalid target"
-		if vputils.IsDigit(target[0]) {
-			// PUSH B Value
-			value := evaluateByte(target)
-			instruction = []byte{0x40, value}
-			status = ""
-		}
-		if vputils.IsAlpha(target[0]) {
-			value := byte(0)
-			instruction = []byte{0x41, value}
-			status = ""
-		}
+		opcodes = []byte{0x40, 0x41}
+		needTarget = true
 	case "POP.B":
-		// POP B Address
 		instruction = []byte{0x51}
 		status = ""
 	case "OUT.B":
-		// OUT B
 		instruction = []byte{0x08}
 		status = ""
 	default:
 		status = "Invalid opcode: '" + opcode + "' "
 	}
 
+	if needTarget {
+		instr, err := buildInstruction(opcodes, target)
+		vputils.Check(err)
+		instruction = instr
+	}
+
 	return instruction, status
 }
 
 func getInstruction(opcode string, target string, dataLabels map[string]byte) ([]byte, string) {
+	opcodes := []byte{}
 	instruction := []byte{}
+	needTarget := false
 	status := ""
 
 	switch opcode {
@@ -90,28 +133,22 @@ func getInstruction(opcode string, target string, dataLabels map[string]byte) ([
 		instruction = []byte{0x00}
 		status = ""
 	case "PUSH.B":
-		status = "Invalid target"
-		if vputils.IsDigit(target[0]) {
-			// PUSH B Value
-			value := evaluateByte(target)
-			instruction = []byte{0x40, value}
-			status = ""
-		}
-		if vputils.IsAlpha(target[0]) {
-			value := dataLabels[target]
-			instruction = []byte{0x41, value}
-			status = ""
-		}
+		opcodes = []byte{0x40, 0x41}
+		needTarget = true
 	case "POP.B":
-		// POP B Address
 		instruction = []byte{0x51}
 		status = ""
 	case "OUT.B":
-		// OUT B
 		instruction = []byte{0x08}
 		status = ""
 	default:
 		status = "Invalid opcode: '" + opcode + "' "
+	}
+
+	if needTarget {
+		instr, err := buildInstructionLabels(opcodes, target, dataLabels)
+		vputils.Check(err)
+		instruction = instr
 	}
 
 	return instruction, status
