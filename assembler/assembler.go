@@ -131,7 +131,7 @@ func printLabels(labels map[string]byte) {
 }
 
 func generateData(source []string) ([]byte, map[string]byte, map[string]byte) {
-	fmt.Println("\tDATA")
+	fmt.Println("\t\tDATA")
 
 	code := []byte{}
 	codeLabels := make(map[string]byte)
@@ -178,9 +178,9 @@ func generateData(source []string) ([]byte, map[string]byte, map[string]byte) {
 				location := len(data)
 
 				if len(values) == 0 {
-					fmt.Printf("%02x\t%s\n", location, opcode)
+					fmt.Printf("%02x\t\t%s\n", location, opcode)
 				} else {
-					fmt.Printf("%02x\t%s\t\t% X\n", location, opcode, values)
+					fmt.Printf("%02x\t\t%s\t\t% X\n", location, opcode, values)
 					data = append(data, values...)
 				}
 			} else {
@@ -211,14 +211,14 @@ func generateData(source []string) ([]byte, map[string]byte, map[string]byte) {
 			}
 		}
 	}
-	fmt.Println("\tENDSEGMENT")
+	fmt.Println("\t\tENDSEGMENT")
 	fmt.Println()
 
 	return data, dataLabels, codeLabels
 }
 
 func generateCode(source []string, dataLabels map[string]byte, codeLabels map[string]byte) []byte {
-	fmt.Println("\tCODE")
+	fmt.Println("\t\tCODE")
 
 	code := []byte{}
 
@@ -251,13 +251,13 @@ func generateCode(source []string, dataLabels map[string]byte, codeLabels map[st
 
 				location := len(code)
 
-				fmt.Printf("%02x\t%s\t%s\t% X\n", location, opcode, target, instruction)
+				fmt.Printf("%02x\t% X\t%s\t%s\n", location, instruction, opcode, target)
 
 				code = append(code, instruction...)
 			}
 		}
 	}
-	fmt.Println("\tENDSEGMENT")
+	fmt.Println("\t\tENDSEGMENT")
 	fmt.Println()
 
 	return code
