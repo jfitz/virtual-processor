@@ -60,7 +60,8 @@ func executeCode(code vector, data vector) {
 	halt := false
 	for !halt {
 		opcode, err := code.get(pc)
-		vputils.CheckAndExit(err)
+		pcs := fmt.Sprintf("%02x", pc)
+		vputils.CheckPrintAndExit(err, "at PC "+pcs)
 
 		instructionSize := 0
 		switch opcode {

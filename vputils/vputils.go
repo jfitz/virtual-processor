@@ -29,6 +29,13 @@ func CheckAndExit(e error) {
 	}
 }
 
+func CheckPrintAndExit(e error, message string) {
+	if e != nil {
+		fmt.Println(e.Error() + " " + message)
+		os.Exit(1)
+	}
+}
+
 func checkWidth(width int) {
 	if width != 1 && width != 2 {
 		CheckAndExit(errors.New("Invalid width"))
