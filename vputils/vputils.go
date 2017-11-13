@@ -15,7 +15,7 @@ type NameValue struct {
 	Value string
 }
 
-func Check(e error) {
+func CheckAndPanic(e error) {
 	if e != nil {
 		panic(e)
 	}
@@ -102,7 +102,7 @@ func Split(s string) []string {
 func read1ByteInt(f *os.File) int {
 	bytes := make([]byte, 1)
 	_, err := f.Read(bytes)
-	Check(err)
+	CheckAndPanic(err)
 
 	value := int(bytes[0])
 
@@ -112,7 +112,7 @@ func read1ByteInt(f *os.File) int {
 func read2ByteInt(f *os.File) int {
 	bytes := make([]byte, 2)
 	_, err := f.Read(bytes)
-	Check(err)
+	CheckAndPanic(err)
 
 	value := int(bytes[1])<<8 + int(bytes[0])
 
@@ -125,7 +125,7 @@ func write1ByteInt(f *os.File, value int) {
 	bytes := []byte{low}
 
 	_, err := f.Write(bytes)
-	Check(err)
+	CheckAndPanic(err)
 }
 
 // if value is greater than 65535 then error
@@ -135,7 +135,7 @@ func write2ByteInt(f *os.File, value int) {
 	bytes := []byte{low, high}
 
 	_, err := f.Write(bytes)
-	Check(err)
+	CheckAndPanic(err)
 }
 
 func ReadString(f *os.File) string {
@@ -144,7 +144,7 @@ func ReadString(f *os.File) string {
 	one_byte[0] = 1
 	for one_byte[0] != 0 {
 		_, err := f.Read(one_byte)
-		Check(err)
+		CheckAndPanic(err)
 		if one_byte[0] != 0 {
 			bytes = append(bytes, one_byte...)
 		}
@@ -157,12 +157,12 @@ func ReadString(f *os.File) string {
 
 func WriteString(f *os.File, text string) {
 	_, err := f.Write([]byte(text))
-	Check(err)
+	CheckAndPanic(err)
 
 	zero_byte := []byte{0}
 
 	_, err = f.Write(zero_byte)
-	Check(err)
+	CheckAndPanic(err)
 }
 
 func ReadBinaryBlock(f *os.File, width int) []byte {
@@ -178,7 +178,7 @@ func ReadBinaryBlock(f *os.File, width int) []byte {
 
 	code := make([]byte, countBytes)
 	_, err := f.Read(code)
-	Check(err)
+	CheckAndPanic(err)
 
 	checkCountBytes := 0
 	switch width {
@@ -207,7 +207,7 @@ func WriteBinaryBlock(name string, bytes []byte, f *os.File, width int) {
 	}
 
 	_, err := f.Write(bytes)
-	Check(err)
+	CheckAndPanic(err)
 
 	switch width {
 	case 1:
@@ -227,7 +227,7 @@ func ReadTextTable(f *os.File) []NameValue {
 
 	// read STX
 	_, err := f.Read(one_byte)
-	Check(err)
+	CheckAndPanic(err)
 
 	if one_byte[0] != stx_byte[0] {
 		ShowErrorAndStop("Did not find STX")
@@ -238,7 +238,7 @@ func ReadTextTable(f *os.File) []NameValue {
 	one_byte[0] = 0
 	for one_byte[0] != etx_byte[0] {
 		_, err := f.Read(one_byte)
-		Check(err)
+		CheckAndPanic(err)
 		if one_byte[0] != etx_byte[0] {
 			bytes = append(bytes, one_byte...)
 		}
@@ -272,7 +272,7 @@ func WriteTextTable(name string, table []NameValue, f *os.File) {
 
 	// write STX
 	_, err := f.Write(stx_byte)
-	Check(err)
+	CheckAndPanic(err)
 
 	for _, nameValue := range table {
 		name := []byte(nameValue.Name)
@@ -280,26 +280,26 @@ func WriteTextTable(name string, table []NameValue, f *os.File) {
 
 		// write name
 		_, err = f.Write(name)
-		Check(err)
+		CheckAndPanic(err)
 		// write FS
 		_, err = f.Write(fs_byte)
-		Check(err)
+		CheckAndPanic(err)
 		// write value
 		_, err = f.Write(value)
-		Check(err)
+		CheckAndPanic(err)
 		// write RS (0x1e)
 		_, err = f.Write(rs_byte)
-		Check(err)
+		CheckAndPanic(err)
 	}
 	// write ETX
 	_, err = f.Write(etx_byte)
-	Check(err)
+	CheckAndPanic(err)
 }
 
 func ReadFile(sourceFile string) []string {
 	fmt.Printf("Reading file %s...\n", sourceFile)
 	b, err := ioutil.ReadFile(sourceFile)
-	Check(err)
+	CheckAndPanic(err)
 
 	source := string(b)
 	sourceLines := strings.Split(source, "\n")

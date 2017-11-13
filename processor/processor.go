@@ -55,7 +55,7 @@ func executeCode(code vector, data vector) {
 	halt := false
 	for !halt {
 		opcode, err := code.get(pc)
-		vputils.Check(err)
+		vputils.CheckAndPanic(err)
 
 		switch opcode {
 		case 0x00:
@@ -66,7 +66,7 @@ func executeCode(code vector, data vector) {
 			// PUSH.B Value
 			codeAddress := pc + 1
 			value, err := code.get(codeAddress)
-			vputils.Check(err)
+			vputils.CheckAndPanic(err)
 
 			vStack = vStack.push(value)
 			pc += 1 // the opcode
@@ -76,10 +76,10 @@ func executeCode(code vector, data vector) {
 			codeAddress := pc + 1
 			dataAddr, err := code.get(codeAddress)
 			dataAddress := int(dataAddr)
-			vputils.Check(err)
+			vputils.CheckAndPanic(err)
 
 			value, err := data.get(dataAddress)
-			vputils.Check(err)
+			vputils.CheckAndPanic(err)
 
 			vStack = vStack.push(value)
 			pc += 1                   // the opcode
@@ -89,10 +89,10 @@ func executeCode(code vector, data vector) {
 		case 0x08:
 			// OUT.B (implied stack)
 			c, err := vStack.top()
-			vputils.Check(err)
+			vputils.CheckAndPanic(err)
 
 			vStack, err = vStack.pop()
-			vputils.Check(err)
+			vputils.CheckAndPanic(err)
 
 			fmt.Print(string(c))
 			pc += 1 // the opcode
@@ -118,7 +118,7 @@ func main() {
 	fmt.Printf("Opening file '%s'\n", moduleFile)
 
 	f, err := os.Open(moduleFile)
-	vputils.Check(err)
+	vputils.CheckAndPanic(err)
 
 	defer f.Close()
 

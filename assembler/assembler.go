@@ -39,7 +39,7 @@ func isDirective(s string) bool {
 
 func evaluateByte(expression string) byte {
 	value, err := strconv.Atoi(expression)
-	vputils.Check(err)
+	vputils.CheckAndPanic(err)
 
 	byteValue := byte(value)
 
@@ -92,7 +92,7 @@ func getInstruction(text string, target string, dataLabels map[string]byte) []by
 	instruction := []byte{}
 
 	opcode, opcodes, err := decodeOpcode(text)
-	vputils.Check(err)
+	vputils.CheckAndPanic(err)
 
 	if len(opcodes) == 0 {
 		instruction = []byte{opcode}
@@ -100,7 +100,7 @@ func getInstruction(text string, target string, dataLabels map[string]byte) []by
 
 	if len(opcodes) > 0 {
 		instr, err := buildInstruction(opcodes, target, dataLabels)
-		vputils.Check(err)
+		vputils.CheckAndPanic(err)
 
 		instruction = instr
 	}
@@ -267,7 +267,7 @@ func write(properties []vputils.NameValue, code []byte, data []byte, filename st
 	fmt.Printf("Writing file %s...\n", filename)
 
 	f, err := os.Create(filename)
-	vputils.Check(err)
+	vputils.CheckAndPanic(err)
 
 	defer f.Close()
 
