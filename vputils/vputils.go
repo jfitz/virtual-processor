@@ -21,7 +21,7 @@ func CheckAndPanic(e error) {
 	}
 }
 
-func ShowErrorAndStop(message string) {
+func CheckAndExit(message string) {
 	if message != "" {
 		fmt.Println(message)
 		os.Exit(1)
@@ -30,7 +30,7 @@ func ShowErrorAndStop(message string) {
 
 func checkWidth(width int) {
 	if width != 1 && width != 2 {
-		ShowErrorAndStop("Invalid width")
+		CheckAndExit("Invalid width")
 	}
 }
 
@@ -189,7 +189,7 @@ func ReadBinaryBlock(f *os.File, width int) []byte {
 	}
 
 	if checkCountBytes != countBytes {
-		ShowErrorAndStop("Block count error")
+		CheckAndExit("Block count error")
 	}
 
 	return code
@@ -230,7 +230,7 @@ func ReadTextTable(f *os.File) []NameValue {
 	CheckAndPanic(err)
 
 	if one_byte[0] != stx_byte[0] {
-		ShowErrorAndStop("Did not find STX")
+		CheckAndExit("Did not find STX")
 	}
 
 	// read until ETX
