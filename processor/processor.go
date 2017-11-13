@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/jfitz/virtual-processor/vputils"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -38,8 +39,11 @@ func (s stack) pop() (stack, error) {
 type vector []byte
 
 func (v vector) get(offset int) (byte, error) {
-	if offset < 0 || offset >= len(v) {
-		return 0, errors.New("Index out of range")
+	max := len(v) - 1
+	if offset < 0 || offset > max {
+		off := strconv.Itoa(offset)
+		maxs := strconv.Itoa(max)
+		return 0, errors.New("Index " + off + " out of range [0.." + maxs + "]")
 	}
 
 	return v[offset], nil
@@ -50,44 +54,45 @@ func executeCode(code vector, data vector) {
 	vStack := make(stack, 0)
 	// bytesPerCodeAddress := 1
 	bytesPerDataAddress := 1
+	bytesperOpcode := 1
 
 	fmt.Printf("Execution started at %04x\n", pc)
 	halt := false
 	for !halt {
 		opcode, err := code.get(pc)
-		vputils.CheckAndPanic(err)
+		vputils.CheckAndExit(err)
 
+		instructionSize := 0
 		switch opcode {
 		case 0x00:
 			// EXIT
+			instructionSize = 1
 			halt = true
-			pc += 1 // the opcode
 		case 0x40:
 			// PUSH.B Value
-			codeAddress := pc + 1
+			instructionSize = bytesperOpcode + 1
+			codeAddress := pc + bytesperOpcode
 			value, err := code.get(codeAddress)
 			vputils.CheckAndPanic(err)
 
 			vStack = vStack.push(value)
-			pc += 1 // the opcode
-			pc += 1 // the target value
 		case 0x41:
 			// PUSH.B Address
-			codeAddress := pc + 1
+			instructionSize = bytesperOpcode + bytesPerDataAddress
+			codeAddress := pc + bytesperOpcode
 			dataAddr, err := code.get(codeAddress)
-			dataAddress := int(dataAddr)
 			vputils.CheckAndPanic(err)
+			dataAddress := int(dataAddr)
 
 			value, err := data.get(dataAddress)
 			vputils.CheckAndPanic(err)
 
 			vStack = vStack.push(value)
-			pc += 1                   // the opcode
-			pc += bytesPerDataAddress // the target address
 		case 0x51:
 			// POP.B Address
 		case 0x08:
 			// OUT.B (implied stack)
+			instructionSize = bytesperOpcode
 			c, err := vStack.top()
 			vputils.CheckAndPanic(err)
 
@@ -95,12 +100,13 @@ func executeCode(code vector, data vector) {
 			vputils.CheckAndPanic(err)
 
 			fmt.Print(string(c))
-			pc += 1 // the opcode
 		default:
 			// invalid opcode
 			fmt.Printf("Invalid opcode %02x at %04x\n", opcode, pc)
 			return
 		}
+
+		pc += instructionSize
 	}
 
 	fmt.Printf("Execution halted at %04x\n", pc)

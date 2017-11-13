@@ -171,7 +171,7 @@ func generateData(source []string) ([]byte, map[string]byte, map[string]byte) {
 					value := evaluateByte(target)
 					values = append(values, value)
 				default:
-					vputils.CheckAndExit(errors.New("Invalid directive"))
+					vputils.CheckAndExit(errors.New("Invalid directive " + opcode))
 				}
 
 				// print offset, directive, and contents
