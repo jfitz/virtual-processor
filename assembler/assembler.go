@@ -110,17 +110,17 @@ func getInstruction(text string, target string, dataLabels map[string]byte) []by
 
 func checkDataLabel(label string, labels map[string]byte) {
 	if label == "" {
-		vputils.CheckAndExit("Data declaration requires label")
+		vputils.CheckAndExit(errors.New("Data declaration requires label"))
 	}
 
 	if _, ok := labels[label]; ok {
-		vputils.CheckAndExit("Duplicate label " + label)
+		vputils.CheckAndExit(errors.New("Duplicate label " + label))
 	}
 }
 
 func checkCodeLabel(label string, labels map[string]byte) {
 	if _, ok := labels[label]; ok {
-		vputils.CheckAndExit("Duplicate label " + label)
+		vputils.CheckAndExit(errors.New("Duplicate label " + label))
 	}
 }
 
@@ -155,7 +155,7 @@ func generateData(source []string) ([]byte, map[string]byte, map[string]byte) {
 				// add the label to our table
 				address := len(dataLabels)
 				if address > 255 {
-					vputils.CheckAndExit("Exceeded data label table size")
+					vputils.CheckAndExit(errors.New("Exceeded data label table size"))
 				}
 				dataLabels[label] = byte(address)
 
@@ -171,7 +171,7 @@ func generateData(source []string) ([]byte, map[string]byte, map[string]byte) {
 					value := evaluateByte(target)
 					values = append(values, value)
 				default:
-					vputils.CheckAndExit("Invalid directive")
+					vputils.CheckAndExit(errors.New("Invalid directive"))
 				}
 
 				// print offset, directive, and contents
@@ -192,7 +192,7 @@ func generateData(source []string) ([]byte, map[string]byte, map[string]byte) {
 					// add the label to our table
 					address := len(codeLabels)
 					if address > 255 {
-						vputils.CheckAndExit("Exceeded code label table size")
+						vputils.CheckAndExit(errors.New("Exceeded code label table size"))
 					}
 					codeLabels[label] = byte(address)
 				}
@@ -201,7 +201,7 @@ func generateData(source []string) ([]byte, map[string]byte, map[string]byte) {
 
 				// check there are no more tokens
 				if len(tokens) > 0 {
-					vputils.CheckAndExit("Extra tokens on line")
+					vputils.CheckAndExit(errors.New("Extra tokens on line"))
 				}
 
 				// decode the instruction
@@ -243,7 +243,7 @@ func generateCode(source []string, dataLabels map[string]byte, codeLabels map[st
 
 				// check that there are no more tokens
 				if len(tokens) > 0 {
-					vputils.CheckAndExit("Extra tokens on line")
+					vputils.CheckAndExit(errors.New("Extra tokens on line"))
 				}
 
 				// decode the instruction

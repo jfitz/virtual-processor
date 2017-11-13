@@ -4,6 +4,7 @@ package of utilities for virtual-processor
 package vputils
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -21,16 +22,16 @@ func CheckAndPanic(e error) {
 	}
 }
 
-func CheckAndExit(message string) {
-	if message != "" {
-		fmt.Println(message)
+func CheckAndExit(e error) {
+	if e != nil {
+		fmt.Println(e.Error())
 		os.Exit(1)
 	}
 }
 
 func checkWidth(width int) {
 	if width != 1 && width != 2 {
-		CheckAndExit("Invalid width")
+		CheckAndExit(errors.New("Invalid width"))
 	}
 }
 
@@ -189,7 +190,7 @@ func ReadBinaryBlock(f *os.File, width int) []byte {
 	}
 
 	if checkCountBytes != countBytes {
-		CheckAndExit("Block count error")
+		CheckAndExit(errors.New("Block count error"))
 	}
 
 	return code
@@ -230,7 +231,7 @@ func ReadTextTable(f *os.File) []NameValue {
 	CheckAndPanic(err)
 
 	if one_byte[0] != stx_byte[0] {
-		CheckAndExit("Did not find STX")
+		CheckAndExit(errors.New("Did not find STX"))
 	}
 
 	// read until ETX
