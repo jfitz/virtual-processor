@@ -62,6 +62,14 @@ func IsText(c byte) bool {
 	return IsAlnum(c) || c == '.'
 }
 
+func IsDirectAddress(s string) bool {
+	return len(s) >= 2 && s[0] == '@' && IsAlpha(s[1])
+}
+
+func IsIndirectAddress(s string) bool {
+	return len(s) >= 3 && s[0] == '@' && s[1] == '@' && IsAlpha(s[2])
+}
+
 // test for compatible character
 func compatible(token string, c byte) bool {
 	if token == "" {
@@ -82,6 +90,20 @@ func compatible(token string, c byte) bool {
 	if IsAlpha(token[0]) {
 		// text token accepts alpha and digit
 		return IsText(c)
+	}
+
+	if token == "@" {
+		return c == '@' || IsAlpha(c)
+	}
+
+	if token == "@@" {
+		return IsAlpha(c)
+	}
+
+	// after checking for '@' and '@@', accept text (for labels)
+	// we know there is at least one leading alpha
+	if token[0] == '@' {
+		return IsAlnum(c)
 	}
 
 	return false

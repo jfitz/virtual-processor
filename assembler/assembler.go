@@ -56,7 +56,19 @@ func buildInstruction(opcodes []byte, target string, dataLabels map[string]byte)
 	}
 
 	if vputils.IsAlpha(target[0]) {
+		opcode := opcodes[0]
+		value := dataLabels[target]
+		instruction = []byte{opcode, value}
+	}
+
+	if vputils.IsDirectAddress(target) {
 		opcode := opcodes[1]
+		value := dataLabels[target]
+		instruction = []byte{opcode, value}
+	}
+
+	if vputils.IsIndirectAddress(target) {
+		opcode := opcodes[2]
 		value := dataLabels[target]
 		instruction = []byte{opcode, value}
 	}
@@ -76,7 +88,7 @@ func decodeOpcode(text string) (byte, []byte, error) {
 	case "EXIT":
 		opcode = byte(0x00)
 	case "PUSH.B":
-		opcodes = []byte{0x40, 0x41}
+		opcodes = []byte{0x40, 0x41, 0x42}
 	case "POP.B":
 		opcode = byte(0x51)
 	case "OUT.B":
@@ -95,10 +107,12 @@ func getInstruction(text string, target string, dataLabels map[string]byte) []by
 	vputils.CheckAndPanic(err)
 
 	if len(opcodes) == 0 {
+		// the instruction does not depend on target
 		instruction = []byte{opcode}
 	}
 
 	if len(opcodes) > 0 {
+		// select instruction depends on target
 		instr, err := buildInstruction(opcodes, target, dataLabels)
 		vputils.CheckAndPanic(err)
 
