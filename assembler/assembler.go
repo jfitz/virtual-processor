@@ -144,7 +144,7 @@ func generateData(source []string) ([]byte, map[string]byte, map[string]byte) {
 		line = strings.TrimRight(line, " \t")
 		// only lines with content
 		if len(line) > 0 {
-			tokens := vputils.Split(line)
+			tokens := vputils.Tokenize(line)
 			label, tokens := first(tokens)
 			opcode, tokens := first(tokens)
 
@@ -228,7 +228,7 @@ func generateCode(source []string, dataLabels map[string]byte, codeLabels map[st
 		line = strings.TrimRight(line, " \t")
 		// only lines with content
 		if len(line) > 0 {
-			tokens := vputils.Split(line)
+			tokens := vputils.Tokenize(line)
 			label, tokens := first(tokens)
 			opcode, tokens := first(tokens)
 

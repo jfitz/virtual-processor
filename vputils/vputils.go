@@ -87,7 +87,7 @@ func compatible(token string, c byte) bool {
 	return false
 }
 
-func Split(s string) []string {
+func Tokenize(s string) []string {
 	parts := []string{}
 	current := ""
 	for _, c := range s {
