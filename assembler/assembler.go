@@ -34,6 +34,10 @@ func isDirective(s string) bool {
 		return true
 	}
 
+	if s == "STRING" {
+		return true
+	}
+
 	return false
 }
 
@@ -144,6 +148,18 @@ func printLabels(labels map[string]byte) {
 	}
 }
 
+func dequoteString(s string) []byte {
+	last := len(s) - 1
+	s = s[1:last]
+	bytes := []byte{}
+	for _, c := range s {
+		bytes = append(bytes, byte(c))
+	}
+	bytes = append(bytes, byte(0))
+
+	return bytes
+}
+
 func generateData(source []string) ([]byte, map[string]byte, map[string]byte) {
 	fmt.Println("\t\tDATA")
 
@@ -182,8 +198,14 @@ func generateData(source []string) ([]byte, map[string]byte, map[string]byte) {
 				switch opcode {
 				case "BYTE":
 					target, _ := first(tokens)
+					// evaluate numeric or text (data label) but nothing else
 					value := evaluateByte(target)
 					values = append(values, value)
+				case "STRING":
+					target, _ := first(tokens)
+					// target must be a string
+					chars := dequoteString(target)
+					values = append(values, chars...)
 				default:
 					vputils.CheckAndExit(errors.New("Invalid directive " + opcode))
 				}

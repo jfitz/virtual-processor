@@ -46,6 +46,10 @@ func IsSpace(c byte) bool {
 	return c == ' ' || c == '\t'
 }
 
+func IsDoubleQuote(c byte) bool {
+	return c == '"'
+}
+
 func IsDigit(c byte) bool {
 	return c >= '0' && c <= '9'
 }
@@ -80,6 +84,14 @@ func compatible(token string, c byte) bool {
 	if IsSpace(token[0]) {
 		// space token accepts spaces
 		return IsSpace(c)
+	}
+
+	if IsDoubleQuote(token[0]) && len(token) == 1 {
+		return true
+	}
+
+	if IsDoubleQuote(token[0]) && len(token) > 1 && !IsDoubleQuote(token[len(token)-1]) {
+		return true
 	}
 
 	if IsDigit(token[0]) {
