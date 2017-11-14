@@ -49,6 +49,19 @@ func (v vector) get(offset int) (byte, error) {
 	return v[offset], nil
 }
 
+func (v vector) put(offset int, value byte) error {
+	max := len(v) - 1
+	if offset < 0 || offset > max {
+		off := strconv.Itoa(offset)
+		maxs := strconv.Itoa(max)
+		return errors.New("Index " + off + " out of range [0.." + maxs + "]")
+	}
+
+	v[offset] = value
+
+	return nil
+}
+
 func executeCode(code vector, data vector) {
 	pc := 0
 	vStack := make(stack, 0)
@@ -60,7 +73,8 @@ func executeCode(code vector, data vector) {
 	halt := false
 	for !halt {
 		opcode, err := code.get(pc)
-		pcs := fmt.Sprintf("%02x", pc)
+		fmt.Printf("Executing %02X at %04X\n", opcode, pc)
+		pcs := fmt.Sprintf("%02X", pc)
 		vputils.CheckPrintAndExit(err, "at PC "+pcs)
 
 		instructionSize := 0
@@ -72,14 +86,16 @@ func executeCode(code vector, data vector) {
 		case 0x40:
 			// PUSH.B Value
 			instructionSize = bytesperOpcode + 1
+
 			codeAddress := pc + bytesperOpcode
 			value, err := code.get(codeAddress)
 			vputils.CheckAndPanic(err)
 
 			vStack = vStack.push(value)
 		case 0x41:
-			// PUSH.B Address
+			// PUSH.B direct address
 			instructionSize = bytesperOpcode + bytesPerDataAddress
+
 			codeAddress := pc + bytesperOpcode
 			dataAddr, err := code.get(codeAddress)
 			vputils.CheckAndPanic(err)
@@ -89,11 +105,44 @@ func executeCode(code vector, data vector) {
 			vputils.CheckAndPanic(err)
 
 			vStack = vStack.push(value)
+		case 0x42:
+			// PUSH.B indirect address
+			instructionSize = bytesperOpcode + bytesPerDataAddress
+
+			codeAddress := pc + bytesperOpcode
+			dataAddr, err := code.get(codeAddress)
+			vputils.CheckAndPanic(err)
+			dataAddress := int(dataAddr)
+
+			dataAddr, err = data.get(dataAddress)
+			vputils.CheckAndPanic(err)
+
+			dataAddress = int(dataAddr)
+			value, err := data.get(dataAddress)
+			vputils.CheckAndPanic(err)
+
+			vStack = vStack.push(value)
 		case 0x51:
-			// POP.B Address
+			// POP.B direct address
+			instructionSize = bytesperOpcode + bytesPerDataAddress
+
+			value, err := vStack.top()
+			vputils.CheckAndPanic(err)
+
+			vStack, err = vStack.pop()
+			vputils.CheckAndPanic(err)
+
+			codeAddress := pc + bytesperOpcode
+			dataAddr, err := code.get(codeAddress)
+			vputils.CheckAndPanic(err)
+			dataAddress := int(dataAddr)
+
+			err = data.put(dataAddress, value)
+			vputils.CheckAndPanic(err)
 		case 0x08:
 			// OUT.B (implied stack)
 			instructionSize = bytesperOpcode
+
 			c, err := vStack.top()
 			vputils.CheckAndPanic(err)
 

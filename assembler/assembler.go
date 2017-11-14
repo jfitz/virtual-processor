@@ -67,13 +67,13 @@ func buildInstruction(opcodes []byte, target string, dataLabels map[string]byte)
 
 	if vputils.IsDirectAddress(target) {
 		opcode := opcodes[1]
-		value := dataLabels[target]
+		value := dataLabels[target[1:]]
 		instruction = []byte{opcode, value}
 	}
 
 	if vputils.IsIndirectAddress(target) {
 		opcode := opcodes[2]
-		value := dataLabels[target]
+		value := dataLabels[target[2:]]
 		instruction = []byte{opcode, value}
 	}
 
@@ -94,7 +94,7 @@ func decodeOpcode(text string) (byte, []byte, error) {
 	case "PUSH.B":
 		opcodes = []byte{0x40, 0x41, 0x42}
 	case "POP.B":
-		opcode = byte(0x51)
+		opcodes = []byte{0, 0x51, 0x52}
 	case "OUT.B":
 		opcode = byte(0x08)
 	default:
@@ -183,7 +183,7 @@ func generateData(source []string) ([]byte, map[string]byte, map[string]byte) {
 				checkDataLabel(label, dataLabels)
 
 				// add the label to our table
-				address := len(dataLabels)
+				address := len(data)
 				if address > 255 {
 					vputils.CheckAndExit(errors.New("Exceeded data label table size"))
 				}
@@ -214,9 +214,9 @@ func generateData(source []string) ([]byte, map[string]byte, map[string]byte) {
 				location := len(data)
 
 				if len(values) == 0 {
-					fmt.Printf("%02x\t\t%s\n", location, opcode)
+					fmt.Printf("%02X\t\t%s\n", location, opcode)
 				} else {
-					fmt.Printf("%02x\t\t%s\t\t% X\n", location, opcode, values)
+					fmt.Printf("%02X\t\t%s\t\t% X\n", location, opcode, values)
 					data = append(data, values...)
 				}
 			} else {
@@ -226,7 +226,7 @@ func generateData(source []string) ([]byte, map[string]byte, map[string]byte) {
 					checkCodeLabel(label, codeLabels)
 
 					// add the label to our table
-					address := len(codeLabels)
+					address := len(code)
 					if address > 255 {
 						vputils.CheckAndExit(errors.New("Exceeded code label table size"))
 					}
@@ -287,7 +287,7 @@ func generateCode(source []string, dataLabels map[string]byte, codeLabels map[st
 
 				location := len(code)
 
-				fmt.Printf("%02x\t% X\t%s\t%s\n", location, instruction, opcode, target)
+				fmt.Printf("%02X\t% X\t%s\t%s\n", location, instruction, opcode, target)
 
 				code = append(code, instruction...)
 			}
