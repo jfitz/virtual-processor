@@ -106,21 +106,14 @@ func (code vector) getDirectAddress(pc Address) Address {
 }
 
 func (code vector) getDirectByte(pc Address, data vector) (byte, Address) {
-	bytesPerOpcode := 1
-
-	codeAddress := pc.addByte(bytesPerOpcode)
-
-	dataAddr, err := code.getByte(codeAddress)
-	vputils.CheckAndPanic(err)
-	dataAddress := Address{dataAddr}
-
+	dataAddress := code.getDirectAddress(pc)
 	value, err := data.getByte(dataAddress)
 	vputils.CheckAndPanic(err)
 
 	return value, dataAddress
 }
 
-func (code vector) getIndirectByte(pc Address, data vector) (byte, Address) {
+func (code vector) getIndirectAddress(pc Address, data vector) Address {
 	bytesPerOpcode := 1
 
 	codeAddress := pc.addByte(bytesPerOpcode)
@@ -133,6 +126,11 @@ func (code vector) getIndirectByte(pc Address, data vector) (byte, Address) {
 	vputils.CheckAndPanic(err)
 	dataAddress = Address{dataAddr}
 
+	return dataAddress
+}
+
+func (code vector) getIndirectByte(pc Address, data vector) (byte, Address) {
+	dataAddress := code.getIndirectAddress(pc, data)
 	value, err := data.getByte(dataAddress)
 	vputils.CheckAndPanic(err)
 
