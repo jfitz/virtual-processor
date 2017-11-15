@@ -47,7 +47,7 @@ func (ca Address) addByte(i int) Address {
 
 type vector []byte
 
-func (v vector) get(address Address) (byte, error) {
+func (v vector) getByte(address Address) (byte, error) {
 	max := len(v) - 1
 	offset := int(address.ByteValue)
 	if offset < 0 || offset > max {
@@ -59,7 +59,7 @@ func (v vector) get(address Address) (byte, error) {
 	return v[offset], nil
 }
 
-func (v vector) put(address Address, value byte) error {
+func (v vector) putByte(address Address, value byte) error {
 	max := len(v) - 1
 	offset := int(address.ByteValue)
 	if offset < 0 || offset > max {
@@ -84,7 +84,7 @@ func executeCode(code vector, data vector) {
 	fmt.Printf("Execution started at %04x\n", pc.ByteValue)
 	halt := false
 	for !halt {
-		opcode, err := code.get(pc)
+		opcode, err := code.getByte(pc)
 		// fmt.Printf("Executing %02X at %04X\n", opcode, pc)
 		pcs := fmt.Sprintf("%02X", pc)
 		vputils.CheckPrintAndExit(err, "at PC "+pcs)
@@ -99,12 +99,12 @@ func executeCode(code vector, data vector) {
 			pc = pc.addByte(instructionSize)
 
 		case 0x40:
-			// PUSH.B Value
+			// PUSH.B immediate value
 			instructionSize = bytesperOpcode + 1
 
 			codeAddress := pc.addByte(bytesperOpcode)
 
-			value, err := code.get(codeAddress)
+			value, err := code.getByte(codeAddress)
 			vputils.CheckAndPanic(err)
 
 			vStack = vStack.push(value)
@@ -117,11 +117,11 @@ func executeCode(code vector, data vector) {
 
 			codeAddress := pc.addByte(bytesperOpcode)
 
-			dataAddr, err := code.get(codeAddress)
+			dataAddr, err := code.getByte(codeAddress)
 			vputils.CheckAndPanic(err)
 			dataAddress := Address{dataAddr}
 
-			value, err := data.get(dataAddress)
+			value, err := data.getByte(dataAddress)
 			vputils.CheckAndPanic(err)
 
 			vStack = vStack.push(value)
@@ -134,15 +134,15 @@ func executeCode(code vector, data vector) {
 
 			codeAddress := pc.addByte(bytesperOpcode)
 
-			dataAddr, err := code.get(codeAddress)
+			dataAddr, err := code.getByte(codeAddress)
 			vputils.CheckAndPanic(err)
 			dataAddress := Address{dataAddr}
 
-			dataAddr, err = data.get(dataAddress)
+			dataAddr, err = data.getByte(dataAddress)
 			vputils.CheckAndPanic(err)
 			dataAddress = Address{dataAddr}
 
-			value, err := data.get(dataAddress)
+			value, err := data.getByte(dataAddress)
 			vputils.CheckAndPanic(err)
 
 			vStack = vStack.push(value)
@@ -161,11 +161,11 @@ func executeCode(code vector, data vector) {
 
 			codeAddress := pc.addByte(bytesperOpcode)
 
-			dataAddr, err := code.get(codeAddress)
+			dataAddr, err := code.getByte(codeAddress)
 			vputils.CheckAndPanic(err)
 			dataAddress := Address{dataAddr}
 
-			err = data.put(dataAddress, value)
+			err = data.putByte(dataAddress, value)
 			vputils.CheckAndPanic(err)
 
 			pc = pc.addByte(instructionSize)
@@ -190,11 +190,11 @@ func executeCode(code vector, data vector) {
 
 			codeAddress := pc.addByte(bytesperOpcode)
 
-			dataAddr, err := code.get(codeAddress)
+			dataAddr, err := code.getByte(codeAddress)
 			vputils.CheckAndPanic(err)
 			dataAddress := Address{dataAddr}
 
-			value, err := data.get(dataAddress)
+			value, err := data.getByte(dataAddress)
 			vputils.CheckAndPanic(err)
 
 			zeroFlag = value == 0
@@ -207,15 +207,15 @@ func executeCode(code vector, data vector) {
 
 			codeAddress := pc.addByte(bytesperOpcode)
 
-			dataAddr, err := code.get(codeAddress)
+			dataAddr, err := code.getByte(codeAddress)
 			vputils.CheckAndPanic(err)
 			dataAddress := Address{dataAddr}
 
-			dataAddr, err = data.get(dataAddress)
+			dataAddr, err = data.getByte(dataAddress)
 			vputils.CheckAndPanic(err)
 			dataAddress = Address{dataAddr}
 
-			value, err := data.get(dataAddress)
+			value, err := data.getByte(dataAddress)
 			vputils.CheckAndPanic(err)
 
 			zeroFlag = value == 0
@@ -239,16 +239,16 @@ func executeCode(code vector, data vector) {
 
 			codeAddress := pc.addByte(bytesperOpcode)
 
-			dataAddr, err := code.get(codeAddress)
+			dataAddr, err := code.getByte(codeAddress)
 			vputils.CheckAndPanic(err)
 			dataAddress := Address{dataAddr}
 
-			value, err := data.get(dataAddress)
+			value, err := data.getByte(dataAddress)
 			vputils.CheckAndPanic(err)
 
 			value += 1
 
-			err = data.put(dataAddress, value)
+			err = data.putByte(dataAddress, value)
 			vputils.CheckAndPanic(err)
 
 			pc = pc.addByte(instructionSize)
@@ -259,20 +259,20 @@ func executeCode(code vector, data vector) {
 
 			codeAddress := pc.addByte(bytesperOpcode)
 
-			dataAddr, err := code.get(codeAddress)
+			dataAddr, err := code.getByte(codeAddress)
 			vputils.CheckAndPanic(err)
 			dataAddress := Address{dataAddr}
 
-			dataAddr, err = data.get(dataAddress)
+			dataAddr, err = data.getByte(dataAddress)
 			vputils.CheckAndPanic(err)
 			dataAddress = Address{dataAddr}
 
-			value, err := data.get(dataAddress)
+			value, err := data.getByte(dataAddress)
 			vputils.CheckAndPanic(err)
 
 			value += 1
 
-			err = data.put(dataAddress, value)
+			err = data.putByte(dataAddress, value)
 			vputils.CheckAndPanic(err)
 
 			pc = pc.addByte(instructionSize)
@@ -283,7 +283,7 @@ func executeCode(code vector, data vector) {
 
 			codeAddress := pc.addByte(bytesperOpcode)
 
-			jumpAddr, err := code.get(codeAddress)
+			jumpAddr, err := code.getByte(codeAddress)
 			vputils.CheckAndPanic(err)
 
 			pc = Address{jumpAddr}
@@ -294,7 +294,7 @@ func executeCode(code vector, data vector) {
 
 			codeAddress := pc.addByte(bytesperOpcode)
 
-			jumpAddr, err := code.get(codeAddress)
+			jumpAddr, err := code.getByte(codeAddress)
 			vputils.CheckAndPanic(err)
 
 			if zeroFlag {
