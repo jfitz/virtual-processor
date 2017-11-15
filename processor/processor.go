@@ -36,6 +36,15 @@ func (s stack) pop() (stack, error) {
 	return s[:last], nil
 }
 
+func (s stack) toppop() (byte, stack, error) {
+	if len(s) == 0 {
+		return 0, s, errors.New("Stack underflow")
+	}
+
+	last := len(s) - 1
+	return s[last], s[:last], nil
+}
+
 type Address struct {
 	ByteValue byte
 }
@@ -186,11 +195,9 @@ func executeCode(code vector, data vector) {
 			// POP.B direct address
 			instructionSize = bytesperOpcode + bytesPerDataAddress
 
-			value, err := vStack.top()
+			value, vs, err := vStack.toppop()
 			vputils.CheckAndPanic(err)
-
-			vStack, err = vStack.pop()
-			vputils.CheckAndPanic(err)
+			vStack = vs
 
 			dataAddress := code.getDirectAddress(pc)
 			err = data.putByte(dataAddress, value)
@@ -202,11 +209,9 @@ func executeCode(code vector, data vector) {
 			// OUT.B (implied stack)
 			instructionSize = bytesperOpcode
 
-			c, err := vStack.top()
+			c, vs, err := vStack.toppop()
 			vputils.CheckAndPanic(err)
-
-			vStack, err = vStack.pop()
-			vputils.CheckAndPanic(err)
+			vStack = vs
 
 			fmt.Print(string(c))
 
