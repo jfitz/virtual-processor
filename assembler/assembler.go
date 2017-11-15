@@ -51,68 +51,77 @@ func evaluateByte(expression string) byte {
 }
 
 func buildInstruction(opcodes []byte, target string, dataLabels map[string]byte) ([]byte, error) {
-	instruction := []byte{}
+	if len(target) == 0 {
+		opcode := opcodes[3]
+		return []byte{opcode}, nil
+	}
 
 	if vputils.IsDigit(target[0]) {
 		opcode := opcodes[0]
 		value := evaluateByte(target)
-		instruction = []byte{opcode, value}
+		return []byte{opcode, value}, nil
 	}
 
 	if vputils.IsAlpha(target[0]) {
 		opcode := opcodes[0]
 		value := dataLabels[target]
-		instruction = []byte{opcode, value}
+		return []byte{opcode, value}, nil
 	}
 
 	if vputils.IsDirectAddress(target) {
 		opcode := opcodes[1]
 		value := dataLabels[target[1:]]
-		instruction = []byte{opcode, value}
+		return []byte{opcode, value}, nil
 	}
 
 	if vputils.IsIndirectAddress(target) {
 		opcode := opcodes[2]
 		value := dataLabels[target[2:]]
-		instruction = []byte{opcode, value}
+		return []byte{opcode, value}, nil
 	}
 
-	if len(instruction) == 0 {
-		return instruction, errors.New("Invalid opcode")
-	}
-
-	return instruction, nil
+	return nil, errors.New("Invalid opcode")
 }
 
-func decodeOpcode(text string) (byte, []byte, error) {
-	opcode := byte(0)
+func decodeOpcode(text string, target string, codeLabels map[string]byte) ([]byte, []byte, error) {
+	opcode := []byte{}
 	opcodes := []byte{}
 
 	switch text {
 	case "EXIT":
-		opcode = byte(0x00)
+		opcode = []byte{0x00}
 	case "PUSH.B":
-		opcodes = []byte{0x40, 0x41, 0x42}
+		opcodes = []byte{0x40, 0x41, 0x42, 0x0F}
 	case "POP.B":
-		opcodes = []byte{0, 0x51, 0x52}
+		opcodes = []byte{0x0F, 0x51, 0x52, 0x0F}
 	case "OUT.B":
-		opcode = byte(0x08)
+		opcode = []byte{0x08}
+	case "FLAGS.B":
+		opcodes = []byte{0x0F, 0x11, 0x12, 0x13}
+	case "JUMP":
+		address := codeLabels[target]
+		opcode = []byte{0x90, address}
+	case "JZ":
+		address := codeLabels[target]
+		opcode = []byte{0x92, address}
+	case "INC.B":
+		opcodes = []byte{0x0F, 0x21, 0x22, 0x23}
 	default:
-		return 0, []byte{}, errors.New("Invalid opcode: '" + text + "' ")
+		return []byte{}, []byte{}, errors.New("Invalid opcode: '" + text + "' ")
 	}
 
 	return opcode, opcodes, nil
 }
 
-func getInstruction(text string, target string, dataLabels map[string]byte) []byte {
+func getInstruction(text string, target string, dataLabels map[string]byte, codeLabels map[string]byte) []byte {
 	instruction := []byte{}
 
-	opcode, opcodes, err := decodeOpcode(text)
-	vputils.CheckAndPanic(err)
+	opcode, opcodes, err := decodeOpcode(text, target, codeLabels)
+	vputils.CheckAndExit(err)
 
-	if len(opcodes) == 0 {
+	if len(opcode) > 0 {
 		// the instruction does not depend on target
-		instruction = []byte{opcode}
+		instruction = opcode
 	}
 
 	if len(opcodes) > 0 {
@@ -241,7 +250,7 @@ func generateData(source []string) ([]byte, map[string]byte, map[string]byte) {
 				}
 
 				// decode the instruction
-				instruction := getInstruction(opcode, target, dataLabels)
+				instruction := getInstruction(opcode, target, dataLabels, codeLabels)
 
 				code = append(code, instruction...)
 			}
@@ -283,7 +292,7 @@ func generateCode(source []string, dataLabels map[string]byte, codeLabels map[st
 				}
 
 				// decode the instruction
-				instruction := getInstruction(opcode, target, dataLabels)
+				instruction := getInstruction(opcode, target, dataLabels, codeLabels)
 
 				location := len(code)
 
