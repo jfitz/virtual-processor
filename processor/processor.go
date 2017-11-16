@@ -46,19 +46,25 @@ func (s stack) toppop() (byte, stack, error) {
 }
 
 type Address struct {
-	ByteValue byte
+	Bytes []byte
+}
+
+func (address Address) ByteValue() byte {
+	return address.Bytes[0]
 }
 
 func (ca Address) addByte(i int) Address {
 	b := byte(i)
-	return Address{ca.ByteValue + b}
+	a := ca.ByteValue() + b
+	as := []byte{a}
+	return Address{as}
 }
 
 type vector []byte
 
 func (v vector) getByte(address Address) (byte, error) {
 	max := len(v) - 1
-	offset := int(address.ByteValue)
+	offset := int(address.ByteValue())
 	if offset < 0 || offset > max {
 		off := strconv.Itoa(offset)
 		maxs := strconv.Itoa(max)
@@ -70,7 +76,7 @@ func (v vector) getByte(address Address) (byte, error) {
 
 func (v vector) putByte(address Address, value byte) error {
 	max := len(v) - 1
-	offset := int(address.ByteValue)
+	offset := int(address.ByteValue())
 	if offset < 0 || offset > max {
 		off := strconv.Itoa(offset)
 		maxs := strconv.Itoa(max)
@@ -105,7 +111,8 @@ func (machine Machine) getDirectAddress(pc Address) Address {
 
 	dataAddr, err := machine.Code.getByte(codeAddress)
 	vputils.CheckAndPanic(err)
-	dataAddress := Address{dataAddr}
+	da := []byte{dataAddr}
+	dataAddress := Address{da}
 
 	return dataAddress
 }
@@ -122,7 +129,8 @@ func (machine Machine) getIndirectAddress(pc Address) Address {
 	dataAddress := machine.getDirectAddress(pc)
 	dataAddr, err := machine.Data.getByte(dataAddress)
 	vputils.CheckAndPanic(err)
-	dataAddress = Address{dataAddr}
+	da := []byte{dataAddr}
+	dataAddress = Address{da}
 
 	return dataAddress
 }
@@ -145,10 +153,10 @@ func executeCode(code vector, data vector) {
 	bytesPerDataAddress := 1
 	f := []bool{false}
 	machine := Machine{bytesPerOpcode, bytesPerCodeAddress, bytesPerDataAddress, code, data, f}
-	pc := Address{0}
+	pc := Address{[]byte{0}}
 	vStack := make(stack, 0)
 
-	fmt.Printf("Execution started at %04x\n", pc.ByteValue)
+	fmt.Printf("Execution started at %04x\n", pc.ByteValue())
 	halt := false
 	for !halt {
 		opcode, err := code.getByte(pc)
@@ -280,7 +288,7 @@ func executeCode(code vector, data vector) {
 			jumpAddr, err := code.getByte(codeAddress)
 			vputils.CheckAndPanic(err)
 
-			pc = Address{jumpAddr}
+			pc = Address{[]byte{jumpAddr}}
 
 		case 0x92:
 			// JZ
@@ -292,19 +300,19 @@ func executeCode(code vector, data vector) {
 			vputils.CheckAndPanic(err)
 
 			if machine.Flags[0] {
-				pc = Address{jumpAddr}
+				pc = Address{[]byte{jumpAddr}}
 			} else {
 				pc = pc.addByte(instructionSize)
 			}
 
 		default:
 			// invalid opcode
-			fmt.Printf("Invalid opcode %02x at %04x\n", opcode, pc.ByteValue)
+			fmt.Printf("Invalid opcode %02x at %04x\n", opcode, pc.ByteValue())
 			return
 		}
 	}
 
-	fmt.Printf("Execution halted at %04x\n", pc.ByteValue)
+	fmt.Printf("Execution halted at %04x\n", pc.ByteValue())
 }
 
 func main() {
