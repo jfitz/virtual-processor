@@ -83,14 +83,13 @@ func (v vector) putByte(address Address, value byte) error {
 }
 
 type Machine struct {
-	Code vector
-	Data vector
+	BytesPerOpcode int
+	Code           vector
+	Data           vector
 }
 
 func (machine Machine) getImmediateByte(pc Address) byte {
-	bytesPerOpcode := 1
-
-	codeAddress := pc.addByte(bytesPerOpcode)
+	codeAddress := pc.addByte(machine.BytesPerOpcode)
 
 	value, err := machine.Code.getByte(codeAddress)
 	vputils.CheckAndPanic(err)
@@ -99,9 +98,7 @@ func (machine Machine) getImmediateByte(pc Address) byte {
 }
 
 func (machine Machine) getDirectAddress(pc Address) Address {
-	bytesPerOpcode := 1
-
-	codeAddress := pc.addByte(bytesPerOpcode)
+	codeAddress := pc.addByte(machine.BytesPerOpcode)
 
 	dataAddr, err := machine.Code.getByte(codeAddress)
 	vputils.CheckAndPanic(err)
@@ -136,13 +133,13 @@ func (machine Machine) getIndirectByte(pc Address) (byte, Address) {
 }
 
 func executeCode(code vector, data vector) {
-	machine := Machine{code, data}
+	bytesPerOpcode := 1
+	machine := Machine{bytesPerOpcode, code, data}
 	pc := Address{0}
 	zeroFlag := false
 	vStack := make(stack, 0)
 	// bytesPerCodeAddress := 1
 	bytesPerDataAddress := 1
-	bytesperOpcode := 1
 
 	fmt.Printf("Execution started at %04x\n", pc.ByteValue)
 	halt := false
@@ -163,7 +160,7 @@ func executeCode(code vector, data vector) {
 
 		case 0x40:
 			// PUSH.B immediate value
-			instructionSize = bytesperOpcode + 1
+			instructionSize = bytesPerOpcode + 1
 
 			value := machine.getImmediateByte(pc)
 			vStack = vStack.push(value)
@@ -172,7 +169,7 @@ func executeCode(code vector, data vector) {
 
 		case 0x41:
 			// PUSH.B direct address
-			instructionSize = bytesperOpcode + bytesPerDataAddress
+			instructionSize = bytesPerOpcode + bytesPerDataAddress
 
 			value, _ := machine.getDirectByte(pc)
 			vStack = vStack.push(value)
@@ -181,7 +178,7 @@ func executeCode(code vector, data vector) {
 
 		case 0x42:
 			// PUSH.B indirect address
-			instructionSize = bytesperOpcode + bytesPerDataAddress
+			instructionSize = bytesPerOpcode + bytesPerDataAddress
 
 			value, _ := machine.getIndirectByte(pc)
 			vStack = vStack.push(value)
@@ -190,7 +187,7 @@ func executeCode(code vector, data vector) {
 
 		case 0x51:
 			// POP.B direct address
-			instructionSize = bytesperOpcode + bytesPerDataAddress
+			instructionSize = bytesPerOpcode + bytesPerDataAddress
 
 			value, vs, err := vStack.toppop()
 			vputils.CheckAndPanic(err)
@@ -204,7 +201,7 @@ func executeCode(code vector, data vector) {
 
 		case 0x08:
 			// OUT.B (implied stack)
-			instructionSize = bytesperOpcode
+			instructionSize = bytesPerOpcode
 
 			c, vs, err := vStack.toppop()
 			vputils.CheckAndPanic(err)
@@ -216,7 +213,7 @@ func executeCode(code vector, data vector) {
 
 		case 0x11:
 			// FLAGS.B direct address
-			instructionSize = bytesperOpcode + bytesPerDataAddress
+			instructionSize = bytesPerOpcode + bytesPerDataAddress
 
 			value, _ := machine.getDirectByte(pc)
 			zeroFlag = value == 0
@@ -225,7 +222,7 @@ func executeCode(code vector, data vector) {
 
 		case 0x12:
 			// FLAGS.B indirect address
-			instructionSize = bytesperOpcode + bytesPerDataAddress
+			instructionSize = bytesPerOpcode + bytesPerDataAddress
 
 			value, _ := machine.getIndirectByte(pc)
 			zeroFlag = value == 0
@@ -234,7 +231,7 @@ func executeCode(code vector, data vector) {
 
 		case 0x13:
 			// FLAGS.B (implied stack)
-			instructionSize = bytesperOpcode
+			instructionSize = bytesPerOpcode
 
 			value, err := vStack.top()
 			vputils.CheckAndPanic(err)
@@ -245,7 +242,7 @@ func executeCode(code vector, data vector) {
 
 		case 0x21:
 			// INC.B direct address
-			instructionSize = bytesperOpcode + bytesPerDataAddress
+			instructionSize = bytesPerOpcode + bytesPerDataAddress
 
 			value, dataAddress := machine.getDirectByte(pc)
 			value += 1
@@ -257,7 +254,7 @@ func executeCode(code vector, data vector) {
 
 		case 0x22:
 			// INC.B indirect address
-			instructionSize = bytesperOpcode + bytesPerDataAddress
+			instructionSize = bytesPerOpcode + bytesPerDataAddress
 
 			value, dataAddress := machine.getIndirectByte(pc)
 			value += 1
@@ -269,9 +266,9 @@ func executeCode(code vector, data vector) {
 
 		case 0x90:
 			// JUMP
-			instructionSize = bytesperOpcode + bytesPerDataAddress
+			instructionSize = bytesPerOpcode + bytesPerDataAddress
 
-			codeAddress := pc.addByte(bytesperOpcode)
+			codeAddress := pc.addByte(bytesPerOpcode)
 
 			jumpAddr, err := code.getByte(codeAddress)
 			vputils.CheckAndPanic(err)
@@ -280,9 +277,9 @@ func executeCode(code vector, data vector) {
 
 		case 0x92:
 			// JZ
-			instructionSize = bytesperOpcode + bytesPerDataAddress
+			instructionSize = bytesPerOpcode + bytesPerDataAddress
 
-			codeAddress := pc.addByte(bytesperOpcode)
+			codeAddress := pc.addByte(bytesPerOpcode)
 
 			jumpAddr, err := code.getByte(codeAddress)
 			vputils.CheckAndPanic(err)
