@@ -83,10 +83,12 @@ func (v vector) putByte(address Address, value byte) error {
 }
 
 type Machine struct {
-	BytesPerOpcode int
-	Code           vector
-	Data           vector
-	Flags          []bool
+	BytesPerOpcode      int
+	BytesPerCodeAddress int
+	BytesPerDataAddress int
+	Code                vector
+	Data                vector
+	Flags               []bool
 }
 
 func (machine Machine) getImmediateByte(pc Address) byte {
@@ -139,12 +141,12 @@ func (machine Machine) setFlags(value byte) {
 
 func executeCode(code vector, data vector) {
 	bytesPerOpcode := 1
+	bytesPerCodeAddress := 1
+	bytesPerDataAddress := 1
 	f := []bool{false}
-	machine := Machine{bytesPerOpcode, code, data, f}
+	machine := Machine{bytesPerOpcode, bytesPerCodeAddress, bytesPerDataAddress, code, data, f}
 	pc := Address{0}
 	vStack := make(stack, 0)
-	// bytesPerCodeAddress := 1
-	bytesPerDataAddress := 1
 
 	fmt.Printf("Execution started at %04x\n", pc.ByteValue)
 	halt := false
