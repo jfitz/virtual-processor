@@ -342,18 +342,24 @@ func main() {
 
 	moduleFile := args[1]
 
+	codeAddressWidth := 1
+	dataAddressWidth := 1
+
 	properties := []vputils.NameValue{}
+
+	caws := strconv.Itoa(codeAddressWidth)
+	daws := strconv.Itoa(dataAddressWidth)
 
 	properties = append(properties, vputils.NameValue{"STACK WIDTH", "1"})
 	properties = append(properties, vputils.NameValue{"DATA WIDTH", "1"})
 	properties = append(properties, vputils.NameValue{"ADDRESS WIDTH", "1"})
-	properties = append(properties, vputils.NameValue{"CODE ADDRESS WIDTH", "1"})
-	properties = append(properties, vputils.NameValue{"DATA ADDRESS WIDTH", "1"})
+	properties = append(properties, vputils.NameValue{"CODE ADDRESS WIDTH", caws})
+	properties = append(properties, vputils.NameValue{"DATA ADDRESS WIDTH", daws})
 	properties = append(properties, vputils.NameValue{"CALL STACK SIZE", "1"})
 
 	source := vputils.ReadFile(sourceFile)
 	data, dataLabels, codeLabels := generateData(source)
 	code := generateCode(source, dataLabels, codeLabels)
 
-	write(properties, code, data, moduleFile, 1, 1)
+	write(properties, code, data, moduleFile, codeAddressWidth, dataAddressWidth)
 }
