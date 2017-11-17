@@ -50,6 +50,21 @@ func evaluateByte(expression string) byte {
 	return byteValue
 }
 
+type Address struct {
+	Bytes []byte
+}
+
+func (address Address) to_s() string {
+	value := 0
+	for _, b := range address.Bytes {
+		value += int(b)
+	}
+
+	return strconv.Itoa(value)
+}
+
+type LabelTable map[string]Address
+
 func buildInstruction(opcodes []byte, target string, dataLabels LabelTable) ([]byte, error) {
 	if len(target) == 0 {
 		opcode := opcodes[3]
@@ -64,26 +79,30 @@ func buildInstruction(opcodes []byte, target string, dataLabels LabelTable) ([]b
 
 	if vputils.IsAlpha(target[0]) {
 		opcode := opcodes[0]
-		value := dataLabels[target]
-		return []byte{opcode, value}, nil
+		instruction := []byte{opcode}
+		address := dataLabels[target]
+		instruction = append(instruction, address.Bytes...)
+		return instruction, nil
 	}
 
 	if vputils.IsDirectAddress(target) {
 		opcode := opcodes[1]
-		value := dataLabels[target[1:]]
-		return []byte{opcode, value}, nil
+		instruction := []byte{opcode}
+		address := dataLabels[target[1:]]
+		instruction = append(instruction, address.Bytes...)
+		return instruction, nil
 	}
 
 	if vputils.IsIndirectAddress(target) {
 		opcode := opcodes[2]
-		value := dataLabels[target[2:]]
-		return []byte{opcode, value}, nil
+		instruction := []byte{opcode}
+		address := dataLabels[target[2:]]
+		instruction = append(instruction, address.Bytes...)
+		return instruction, nil
 	}
 
 	return nil, errors.New("Invalid opcode")
 }
-
-type LabelTable map[string]byte
 
 func decodeOpcode(text string, target string, codeLabels LabelTable) ([]byte, []byte, error) {
 	opcode := []byte{}
@@ -101,11 +120,19 @@ func decodeOpcode(text string, target string, codeLabels LabelTable) ([]byte, []
 	case "FLAGS.B":
 		opcodes = []byte{0x0F, 0x11, 0x12, 0x13}
 	case "JUMP":
-		address := codeLabels[target]
-		opcode = []byte{0x90, address}
+		opcode = []byte{0x90}
+		address, ok := codeLabels[target]
+		if !ok {
+			address = Address{make([]byte, 1)}
+		}
+		opcode = append(opcode, address.Bytes...)
 	case "JZ":
-		address := codeLabels[target]
-		opcode = []byte{0x92, address}
+		opcode = []byte{0x92}
+		address, ok := codeLabels[target]
+		if !ok {
+			address = Address{make([]byte, 1)}
+		}
+		opcode = append(opcode, address.Bytes...)
 	case "INC.B":
 		opcodes = []byte{0x0F, 0x21, 0x22, 0x23}
 	default:
@@ -121,6 +148,11 @@ func getInstruction(text string, target string, dataLabels LabelTable, codeLabel
 	opcode, opcodes, err := decodeOpcode(text, target, codeLabels)
 	vputils.CheckAndExit(err)
 
+	if len(opcode) == 0 && len(opcodes) == 0 {
+		err := errors.New("Empty opcode")
+		vputils.CheckAndExit(err)
+	}
+
 	if len(opcode) > 0 {
 		// the instruction does not depend on target
 		instruction = opcode
@@ -128,10 +160,8 @@ func getInstruction(text string, target string, dataLabels LabelTable, codeLabel
 
 	if len(opcodes) > 0 {
 		// select instruction depends on target
-		instr, err := buildInstruction(opcodes, target, dataLabels)
+		instruction, err = buildInstruction(opcodes, target, dataLabels)
 		vputils.CheckAndPanic(err)
-
-		instruction = instr
 	}
 
 	return instruction
@@ -198,7 +228,7 @@ func generateData(source []string) ([]byte, LabelTable, LabelTable) {
 				if address > 255 {
 					vputils.CheckAndExit(errors.New("Exceeded data label table size"))
 				}
-				dataLabels[label] = byte(address)
+				dataLabels[label] = Address{[]byte{byte(address)}}
 
 				// write the label on a line by itself
 				if len(label) > 0 {
@@ -241,7 +271,7 @@ func generateData(source []string) ([]byte, LabelTable, LabelTable) {
 					if address > 255 {
 						vputils.CheckAndExit(errors.New("Exceeded code label table size"))
 					}
-					codeLabels[label] = byte(address)
+					codeLabels[label] = Address{[]byte{byte(address)}}
 				}
 
 				target, tokens := first(tokens)
@@ -313,10 +343,10 @@ func generateCode(source []string, dataLabels LabelTable, codeLabels LabelTable)
 func write(properties []vputils.NameValue, code []byte, codeLabels LabelTable, data []byte, filename string, codeWidth int, dataWidth int) {
 	exports := []vputils.NameValue{}
 
-	for k, v := range codeLabels {
-		if vputils.IsUpper(k[0]) {
-			s := strconv.Itoa(int(v))
-			nv := vputils.NameValue{k, s}
+	for label, address := range codeLabels {
+		if vputils.IsUpper(label[0]) {
+			s := address.to_s()
+			nv := vputils.NameValue{label, s}
 			exports = append(exports, nv)
 		}
 	}
