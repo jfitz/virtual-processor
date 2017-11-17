@@ -50,7 +50,7 @@ func evaluateByte(expression string) byte {
 	return byteValue
 }
 
-func buildInstruction(opcodes []byte, target string, dataLabels map[string]byte) ([]byte, error) {
+func buildInstruction(opcodes []byte, target string, dataLabels LabelTable) ([]byte, error) {
 	if len(target) == 0 {
 		opcode := opcodes[3]
 		return []byte{opcode}, nil
@@ -83,7 +83,9 @@ func buildInstruction(opcodes []byte, target string, dataLabels map[string]byte)
 	return nil, errors.New("Invalid opcode")
 }
 
-func decodeOpcode(text string, target string, codeLabels map[string]byte) ([]byte, []byte, error) {
+type LabelTable map[string]byte
+
+func decodeOpcode(text string, target string, codeLabels LabelTable) ([]byte, []byte, error) {
 	opcode := []byte{}
 	opcodes := []byte{}
 
@@ -113,7 +115,7 @@ func decodeOpcode(text string, target string, codeLabels map[string]byte) ([]byt
 	return opcode, opcodes, nil
 }
 
-func getInstruction(text string, target string, dataLabels map[string]byte, codeLabels map[string]byte) []byte {
+func getInstruction(text string, target string, dataLabels LabelTable, codeLabels LabelTable) []byte {
 	instruction := []byte{}
 
 	opcode, opcodes, err := decodeOpcode(text, target, codeLabels)
@@ -135,7 +137,7 @@ func getInstruction(text string, target string, dataLabels map[string]byte, code
 	return instruction
 }
 
-func checkDataLabel(label string, labels map[string]byte) {
+func checkDataLabel(label string, labels LabelTable) {
 	if label == "" {
 		vputils.CheckAndExit(errors.New("Data declaration requires label"))
 	}
@@ -145,13 +147,13 @@ func checkDataLabel(label string, labels map[string]byte) {
 	}
 }
 
-func checkCodeLabel(label string, labels map[string]byte) {
+func checkCodeLabel(label string, labels LabelTable) {
 	if _, ok := labels[label]; ok {
 		vputils.CheckAndExit(errors.New("Duplicate label " + label))
 	}
 }
 
-func printLabels(labels map[string]byte) {
+func printLabels(labels LabelTable) {
 	for k, v := range labels {
 		fmt.Printf("%s\t%d\n", k, v)
 	}
@@ -169,13 +171,13 @@ func dequoteString(s string) []byte {
 	return bytes
 }
 
-func generateData(source []string) ([]byte, map[string]byte, map[string]byte) {
+func generateData(source []string) ([]byte, LabelTable, LabelTable) {
 	fmt.Println("\t\tDATA")
 
 	code := []byte{}
-	codeLabels := make(map[string]byte)
+	codeLabels := make(LabelTable)
 	data := []byte{}
-	dataLabels := make(map[string]byte)
+	dataLabels := make(LabelTable)
 
 	for _, line := range source {
 		// remove comment from line
@@ -262,7 +264,7 @@ func generateData(source []string) ([]byte, map[string]byte, map[string]byte) {
 	return data, dataLabels, codeLabels
 }
 
-func generateCode(source []string, dataLabels map[string]byte, codeLabels map[string]byte) []byte {
+func generateCode(source []string, dataLabels LabelTable, codeLabels LabelTable) []byte {
 	fmt.Println("\t\tCODE")
 
 	code := []byte{}
@@ -308,7 +310,7 @@ func generateCode(source []string, dataLabels map[string]byte, codeLabels map[st
 	return code
 }
 
-func write(properties []vputils.NameValue, code []byte, codeLabels map[string]byte, data []byte, filename string, codeWidth int, dataWidth int) {
+func write(properties []vputils.NameValue, code []byte, codeLabels LabelTable, data []byte, filename string, codeWidth int, dataWidth int) {
 	exports := []vputils.NameValue{}
 
 	for k, v := range codeLabels {
