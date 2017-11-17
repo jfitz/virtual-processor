@@ -1,18 +1,18 @@
 
-MESSAGE	STRING	"Hello, world!"
-ADDRESS	BYTE	0
-NEWLINE	BYTE	10
+message	STRING	"Hello, world!"
+address	BYTE	0
+newline	BYTE	10
 
-MAIN	PUSH.B	MESSAGE
-	POP.B	@ADDRESS
+MAIN	PUSH.B	message
+	POP.B	@address
 
-LOOP	PUSH.B	@@ADDRESS
+loop	PUSH.B	@@address
 	FLAGS.B
-	JZ	PRINTNL
+	JZ	printnl
 	OUT.B
-	INC.B	@ADDRESS
-	JUMP	LOOP
+	INC.B	@address
+	JUMP	loop
 
-PRINTNL	PUSH.B	@NEWLINE
+printnl	PUSH.B	@newline
 	OUT.B
 	EXIT

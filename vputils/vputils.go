@@ -62,6 +62,14 @@ func IsAlnum(c byte) bool {
 	return IsDigit(c) || IsAlpha(c)
 }
 
+func IsUpper(c byte) bool {
+	return (c >= 'A' && c <= 'Z')
+}
+
+func IsLower(c byte) bool {
+	return (c >= 'a' && c <= 'z')
+}
+
 func IsText(c byte) bool {
 	return IsAlnum(c) || c == '.'
 }

@@ -147,13 +147,14 @@ func (machine Machine) setFlags(value byte) {
 	machine.Flags[0] = value == 0
 }
 
-func executeCode(code vector, data vector) {
+func executeCode(code vector, startAddress int, data vector) {
 	bytesPerOpcode := 1
 	bytesPerCodeAddress := 1
 	bytesPerDataAddress := 1
 	f := []bool{false}
 	machine := Machine{bytesPerOpcode, bytesPerCodeAddress, bytesPerDataAddress, code, data, f}
-	pc := Address{[]byte{0}}
+	sa := byte(startAddress)
+	pc := Address{[]byte{sa}}
 	vStack := make(stack, 0)
 
 	fmt.Printf("Execution started at %04x\n", pc.ByteValue())
@@ -358,6 +359,22 @@ func main() {
 	}
 
 	header = vputils.ReadString(f)
+	if header != "exports" {
+		fmt.Println("Did not find exports header")
+		return
+	}
+
+	exports := vputils.ReadTextTable(f)
+
+	startAddress := 0
+	for _, nameValue := range exports {
+		if nameValue.Name == "MAIN" {
+			startAddress, err = strconv.Atoi(nameValue.Value)
+			vputils.CheckAndExit(err)
+		}
+	}
+
+	header = vputils.ReadString(f)
 	if header != "code" {
 		fmt.Println("Did not find code header")
 		return
@@ -373,5 +390,5 @@ func main() {
 
 	data := vputils.ReadBinaryBlock(f, dataWidth)
 
-	executeCode(code, data)
+	executeCode(code, startAddress, data)
 }

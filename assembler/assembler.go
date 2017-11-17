@@ -308,7 +308,17 @@ func generateCode(source []string, dataLabels map[string]byte, codeLabels map[st
 	return code
 }
 
-func write(properties []vputils.NameValue, code []byte, data []byte, filename string, codeWidth int, dataWidth int) {
+func write(properties []vputils.NameValue, code []byte, codeLabels map[string]byte, data []byte, filename string, codeWidth int, dataWidth int) {
+	exports := []vputils.NameValue{}
+
+	for k, v := range codeLabels {
+		if vputils.IsUpper(k[0]) {
+			s := strconv.Itoa(int(v))
+			nv := vputils.NameValue{k, s}
+			exports = append(exports, nv)
+		}
+	}
+
 	fmt.Printf("Writing file %s...\n", filename)
 
 	f, err := os.Create(filename)
@@ -319,6 +329,7 @@ func write(properties []vputils.NameValue, code []byte, data []byte, filename st
 	vputils.WriteString(f, "module")
 
 	vputils.WriteTextTable("properties", properties, f)
+	vputils.WriteTextTable("exports", exports, f)
 	vputils.WriteBinaryBlock("code", code, f, codeWidth)
 	vputils.WriteBinaryBlock("data", data, f, dataWidth)
 
@@ -361,5 +372,5 @@ func main() {
 	data, dataLabels, codeLabels := generateData(source)
 	code := generateCode(source, dataLabels, codeLabels)
 
-	write(properties, code, data, moduleFile, codeAddressWidth, dataAddressWidth)
+	write(properties, code, codeLabels, data, moduleFile, codeAddressWidth, dataAddressWidth)
 }
