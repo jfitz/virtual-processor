@@ -1,4 +1,3 @@
-
 message	STRING	"Hello, world!"
 address	BYTE	0
 newline	BYTE	10

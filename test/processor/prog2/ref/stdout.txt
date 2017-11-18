@@ -1,0 +1,3 @@
+Opening file 'test/processor/prog1/data/program.module'
+Execution started at 0000
+HExecution halted at 0004

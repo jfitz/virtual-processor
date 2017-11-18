@@ -1,0 +1,12 @@
+Reading file test/asm/prog1/data/program.asm...
+		DATA
+		ENDSEGMENT
+
+		CODE
+MAIN:
+00	40 48	PUSH.B	72
+02	08	OUT.B	
+03	00	EXIT	
+		ENDSEGMENT
+
+Writing file test/asm/prog1/ref/program.module...
