@@ -157,7 +157,58 @@ func (machine Machine) setFlags(value byte) {
 	machine.Flags[0] = value == 0
 }
 
-func executeCode(code vector, startAddress int, data vector, trace bool, instructionDefinitions map[byte]string) {
+type instructionDefinition struct {
+	Name        string
+	TargetSize  string
+	AddressMode string
+}
+
+func (def instructionDefinition) to_s() string {
+	s := def.Name
+	if def.TargetSize != "" {
+		s += "."
+		s += def.TargetSize
+	}
+	switch def.AddressMode {
+	case "V":
+		s += " "
+		s += "immediate"
+	case "D":
+		s += " "
+		s += "direct"
+	case "I":
+		s += " "
+		s += "indirect"
+	case "S":
+		s += " "
+		s += "stack"
+	}
+
+	return s
+}
+
+type instructionTable map[byte]instructionDefinition
+
+func defineInstructions() instructionTable {
+	instructionDefinitions := make(instructionTable)
+	instructionDefinitions[0x00] = instructionDefinition{"EXIT", "", ""}
+	instructionDefinitions[0x40] = instructionDefinition{"PUSH", "B", "V"}
+	instructionDefinitions[0x41] = instructionDefinition{"PUSH", "B", "D"}
+	instructionDefinitions[0x42] = instructionDefinition{"PUSH", "B", "I"}
+	instructionDefinitions[0x51] = instructionDefinition{"POP", "B", "D"}
+	instructionDefinitions[0x08] = instructionDefinition{"OUT", "B", "S"}
+	instructionDefinitions[0x11] = instructionDefinition{"FLAGS", "B", "D"}
+	instructionDefinitions[0x12] = instructionDefinition{"FLAGS", "B", "I"}
+	instructionDefinitions[0x13] = instructionDefinition{"FLAGS", "B", "S"}
+	instructionDefinitions[0x21] = instructionDefinition{"INC", "B", "D"}
+	instructionDefinitions[0x22] = instructionDefinition{"INC", "B", "I"}
+	instructionDefinitions[0x90] = instructionDefinition{"JUMP", "", ""}
+	instructionDefinitions[0x92] = instructionDefinition{"JZ", "", ""}
+
+	return instructionDefinitions
+}
+
+func executeCode(code vector, startAddress int, data vector, trace bool, instructionDefinitions instructionTable) {
 	bytesPerOpcode := 1
 	bytesPerCodeAddress := 1
 	bytesPerDataAddress := 1
@@ -174,7 +225,7 @@ func executeCode(code vector, startAddress int, data vector, trace bool, instruc
 		pcs := pc.to_s()
 		vputils.CheckPrintAndExit(err, "at PC "+pcs)
 		if trace {
-			text := instructionDefinitions[opcode]
+			text := instructionDefinitions[opcode].to_s()
 			fmt.Printf("%s: %02X %s\n", pcs, opcode, text)
 		}
 
@@ -327,25 +378,6 @@ func executeCode(code vector, startAddress int, data vector, trace bool, instruc
 	}
 
 	fmt.Printf("Execution halted at %04x\n", pc.ByteValue())
-}
-
-func defineInstructions() map[byte]string {
-	instructionDefinitions := make(map[byte]string)
-	instructionDefinitions[0x00] = "EXIT"
-	instructionDefinitions[0x40] = "PUSH.B immediate value"
-	instructionDefinitions[0x41] = "PUSH.B direct address"
-	instructionDefinitions[0x42] = "PUSH.B indirect address"
-	instructionDefinitions[0x51] = "POP.B direct address"
-	instructionDefinitions[0x08] = "OUT.B (implied stack)"
-	instructionDefinitions[0x11] = "FLAGS.B direct address"
-	instructionDefinitions[0x12] = "FLAGS.B indirect address"
-	instructionDefinitions[0x13] = "FLAGS.B (implied stack)"
-	instructionDefinitions[0x21] = "INC.B direct address"
-	instructionDefinitions[0x22] = "INC.B indirect address"
-	instructionDefinitions[0x90] = "JUMP"
-	instructionDefinitions[0x92] = "JZ"
-
-	return instructionDefinitions
 }
 
 func main() {
