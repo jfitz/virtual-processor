@@ -157,7 +157,7 @@ func (machine Machine) setFlags(value byte) {
 	machine.Flags[0] = value == 0
 }
 
-func executeCode(code vector, startAddress int, data vector, trace bool) {
+func executeCode(code vector, startAddress int, data vector, trace bool, instructionDefinitions map[byte]string) {
 	bytesPerOpcode := 1
 	bytesPerCodeAddress := 1
 	bytesPerDataAddress := 1
@@ -172,10 +172,11 @@ func executeCode(code vector, startAddress int, data vector, trace bool) {
 	for !halt {
 		opcode, err := code.getByte(pc)
 		pcs := pc.to_s()
-		if trace {
-			fmt.Printf("%s: %02X\n", pcs, opcode)
-		}
 		vputils.CheckPrintAndExit(err, "at PC "+pcs)
+		if trace {
+			text := instructionDefinitions[opcode]
+			fmt.Printf("%s: %02X %s\n", pcs, opcode, text)
+		}
 
 		instructionSize := 0
 		switch opcode {
@@ -328,6 +329,25 @@ func executeCode(code vector, startAddress int, data vector, trace bool) {
 	fmt.Printf("Execution halted at %04x\n", pc.ByteValue())
 }
 
+func defineInstructions() map[byte]string {
+	instructionDefinitions := make(map[byte]string)
+	instructionDefinitions[0x00] = "EXIT"
+	instructionDefinitions[0x40] = "PUSH.B immediate value"
+	instructionDefinitions[0x41] = "PUSH.B direct address"
+	instructionDefinitions[0x42] = "PUSH.B indirect address"
+	instructionDefinitions[0x51] = "POP.B direct address"
+	instructionDefinitions[0x08] = "OUT.B (implied stack)"
+	instructionDefinitions[0x11] = "FLAGS.B direct address"
+	instructionDefinitions[0x12] = "FLAGS.B indirect address"
+	instructionDefinitions[0x13] = "FLAGS.B (implied stack)"
+	instructionDefinitions[0x21] = "INC.B direct address"
+	instructionDefinitions[0x22] = "INC.B indirect address"
+	instructionDefinitions[0x90] = "JUMP"
+	instructionDefinitions[0x92] = "JZ"
+
+	return instructionDefinitions
+}
+
 func main() {
 	tracePtr := flag.Bool("trace", false, "Display trace during execution.")
 	flag.Parse()
@@ -405,5 +425,7 @@ func main() {
 
 	data := vputils.ReadBinaryBlock(f, dataWidth)
 
-	executeCode(code, startAddress, data, trace)
+	instructionDefinitions := defineInstructions()
+
+	executeCode(code, startAddress, data, trace, instructionDefinitions)
 }
