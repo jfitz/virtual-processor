@@ -5,6 +5,7 @@ package main
 
 import (
 	"errors"
+	"flag"
 	"fmt"
 	"github.com/jfitz/virtual-processor/vputils"
 	"os"
@@ -47,6 +48,15 @@ func (s stack) toppop() (byte, stack, error) {
 
 type Address struct {
 	Bytes []byte
+}
+
+func (address Address) to_s() string {
+	value := 0
+	for _, b := range address.Bytes {
+		value += int(b)
+	}
+
+	return fmt.Sprintf("%04X", value)
 }
 
 func (address Address) ByteValue() byte {
@@ -147,7 +157,7 @@ func (machine Machine) setFlags(value byte) {
 	machine.Flags[0] = value == 0
 }
 
-func executeCode(code vector, startAddress int, data vector) {
+func executeCode(code vector, startAddress int, data vector, trace bool) {
 	bytesPerOpcode := 1
 	bytesPerCodeAddress := 1
 	bytesPerDataAddress := 1
@@ -161,8 +171,10 @@ func executeCode(code vector, startAddress int, data vector) {
 	halt := false
 	for !halt {
 		opcode, err := code.getByte(pc)
-		// fmt.Printf("Executing %02X at %04X\n", opcode, pc)
-		pcs := fmt.Sprintf("%02X", pc)
+		pcs := pc.to_s()
+		if trace {
+			fmt.Printf("%s: %02X\n", pcs, opcode)
+		}
 		vputils.CheckPrintAndExit(err, "at PC "+pcs)
 
 		instructionSize := 0
@@ -317,7 +329,10 @@ func executeCode(code vector, startAddress int, data vector) {
 }
 
 func main() {
-	args := os.Args[1:]
+	tracePtr := flag.Bool("trace", false, "Display trace during execution.")
+	flag.Parse()
+	trace := *tracePtr
+	args := flag.Args()
 
 	if len(args) == 0 {
 		fmt.Println("No module file specified")
@@ -390,5 +405,5 @@ func main() {
 
 	data := vputils.ReadBinaryBlock(f, dataWidth)
 
-	executeCode(code, startAddress, data)
+	executeCode(code, startAddress, data, trace)
 }
