@@ -161,27 +161,15 @@ type instructionDefinition struct {
 	Name        string
 	TargetSize  string
 	AddressMode string
+	JumpMode    string
 }
 
 func (def instructionDefinition) to_s() string {
 	s := def.Name
+
 	if def.TargetSize != "" {
 		s += "."
 		s += def.TargetSize
-	}
-	switch def.AddressMode {
-	case "V":
-		s += " "
-		s += "immediate"
-	case "D":
-		s += " "
-		s += "direct"
-	case "I":
-		s += " "
-		s += "indirect"
-	case "S":
-		s += " "
-		s += "stack"
 	}
 
 	return s
@@ -191,19 +179,19 @@ type instructionTable map[byte]instructionDefinition
 
 func defineInstructions() instructionTable {
 	instructionDefinitions := make(instructionTable)
-	instructionDefinitions[0x00] = instructionDefinition{"EXIT", "", ""}
-	instructionDefinitions[0x40] = instructionDefinition{"PUSH", "B", "V"}
-	instructionDefinitions[0x41] = instructionDefinition{"PUSH", "B", "D"}
-	instructionDefinitions[0x42] = instructionDefinition{"PUSH", "B", "I"}
-	instructionDefinitions[0x51] = instructionDefinition{"POP", "B", "D"}
-	instructionDefinitions[0x08] = instructionDefinition{"OUT", "B", "S"}
-	instructionDefinitions[0x11] = instructionDefinition{"FLAGS", "B", "D"}
-	instructionDefinitions[0x12] = instructionDefinition{"FLAGS", "B", "I"}
-	instructionDefinitions[0x13] = instructionDefinition{"FLAGS", "B", "S"}
-	instructionDefinitions[0x21] = instructionDefinition{"INC", "B", "D"}
-	instructionDefinitions[0x22] = instructionDefinition{"INC", "B", "I"}
-	instructionDefinitions[0x90] = instructionDefinition{"JUMP", "", ""}
-	instructionDefinitions[0x92] = instructionDefinition{"JZ", "", ""}
+	instructionDefinitions[0x00] = instructionDefinition{"EXIT", "", "", ""}
+	instructionDefinitions[0x40] = instructionDefinition{"PUSH", "B", "V", ""}
+	instructionDefinitions[0x41] = instructionDefinition{"PUSH", "B", "D", ""}
+	instructionDefinitions[0x42] = instructionDefinition{"PUSH", "B", "I", ""}
+	instructionDefinitions[0x51] = instructionDefinition{"POP", "B", "D", ""}
+	instructionDefinitions[0x08] = instructionDefinition{"OUT", "B", "S", ""}
+	instructionDefinitions[0x11] = instructionDefinition{"FLAGS", "B", "D", ""}
+	instructionDefinitions[0x12] = instructionDefinition{"FLAGS", "B", "I", ""}
+	instructionDefinitions[0x13] = instructionDefinition{"FLAGS", "B", "S", ""}
+	instructionDefinitions[0x21] = instructionDefinition{"INC", "B", "D", ""}
+	instructionDefinitions[0x22] = instructionDefinition{"INC", "B", "I", ""}
+	instructionDefinitions[0x90] = instructionDefinition{"JUMP", "", "", "A"}
+	instructionDefinitions[0x92] = instructionDefinition{"JZ", "", "", "A"}
 
 	return instructionDefinitions
 }
@@ -225,8 +213,58 @@ func executeCode(code vector, startAddress int, data vector, trace bool, instruc
 		pcs := pc.to_s()
 		vputils.CheckPrintAndExit(err, "at PC "+pcs)
 		if trace {
-			text := instructionDefinitions[opcode].to_s()
-			fmt.Printf("%s: %02X %s\n", pcs, opcode, text)
+			def := instructionDefinitions[opcode]
+			text := def.to_s()
+			value_s := ""
+			dataAddress_s := ""
+			dataAddress1_s := ""
+			jumpAddress_s := ""
+			if def.AddressMode == "V" {
+				value := machine.getImmediateByte(pc)
+				value_s = fmt.Sprintf("%02X", value)
+			}
+			if def.AddressMode == "D" {
+				dataAddress := machine.getDirectAddress(pc)
+				dataAddress_s = dataAddress.to_s()
+				value, _ := machine.getDirectByte(pc)
+				value_s = fmt.Sprintf("%02X", value)
+			}
+			if def.AddressMode == "I" {
+				dataAddress1 := machine.getDirectAddress(pc)
+				dataAddress1_s = dataAddress1.to_s()
+				dataAddress := machine.getIndirectAddress(pc)
+				dataAddress_s = dataAddress.to_s()
+				value, _ := machine.getIndirectByte(pc)
+				value_s = fmt.Sprintf("%02X", value)
+			}
+
+			if def.JumpMode == "A" {
+				codeAddress := pc.addByte(bytesPerOpcode)
+				jumpAddr, _ := code.getByte(codeAddress)
+				jumpAddress := Address{[]byte{jumpAddr}}
+				jumpAddress_s = jumpAddress.to_s()
+			}
+			if def.JumpMode == "R" {
+				codeAddress := pc.addByte(bytesPerOpcode)
+				jumpAddr, _ := code.getByte(codeAddress)
+				jumpAddress := Address{[]byte{jumpAddr}}
+				jumpAddress_s = jumpAddress.to_s()
+			}
+
+			line := fmt.Sprintf("%s: %02X %s", pcs, opcode, text)
+			if len(dataAddress1_s) > 0 {
+				line += " @@" + dataAddress1_s
+			}
+			if len(dataAddress_s) > 0 {
+				line += " @" + dataAddress_s
+			}
+			if len(value_s) > 0 {
+				line += " =" + value_s
+			}
+			if len(jumpAddress_s) > 0 {
+				line += " >" + jumpAddress_s
+			}
+			fmt.Println(line)
 		}
 
 		instructionSize := 0
@@ -288,6 +326,10 @@ func executeCode(code vector, startAddress int, data vector, trace bool, instruc
 			vStack = vs
 
 			fmt.Print(string(c))
+
+			if trace {
+				fmt.Println()
+			}
 
 			pc = pc.addByte(instructionSize)
 
