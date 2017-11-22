@@ -343,8 +343,6 @@ func write(properties []vputils.NameValue, code []byte, codeLabels LabelTable, d
 		}
 	}
 
-	fmt.Printf("Writing file %s...\n", filename)
-
 	f, err := os.Create(filename)
 	vputils.CheckAndPanic(err)
 
