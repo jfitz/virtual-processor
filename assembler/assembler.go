@@ -104,48 +104,36 @@ func buildInstruction(opcodes []byte, target string, dataLabels LabelTable) ([]b
 	return nil, errors.New("Invalid opcode")
 }
 
-func decodeOpcode(text string, target string, codeLabels LabelTable) ([]byte, []byte, error) {
-	opcode := []byte{}
-	opcodes := []byte{}
+func decodeOpcode(text string, target string, opcodeTable map[string][]byte, opcodesTable map[string][]byte, codeLabels LabelTable) ([]byte, []byte, error) {
+	opcode, ok1 := opcodeTable[text]
+	opcodes, ok2 := opcodesTable[text]
+
+	if !ok1 && !ok2 {
+		return []byte{}, []byte{}, errors.New("Invalid opcode: '" + text + "' ")
+	}
 
 	switch text {
-	case "EXIT":
-		opcode = []byte{0x00}
-	case "PUSH.B":
-		opcodes = []byte{0x40, 0x41, 0x42, 0x0F}
-	case "POP.B":
-		opcodes = []byte{0x0F, 0x51, 0x52, 0x0F}
-	case "OUT.B":
-		opcode = []byte{0x08}
-	case "FLAGS.B":
-		opcodes = []byte{0x0F, 0x11, 0x12, 0x13}
 	case "JUMP":
-		opcode = []byte{0x90}
 		address, ok := codeLabels[target]
 		if !ok {
 			address = Address{make([]byte, 1)}
 		}
 		opcode = append(opcode, address.Bytes...)
 	case "JZ":
-		opcode = []byte{0x92}
 		address, ok := codeLabels[target]
 		if !ok {
 			address = Address{make([]byte, 1)}
 		}
 		opcode = append(opcode, address.Bytes...)
-	case "INC.B":
-		opcodes = []byte{0x0F, 0x21, 0x22, 0x23}
-	default:
-		return []byte{}, []byte{}, errors.New("Invalid opcode: '" + text + "' ")
 	}
 
 	return opcode, opcodes, nil
 }
 
-func getInstruction(text string, target string, dataLabels LabelTable, codeLabels LabelTable) []byte {
+func getInstruction(text string, target string, opcodeTable map[string][]byte, opcodesTable map[string][]byte, dataLabels LabelTable, codeLabels LabelTable) []byte {
 	instruction := []byte{}
 
-	opcode, opcodes, err := decodeOpcode(text, target, codeLabels)
+	opcode, opcodes, err := decodeOpcode(text, target, opcodeTable, opcodesTable, codeLabels)
 	vputils.CheckAndExit(err)
 
 	if len(opcode) == 0 && len(opcodes) == 0 {
@@ -201,7 +189,7 @@ func dequoteString(s string) []byte {
 	return bytes
 }
 
-func generateData(source []string) ([]byte, LabelTable, LabelTable) {
+func generateData(source []string, opcodeTable map[string][]byte, opcodesTable map[string][]byte) ([]byte, LabelTable, LabelTable) {
 	fmt.Println("\t\tDATA")
 
 	code := []byte{}
@@ -282,7 +270,7 @@ func generateData(source []string) ([]byte, LabelTable, LabelTable) {
 				}
 
 				// decode the instruction
-				instruction := getInstruction(opcode, target, dataLabels, codeLabels)
+				instruction := getInstruction(opcode, target, opcodeTable, opcodesTable, dataLabels, codeLabels)
 
 				code = append(code, instruction...)
 			}
@@ -294,7 +282,7 @@ func generateData(source []string) ([]byte, LabelTable, LabelTable) {
 	return data, dataLabels, codeLabels
 }
 
-func generateCode(source []string, dataLabels LabelTable, codeLabels LabelTable) []byte {
+func generateCode(source []string, opcodeTable map[string][]byte, opcodesTable map[string][]byte, dataLabels LabelTable, codeLabels LabelTable) []byte {
 	fmt.Println("\t\tCODE")
 
 	code := []byte{}
@@ -324,7 +312,7 @@ func generateCode(source []string, dataLabels LabelTable, codeLabels LabelTable)
 				}
 
 				// decode the instruction
-				instruction := getInstruction(opcode, target, dataLabels, codeLabels)
+				instruction := getInstruction(opcode, target, opcodeTable, opcodesTable, dataLabels, codeLabels)
 
 				location := len(code)
 
@@ -400,9 +388,21 @@ func main() {
 	properties = append(properties, vputils.NameValue{"DATA ADDRESS WIDTH", daws})
 	properties = append(properties, vputils.NameValue{"CALL STACK SIZE", "1"})
 
+	opcodeTable := map[string][]byte{}
+	opcodeTable["EXIT"] = []byte{0x00}
+	opcodeTable["JUMP"] = []byte{0x90}
+	opcodeTable["JZ"] = []byte{0x92}
+	opcodeTable["OUT.B"] = []byte{0x08}
+
+	opcodesTable := map[string][]byte{}
+	opcodesTable["PUSH.B"] = []byte{0x40, 0x41, 0x42, 0x0F}
+	opcodesTable["POP.B"] = []byte{0x0F, 0x51, 0x52, 0x0F}
+	opcodesTable["FLAGS.B"] = []byte{0x0F, 0x11, 0x12, 0x13}
+	opcodesTable["INC.B"] = []byte{0x0F, 0x21, 0x22, 0x23}
+
 	source := vputils.ReadFile(sourceFile)
-	data, dataLabels, codeLabels := generateData(source)
-	code := generateCode(source, dataLabels, codeLabels)
+	data, dataLabels, codeLabels := generateData(source, opcodeTable, opcodesTable)
+	code := generateCode(source, opcodeTable, opcodesTable, dataLabels, codeLabels)
 
 	write(properties, code, codeLabels, data, moduleFile, codeAddressWidth, dataAddressWidth)
 }
