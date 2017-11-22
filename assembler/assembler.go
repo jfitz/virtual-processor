@@ -104,7 +104,7 @@ func buildInstruction(opcodes []byte, target string, dataLabels LabelTable) ([]b
 	return nil, errors.New("Invalid opcode")
 }
 
-func decodeOpcode(text string, target string, opcodeTable map[string][]byte, addressOpcodes map[string][]byte, jumpOpcodes map[string][]byte, codeLabels LabelTable) ([]byte, []byte, error) {
+func decodeOpcode(text string, target string, opcodeTable map[string]byte, addressOpcodes map[string][]byte, jumpOpcodes map[string][]byte, codeLabels LabelTable) ([]byte, []byte, error) {
 	opcode, ok1 := opcodeTable[text]
 	opcodes, ok2 := addressOpcodes[text]
 	jumpOpcode, ok3 := jumpOpcodes[text]
@@ -113,25 +113,24 @@ func decodeOpcode(text string, target string, opcodeTable map[string][]byte, add
 		return []byte{}, []byte{}, errors.New("Invalid opcode: '" + text + "' ")
 	}
 
-	switch text {
-	case "JUMP":
+	// assume we have a simple opcode (with no target)
+	instruction := []byte{opcode}
+
+	// TODO: for address opcodes, append the target and select address mode
+
+	// for jump instructions, append the target address
+	if ok3 {
 		address, ok := codeLabels[target]
 		if !ok {
 			address = Address{make([]byte, 1)}
 		}
-		opcode = append(jumpOpcode, address.Bytes...)
-	case "JZ":
-		address, ok := codeLabels[target]
-		if !ok {
-			address = Address{make([]byte, 1)}
-		}
-		opcode = append(jumpOpcode, address.Bytes...)
+		instruction = append(jumpOpcode, address.Bytes...)
 	}
 
-	return opcode, opcodes, nil
+	return instruction, opcodes, nil
 }
 
-func getInstruction(text string, target string, opcodeTable map[string][]byte, addressOpcodes map[string][]byte, jumpOpcodes map[string][]byte, dataLabels LabelTable, codeLabels LabelTable) []byte {
+func getInstruction(text string, target string, opcodeTable map[string]byte, addressOpcodes map[string][]byte, jumpOpcodes map[string][]byte, dataLabels LabelTable, codeLabels LabelTable) []byte {
 	instruction := []byte{}
 
 	opcode, opcodes, err := decodeOpcode(text, target, opcodeTable, addressOpcodes, jumpOpcodes, codeLabels)
@@ -190,7 +189,7 @@ func dequoteString(s string) []byte {
 	return bytes
 }
 
-func generateData(source []string, opcodeTable map[string][]byte, addressOpcodes map[string][]byte, jumpOpcodes map[string][]byte) ([]byte, LabelTable, LabelTable) {
+func generateData(source []string, opcodeTable map[string]byte, addressOpcodes map[string][]byte, jumpOpcodes map[string][]byte) ([]byte, LabelTable, LabelTable) {
 	fmt.Println("\t\tDATA")
 
 	code := []byte{}
@@ -283,7 +282,7 @@ func generateData(source []string, opcodeTable map[string][]byte, addressOpcodes
 	return data, dataLabels, codeLabels
 }
 
-func generateCode(source []string, opcodeTable map[string][]byte, addressOpcodes map[string][]byte, jumpOpcodes map[string][]byte, dataLabels LabelTable, codeLabels LabelTable) []byte {
+func generateCode(source []string, opcodeTable map[string]byte, addressOpcodes map[string][]byte, jumpOpcodes map[string][]byte, dataLabels LabelTable, codeLabels LabelTable) []byte {
 	fmt.Println("\t\tCODE")
 
 	code := []byte{}
@@ -389,9 +388,9 @@ func main() {
 	properties = append(properties, vputils.NameValue{"DATA ADDRESS WIDTH", daws})
 	properties = append(properties, vputils.NameValue{"CALL STACK SIZE", "1"})
 
-	opcodeTable := map[string][]byte{}
-	opcodeTable["EXIT"] = []byte{0x00}
-	opcodeTable["OUT.B"] = []byte{0x08}
+	opcodeTable := map[string]byte{}
+	opcodeTable["EXIT"] = byte(0x00)
+	opcodeTable["OUT.B"] = byte(0x08)
 
 	jumpOpcodes := map[string][]byte{}
 	jumpOpcodes["JUMP"] = []byte{0x90}
