@@ -50,6 +50,17 @@ type Address struct {
 	Bytes []byte
 }
 
+func makeAddress(value int, size int) Address {
+	address := []byte{}
+
+	for i := 0; i < size; i++ {
+		b := byte(i & 0xff)
+		address = append(address, b)
+	}
+
+	return Address{address}
+}
+
 func (address Address) empty() bool {
 	return len(address.Bytes) == 0
 }
@@ -206,14 +217,13 @@ func defineInstructions() instructionTable {
 	return instructionDefinitions
 }
 
-func executeCode(code vector, startAddress int, data vector, trace bool, instructionDefinitions instructionTable) {
+func executeCode(code vector, startAddress Address, data vector, trace bool, instructionDefinitions instructionTable) {
 	bytesPerOpcode := 1
 	bytesPerCodeAddress := 1
 	bytesPerDataAddress := 1
 	f := []bool{false}
 	machine := Machine{bytesPerOpcode, bytesPerCodeAddress, bytesPerDataAddress, code, data, f}
-	sa := byte(startAddress)
-	pc := Address{[]byte{sa}}
+	pc := startAddress
 	vStack := make(stack, 0)
 
 	fmt.Printf("Execution started at %04x\n", pc.ByteValue())
@@ -411,9 +421,14 @@ func executeCode(code vector, startAddress int, data vector, trace bool, instruc
 }
 
 func main() {
+	startSymbolPtr := flag.String("start", "MAIN", "Start execution at symbol.")
 	tracePtr := flag.Bool("trace", false, "Display trace during execution.")
+
 	flag.Parse()
+
+	startSymbol := *startSymbolPtr
 	trace := *tracePtr
+
 	args := flag.Args()
 
 	if len(args) == 0 {
@@ -422,7 +437,6 @@ func main() {
 	}
 
 	moduleFile := args[0]
-	fmt.Printf("Opening file '%s'\n", moduleFile)
 
 	f, err := os.Open(moduleFile)
 	vputils.CheckAndPanic(err)
@@ -432,60 +446,74 @@ func main() {
 	header := vputils.ReadString(f)
 	if header != "module" {
 		fmt.Println("Did not find module header")
-		return
+		os.Exit(2)
 	}
 
 	header = vputils.ReadString(f)
 	if header != "properties" {
 		fmt.Println("Did not find properties header")
-		return
+		os.Exit(2)
 	}
 
 	properties := vputils.ReadTextTable(f)
 
-	codeWidth := 0
-	dataWidth := 0
+	codeAddressWidth := 0
+	dataAddressWidth := 0
 	for _, nameValue := range properties {
 		shortName := strings.Replace(nameValue.Name, " ", "", -1)
 		if shortName == "CODEADDRESSWIDTH" {
-			codeWidth = 1
+			codeAddressWidth = 1
 		}
 		if shortName == "DATAADDRESSWIDTH" {
-			dataWidth = 1
+			dataAddressWidth = 1
 		}
 	}
 
 	header = vputils.ReadString(f)
 	if header != "exports" {
 		fmt.Println("Did not find exports header")
-		return
+		os.Exit(2)
 	}
 
 	exports := vputils.ReadTextTable(f)
 
-	startAddress := 0
+	startAddressFound := false
+	startAddressInt := 0
 	for _, nameValue := range exports {
-		if nameValue.Name == "MAIN" {
-			startAddress, err = strconv.Atoi(nameValue.Value)
-			vputils.CheckAndExit(err)
+		if nameValue.Name == startSymbol {
+			startAddressFound = true
+			startAddressInt, err = strconv.Atoi(nameValue.Value)
+			vputils.CheckPrintAndExit(err, "Invalid start address")
 		}
 	}
+
+	if !startAddressFound {
+		fmt.Println("Starting symbol " + startSymbol + " not found")
+		os.Exit(2)
+	}
+
+	startAddress := makeAddress(startAddressInt, codeAddressWidth)
 
 	header = vputils.ReadString(f)
 	if header != "code" {
 		fmt.Println("Did not find code header")
-		return
+		os.Exit(2)
 	}
 
-	code := vputils.ReadBinaryBlock(f, codeWidth)
+	code := vputils.ReadBinaryBlock(f, codeAddressWidth)
+
+	if int(startAddress.ByteValue()) >= len(code) {
+		fmt.Println("Starting address " + startAddress.to_s() + " is not valid")
+		os.Exit(2)
+	}
 
 	header = vputils.ReadString(f)
 	if header != "data" {
 		fmt.Println("Did not find data header")
-		return
+		os.Exit(2)
 	}
 
-	data := vputils.ReadBinaryBlock(f, dataWidth)
+	data := vputils.ReadBinaryBlock(f, dataAddressWidth)
 
 	instructionDefinitions := defineInstructions()
 
