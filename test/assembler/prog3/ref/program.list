@@ -1,4 +1,3 @@
-Reading file test/asm/prog3/data/program.asm...
 		DATA
 message:
 00		STRING		48 65 6C 6C 6F 2C 20 77 6F 72 6C 64 21 00
@@ -25,4 +24,3 @@ printnl:
 11	00	EXIT	
 		ENDSEGMENT
 
-Writing file test/asm/prog3/ref/program.module...

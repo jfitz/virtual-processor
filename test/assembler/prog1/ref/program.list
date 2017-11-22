@@ -1,4 +1,3 @@
-Reading file test/asm/prog1/data/program.asm...
 		DATA
 		ENDSEGMENT
 
@@ -9,4 +8,3 @@ MAIN:
 03	00	EXIT	
 		ENDSEGMENT
 
-Writing file test/asm/prog1/ref/program.module...

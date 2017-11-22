@@ -1,0 +1,2 @@
+Starting symbol MAIN not found
+exit status 2

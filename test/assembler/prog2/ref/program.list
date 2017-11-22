@@ -1,4 +1,3 @@
-Reading file test/asm/prog2/data/program.asm...
 		DATA
 MESSAGE:
 00		BYTE		48
@@ -11,4 +10,3 @@ MAIN:
 03	00	EXIT	
 		ENDSEGMENT
 
-Writing file test/asm/prog2/ref/program.module...

@@ -1,0 +1,6 @@
+Execution started at 0002
+0002: 40 PUSH.B =48
+0004: 08 OUT.B
+H
+0005: 00 EXIT
+Execution halted at 0006
