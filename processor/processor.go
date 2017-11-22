@@ -54,8 +54,9 @@ func makeAddress(value int, size int) Address {
 	address := []byte{}
 
 	for i := 0; i < size; i++ {
-		b := byte(i & 0xff)
+		b := byte(value & 0xff)
 		address = append(address, b)
+		value = value / 256
 	}
 
 	return Address{address}
@@ -226,12 +227,15 @@ func executeCode(code vector, startAddress Address, data vector, trace bool, ins
 	pc := startAddress
 	vStack := make(stack, 0)
 
-	fmt.Printf("Execution started at %04x\n", pc.ByteValue())
+	if trace {
+		fmt.Printf("Execution started at %04x\n", pc.ByteValue())
+	}
+
 	halt := false
 	for !halt {
 		opcode, err := code.getByte(pc)
-		pcs := pc.to_s()
-		vputils.CheckPrintAndExit(err, "at PC "+pcs)
+		vputils.CheckPrintAndExit(err, "at PC "+pc.to_s())
+
 		def := instructionDefinitions[opcode]
 		value := byte(0)
 		value_s := ""
@@ -295,7 +299,7 @@ func executeCode(code vector, startAddress Address, data vector, trace bool, ins
 
 		if trace {
 			text := def.to_s()
-			line := fmt.Sprintf("%s: %02X %s", pcs, opcode, text)
+			line := fmt.Sprintf("%s: %02X %s", pc.to_s(), opcode, text)
 			if !dataAddress1.empty() {
 				line += " @@" + dataAddress1.to_s()
 			}
@@ -412,12 +416,14 @@ func executeCode(code vector, startAddress Address, data vector, trace bool, ins
 
 		default:
 			// invalid opcode
-			fmt.Printf("Invalid opcode %02x at %04x\n", opcode, pc.ByteValue())
+			fmt.Printf("Invalid opcode %02x at %s\n", opcode, pc.to_s())
 			return
 		}
 	}
 
-	fmt.Printf("Execution halted at %04x\n", pc.ByteValue())
+	if trace {
+		fmt.Println("Execution halted at " + pc.to_s())
+	}
 }
 
 func main() {
