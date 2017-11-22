@@ -347,7 +347,6 @@ func WriteTextTable(name string, table []NameValue, f *os.File) {
 }
 
 func ReadFile(sourceFile string) []string {
-	fmt.Printf("Reading file %s...\n", sourceFile)
 	b, err := ioutil.ReadFile(sourceFile)
 	CheckAndPanic(err)
 

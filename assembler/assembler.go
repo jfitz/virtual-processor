@@ -366,12 +366,11 @@ func main() {
 
 	sourceFile := args[0]
 
-	if len(args) == 1 {
-		fmt.Println("No output file specified")
-		os.Exit(1)
-	}
+	moduleFile := ""
 
-	moduleFile := args[1]
+	if len(args) > 1 {
+		moduleFile = args[1]
+	}
 
 	codeAddressWidth := 1
 	dataAddressWidth := 1
@@ -406,5 +405,8 @@ func main() {
 	data, dataLabels, codeLabels := generateData(source, opcodeTable, addressOpcodes, jumpOpcodes)
 	code := generateCode(source, opcodeTable, addressOpcodes, jumpOpcodes, dataLabels, codeLabels)
 
-	write(properties, code, codeLabels, data, moduleFile, codeAddressWidth, dataAddressWidth)
+	// if output specified, write module file
+	if len(moduleFile) > 0 {
+		write(properties, code, codeLabels, data, moduleFile, codeAddressWidth, dataAddressWidth)
+	}
 }
