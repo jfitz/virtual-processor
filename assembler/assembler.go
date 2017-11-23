@@ -109,20 +109,21 @@ type opcodeDefinition struct {
 	IsJump bool
 }
 
-func decodeOpcode(text string, target string, opcodeDefs map[string]opcodeDefinition, codeLabels LabelTable) ([]byte, []byte, error) {
-	opcodeDef, ok3 := opcodeDefs[text]
+func decodeOpcode(text string, target string, opcodeDefs map[string]opcodeDefinition, codeLabels LabelTable, dataLabels LabelTable) ([]byte, error) {
+	opcodeDef, ok := opcodeDefs[text]
 
-	if !ok3 {
-		return []byte{}, []byte{}, errors.New("Invalid opcode: '" + text + "' ")
+	if !ok {
+		return []byte{}, errors.New("Invalid opcode: '" + text + "' ")
 	}
 
 	// assume we have a simple opcode (with no target)
 	instruction := opcodeDef.Opcode
 
-	// TODO: for address opcodes, append the target and select address mode
-	opcodes := []byte{}
+	var err error
 	if len(instruction) > 1 {
-		opcodes = instruction
+		// select instruction depends on target
+		instruction, err = buildInstruction(instruction, target, dataLabels)
+		vputils.CheckAndPanic(err)
 	}
 
 	// for jump instructions, append the target address
@@ -134,29 +135,16 @@ func decodeOpcode(text string, target string, opcodeDefs map[string]opcodeDefini
 		instruction = append(instruction, address.Bytes...)
 	}
 
-	return instruction, opcodes, nil
+	return instruction, nil
 }
 
 func getInstruction(text string, target string, opcodeDefs map[string]opcodeDefinition, dataLabels LabelTable, codeLabels LabelTable) []byte {
-	instruction := []byte{}
-
-	opcode, opcodes, err := decodeOpcode(text, target, opcodeDefs, codeLabels)
+	instruction, err := decodeOpcode(text, target, opcodeDefs, codeLabels, dataLabels)
 	vputils.CheckAndExit(err)
 
-	if len(opcode) == 0 && len(opcodes) == 0 {
+	if len(instruction) == 0 {
 		err := errors.New("Empty opcode")
 		vputils.CheckAndExit(err)
-	}
-
-	if len(opcode) > 0 {
-		// the instruction does not depend on target
-		instruction = opcode
-	}
-
-	if len(opcodes) > 0 {
-		// select instruction depends on target
-		instruction, err = buildInstruction(opcodes, target, dataLabels)
-		vputils.CheckAndPanic(err)
 	}
 
 	return instruction
