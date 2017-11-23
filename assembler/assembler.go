@@ -65,7 +65,13 @@ func (address Address) to_s() string {
 
 type LabelTable map[string]Address
 
-func buildInstruction(opcodes []byte, target string, dataLabels LabelTable) ([]byte, error) {
+func buildInstruction(opcodemap opcodeAddresses, target string, dataLabels LabelTable) ([]byte, error) {
+	opcodes, ok := opcodemap["B"]
+
+	if !ok {
+		return nil, errors.New("Set not found")
+	}
+
 	if len(target) == 0 {
 		opcode := opcodes[3]
 		return []byte{opcode}, nil
@@ -104,9 +110,11 @@ func buildInstruction(opcodes []byte, target string, dataLabels LabelTable) ([]b
 	return nil, errors.New("Invalid opcode")
 }
 
+type opcodeAddresses map[string][]byte
+
 type opcodeDefinition struct {
 	Opcode         byte
-	AddressOpcodes []byte
+	AddressOpcodes opcodeAddresses
 	IsJump         bool
 }
 
@@ -122,7 +130,7 @@ func decodeOpcode(text string, target string, opcodeDefs map[string]opcodeDefini
 	addressOpcodes := opcodeDef.AddressOpcodes
 
 	var err error
-	if len(addressOpcodes) > 1 {
+	if len(addressOpcodes) > 0 {
 		// select instruction depends on target
 		instruction, err = buildInstruction(addressOpcodes, target, dataLabels)
 		vputils.CheckAndPanic(err)
@@ -383,15 +391,29 @@ func main() {
 	properties = append(properties, vputils.NameValue{"CALL STACK SIZE", "1"})
 
 	opcodeDefs := map[string]opcodeDefinition{}
-	opcodeDefs["EXIT"] = opcodeDefinition{0x00, []byte{}, false}
-	opcodeDefs["OUT"] = opcodeDefinition{0x08, []byte{}, false}
-	opcodeDefs["JUMP"] = opcodeDefinition{0x90, []byte{}, true}
-	opcodeDefs["JZ"] = opcodeDefinition{0x92, []byte{}, true}
 
-	opcodeDefs["PUSH.B"] = opcodeDefinition{0x0F, []byte{0x40, 0x41, 0x42, 0x0F}, false}
-	opcodeDefs["POP.B"] = opcodeDefinition{0x0F, []byte{0x0F, 0x51, 0x52, 0x0F}, false}
-	opcodeDefs["FLAGS.B"] = opcodeDefinition{0x0F, []byte{0x0F, 0x11, 0x12, 0x13}, false}
-	opcodeDefs["INC.B"] = opcodeDefinition{0x0F, []byte{0x0F, 0x21, 0x22, 0x23}, false}
+	empty_opcodes := make(opcodeAddresses)
+
+	opcodeDefs["EXIT"] = opcodeDefinition{0x00, empty_opcodes, false}
+	opcodeDefs["OUT"] = opcodeDefinition{0x08, empty_opcodes, false}
+	opcodeDefs["JUMP"] = opcodeDefinition{0x90, empty_opcodes, true}
+	opcodeDefs["JZ"] = opcodeDefinition{0x92, empty_opcodes, true}
+
+	push_opcodes := make(opcodeAddresses)
+	push_opcodes["B"] = []byte{0x40, 0x41, 0x42, 0x0F}
+	opcodeDefs["PUSH.B"] = opcodeDefinition{0x0F, push_opcodes, false}
+
+	pop_opcodes := make(opcodeAddresses)
+	pop_opcodes["B"] = []byte{0x0F, 0x51, 0x52, 0x0F}
+	opcodeDefs["POP.B"] = opcodeDefinition{0x0F, pop_opcodes, false}
+
+	flags_opcodes := make(opcodeAddresses)
+	flags_opcodes["B"] = []byte{0x0F, 0x11, 0x12, 0x13}
+	opcodeDefs["FLAGS.B"] = opcodeDefinition{0x0F, flags_opcodes, false}
+
+	inc_opcodes := make(opcodeAddresses)
+	inc_opcodes["B"] = []byte{0x0F, 0x21, 0x22, 0x23}
+	opcodeDefs["INC.B"] = opcodeDefinition{0x0F, inc_opcodes, false}
 
 	source := vputils.ReadFile(sourceFile)
 	data, dataLabels, codeLabels := generateData(source, opcodeDefs)
