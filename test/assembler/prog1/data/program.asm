@@ -1,3 +1,3 @@
 MAIN	PUSH.B	72
-	OUT.B
+	OUT
 	EXIT

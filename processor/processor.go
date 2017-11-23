@@ -206,7 +206,7 @@ func defineInstructions() instructionTable {
 	instructionDefinitions[0x41] = instructionDefinition{"PUSH", "B", "D", ""}
 	instructionDefinitions[0x42] = instructionDefinition{"PUSH", "B", "I", ""}
 	instructionDefinitions[0x51] = instructionDefinition{"POP", "B", "D", ""}
-	instructionDefinitions[0x08] = instructionDefinition{"OUT", "B", "S", ""}
+	instructionDefinitions[0x08] = instructionDefinition{"OUT", "", "S", ""}
 	instructionDefinitions[0x11] = instructionDefinition{"FLAGS", "B", "D", ""}
 	instructionDefinitions[0x12] = instructionDefinition{"FLAGS", "B", "I", ""}
 	instructionDefinitions[0x13] = instructionDefinition{"FLAGS", "B", "S", ""}
@@ -351,7 +351,7 @@ func executeCode(code vector, startAddress Address, data vector, trace bool, ins
 			pc = pc.addByte(instructionSize)
 
 		case 0x08:
-			// OUT.B (implied stack)
+			// OUT (implied stack)
 			value, vStack, err = vStack.toppop()
 			vputils.CheckAndPanic(err)
 

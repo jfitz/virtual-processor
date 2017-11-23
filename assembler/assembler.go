@@ -384,7 +384,7 @@ func main() {
 
 	opcodeDefs := map[string]opcodeDefinition{}
 	opcodeDefs["EXIT"] = opcodeDefinition{0x00, []byte{}, false}
-	opcodeDefs["OUT.B"] = opcodeDefinition{0x08, []byte{}, false}
+	opcodeDefs["OUT"] = opcodeDefinition{0x08, []byte{}, false}
 	opcodeDefs["JUMP"] = opcodeDefinition{0x90, []byte{}, true}
 	opcodeDefs["JZ"] = opcodeDefinition{0x92, []byte{}, true}
 

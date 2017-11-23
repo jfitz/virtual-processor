@@ -8,10 +8,10 @@ MAIN	PUSH.B	message
 loop	PUSH.B	@@address
 	FLAGS.B
 	JZ	printnl
-	OUT.B
+	OUT
 	INC.B	@address
 	JUMP	loop
 
 printnl	PUSH.B	@newline
-	OUT.B
+	OUT
 	EXIT
