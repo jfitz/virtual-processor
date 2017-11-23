@@ -65,8 +65,8 @@ func (address Address) to_s() string {
 
 type LabelTable map[string]Address
 
-func buildInstruction(opcodemap opcodeAddresses, target string, dataLabels LabelTable) ([]byte, error) {
-	opcodes, ok := opcodemap["B"]
+func buildInstruction(opcodemap opcodeAddresses, targetSize string, target string, dataLabels LabelTable) ([]byte, error) {
+	opcodes, ok := opcodemap[targetSize]
 
 	if !ok {
 		return nil, errors.New("Set not found")
@@ -118,7 +118,7 @@ type opcodeDefinition struct {
 	IsJump         bool
 }
 
-func decodeOpcode(text string, target string, opcodeDefs map[string]opcodeDefinition, codeLabels LabelTable, dataLabels LabelTable) ([]byte, error) {
+func decodeOpcode(text string, targetSize string, target string, opcodeDefs map[string]opcodeDefinition, codeLabels LabelTable, dataLabels LabelTable) ([]byte, error) {
 	opcodeDef, ok := opcodeDefs[text]
 
 	if !ok {
@@ -132,7 +132,7 @@ func decodeOpcode(text string, target string, opcodeDefs map[string]opcodeDefini
 	var err error
 	if len(addressOpcodes) > 0 {
 		// select instruction depends on target
-		instruction, err = buildInstruction(addressOpcodes, target, dataLabels)
+		instruction, err = buildInstruction(addressOpcodes, targetSize, target, dataLabels)
 		vputils.CheckAndPanic(err)
 	}
 
@@ -148,8 +148,8 @@ func decodeOpcode(text string, target string, opcodeDefs map[string]opcodeDefini
 	return instruction, nil
 }
 
-func getInstruction(text string, target string, opcodeDefs map[string]opcodeDefinition, dataLabels LabelTable, codeLabels LabelTable) []byte {
-	instruction, err := decodeOpcode(text, target, opcodeDefs, codeLabels, dataLabels)
+func getInstruction(text string, targetSize string, target string, opcodeDefs map[string]opcodeDefinition, dataLabels LabelTable, codeLabels LabelTable) []byte {
+	instruction, err := decodeOpcode(text, targetSize, target, opcodeDefs, codeLabels, dataLabels)
 	vputils.CheckAndExit(err)
 
 	if len(instruction) == 0 {
@@ -210,10 +210,10 @@ func generateData(source []string, opcodeDefs map[string]opcodeDefinition) ([]by
 		if len(line) > 0 {
 			tokens := vputils.Tokenize(line)
 			label, tokens := first(tokens)
-			opcode, tokens := first(tokens)
+			word, tokens := first(tokens)
 
 			// write the directive or instruction
-			if isDirective(opcode) {
+			if isDirective(word) {
 				checkDataLabel(label, dataLabels)
 
 				// add the label to our table
@@ -229,7 +229,7 @@ func generateData(source []string, opcodeDefs map[string]opcodeDefinition) ([]by
 				}
 
 				values := []byte{}
-				switch opcode {
+				switch word {
 				case "BYTE":
 					target, _ := first(tokens)
 					// evaluate numeric or text (data label) but nothing else
@@ -241,20 +241,27 @@ func generateData(source []string, opcodeDefs map[string]opcodeDefinition) ([]by
 					chars := dequoteString(target)
 					values = append(values, chars...)
 				default:
-					vputils.CheckAndExit(errors.New("Invalid directive " + opcode))
+					vputils.CheckAndExit(errors.New("Invalid directive " + word))
 				}
 
 				// print offset, directive, and contents
 				location := len(data)
 
 				if len(values) == 0 {
-					fmt.Printf("%02X\t\t%s\n", location, opcode)
+					fmt.Printf("%02X\t\t%s\n", location, word)
 				} else {
-					fmt.Printf("%02X\t\t%s\t\t% X\n", location, opcode, values)
+					fmt.Printf("%02X\t\t%s\t\t% X\n", location, word, values)
 					data = append(data, values...)
 				}
 			} else {
 				// process instruction
+				opcode := word
+				targetSize := ""
+				parts := strings.Split(word, ".")
+				if len(parts) > 1 {
+					opcode = parts[0]
+					targetSize = parts[1]
+				}
 
 				if len(label) > 0 {
 					checkCodeLabel(label, codeLabels)
@@ -275,7 +282,7 @@ func generateData(source []string, opcodeDefs map[string]opcodeDefinition) ([]by
 				}
 
 				// decode the instruction
-				instruction := getInstruction(opcode, target, opcodeDefs, dataLabels, codeLabels)
+				instruction := getInstruction(opcode, targetSize, target, opcodeDefs, dataLabels, codeLabels)
 
 				code = append(code, instruction...)
 			}
@@ -300,10 +307,18 @@ func generateCode(source []string, opcodeDefs map[string]opcodeDefinition, dataL
 		if len(line) > 0 {
 			tokens := vputils.Tokenize(line)
 			label, tokens := first(tokens)
-			opcode, tokens := first(tokens)
+			word, tokens := first(tokens)
 
 			// write the directive or instruction
-			if !isDirective(opcode) {
+			if !isDirective(word) {
+				opcode := word
+				targetSize := ""
+				parts := strings.Split(word, ".")
+				if len(parts) > 1 {
+					opcode = parts[0]
+					targetSize = parts[1]
+				}
+
 				if len(label) > 0 {
 					// write the label on a line by itself
 					fmt.Printf("%s:\n", label)
@@ -317,11 +332,11 @@ func generateCode(source []string, opcodeDefs map[string]opcodeDefinition, dataL
 				}
 
 				// decode the instruction
-				instruction := getInstruction(opcode, target, opcodeDefs, dataLabels, codeLabels)
+				instruction := getInstruction(opcode, targetSize, target, opcodeDefs, dataLabels, codeLabels)
 
 				location := len(code)
 
-				fmt.Printf("%02X\t% X\t%s\t%s\n", location, instruction, opcode, target)
+				fmt.Printf("%02X\t% X\t%s\t%s\n", location, instruction, word, target)
 
 				code = append(code, instruction...)
 			}
@@ -401,19 +416,19 @@ func main() {
 
 	push_opcodes := make(opcodeAddresses)
 	push_opcodes["B"] = []byte{0x40, 0x41, 0x42, 0x0F}
-	opcodeDefs["PUSH.B"] = opcodeDefinition{0x0F, push_opcodes, false}
+	opcodeDefs["PUSH"] = opcodeDefinition{0x0F, push_opcodes, false}
 
 	pop_opcodes := make(opcodeAddresses)
 	pop_opcodes["B"] = []byte{0x0F, 0x51, 0x52, 0x0F}
-	opcodeDefs["POP.B"] = opcodeDefinition{0x0F, pop_opcodes, false}
+	opcodeDefs["POP"] = opcodeDefinition{0x0F, pop_opcodes, false}
 
 	flags_opcodes := make(opcodeAddresses)
 	flags_opcodes["B"] = []byte{0x0F, 0x11, 0x12, 0x13}
-	opcodeDefs["FLAGS.B"] = opcodeDefinition{0x0F, flags_opcodes, false}
+	opcodeDefs["FLAGS"] = opcodeDefinition{0x0F, flags_opcodes, false}
 
 	inc_opcodes := make(opcodeAddresses)
 	inc_opcodes["B"] = []byte{0x0F, 0x21, 0x22, 0x23}
-	opcodeDefs["INC.B"] = opcodeDefinition{0x0F, inc_opcodes, false}
+	opcodeDefs["INC"] = opcodeDefinition{0x0F, inc_opcodes, false}
 
 	source := vputils.ReadFile(sourceFile)
 	data, dataLabels, codeLabels := generateData(source, opcodeDefs)
