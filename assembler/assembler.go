@@ -358,7 +358,7 @@ type module struct {
 	DataAddressWidth int
 }
 
-func write(myModule module, filename string) {
+func (myModule module) write(filename string) {
 	f, err := os.Create(filename)
 	vputils.CheckAndPanic(err)
 
@@ -471,6 +471,6 @@ func main() {
 
 	// if output specified, write module file
 	if len(moduleFile) > 0 {
-		write(myModule, moduleFile)
+		myModule.write(moduleFile)
 	}
 }
