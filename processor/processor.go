@@ -121,7 +121,6 @@ func (v vector) putByte(address Address, value byte) error {
 }
 
 type Machine struct {
-	BytesPerOpcode      int
 	BytesPerCodeAddress int
 	BytesPerDataAddress int
 	Code                vector
@@ -129,7 +128,7 @@ type Machine struct {
 }
 
 func (machine Machine) getImmediateByte(pc Address) byte {
-	codeAddress := pc.addByte(machine.BytesPerOpcode)
+	codeAddress := pc.addByte(1)
 
 	value, err := machine.Code.getByte(codeAddress)
 	vputils.CheckAndPanic(err)
@@ -138,7 +137,7 @@ func (machine Machine) getImmediateByte(pc Address) byte {
 }
 
 func (machine Machine) getDirectAddress(pc Address) Address {
-	codeAddress := pc.addByte(machine.BytesPerOpcode)
+	codeAddress := pc.addByte(1)
 
 	dataAddr, err := machine.Code.getByte(codeAddress)
 	vputils.CheckAndPanic(err)
@@ -214,10 +213,9 @@ func defineInstructions() instructionTable {
 }
 
 func executeCode(code vector, startAddress Address, data vector, trace bool, instructionDefinitions instructionTable) {
-	bytesPerOpcode := 1
 	bytesPerCodeAddress := 1
 	bytesPerDataAddress := 1
-	machine := Machine{bytesPerOpcode, bytesPerCodeAddress, bytesPerDataAddress, code, data}
+	machine := Machine{bytesPerCodeAddress, bytesPerDataAddress, code, data}
 	flags := [1]bool{false}
 	pc := startAddress
 	vStack := make(stack, 0)
@@ -280,14 +278,14 @@ func executeCode(code vector, startAddress Address, data vector, trace bool, ins
 		if def.JumpMode == "A" {
 			instructionSize += bytesPerCodeAddress
 
-			codeAddress := pc.addByte(bytesPerOpcode)
+			codeAddress := pc.addByte(1)
 			jumpAddr, _ := code.getByte(codeAddress)
 			jumpAddress = Address{[]byte{jumpAddr}}
 		}
 		if def.JumpMode == "R" {
 			instructionSize += bytesPerCodeAddress
 
-			codeAddress := pc.addByte(bytesPerOpcode)
+			codeAddress := pc.addByte(1)
 			jumpAddr, _ := code.getByte(codeAddress)
 			jumpAddress = Address{[]byte{jumpAddr}}
 		}
