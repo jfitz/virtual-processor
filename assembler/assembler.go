@@ -364,12 +364,13 @@ func write(properties []vputils.NameValue, code []byte, exports []vputils.NameVa
 	f.Sync()
 }
 
-func makeProperties(codeAddressWidth int, dataAddressWidth int) []vputils.NameValue {
+func makeProperties(instructionSetVersion string, codeAddressWidth int, dataAddressWidth int) []vputils.NameValue {
 	caws := strconv.Itoa(codeAddressWidth)
 	daws := strconv.Itoa(dataAddressWidth)
 
 	properties := []vputils.NameValue{}
 
+	properties = append(properties, vputils.NameValue{"INSTRUCTION SET VERSION", instructionSetVersion})
 	properties = append(properties, vputils.NameValue{"STACK WIDTH", "1"})
 	properties = append(properties, vputils.NameValue{"DATA WIDTH", "1"})
 	properties = append(properties, vputils.NameValue{"ADDRESS WIDTH", "1"})
@@ -409,6 +410,20 @@ func makeOpcodeDefinitions() map[string]opcodeDefinition {
 	return opcodeDefs
 }
 
+func makeExports(codeLabels LabelTable) []vputils.NameValue {
+	exports := []vputils.NameValue{}
+
+	for label, address := range codeLabels {
+		if vputils.IsUpper(label[0]) {
+			s := address.to_s()
+			nv := vputils.NameValue{label, s}
+			exports = append(exports, nv)
+		}
+	}
+
+	return exports
+}
+
 func main() {
 	args := os.Args[1:]
 
@@ -425,26 +440,19 @@ func main() {
 		moduleFile = args[1]
 	}
 
+	opcodeDefs := makeOpcodeDefinitions()
+	instructionSetVersion := "1"
+
 	codeAddressWidth := 1
 	dataAddressWidth := 1
 
-	properties := makeProperties(codeAddressWidth, dataAddressWidth)
+	properties := makeProperties(instructionSetVersion, codeAddressWidth, dataAddressWidth)
 
 	source := vputils.ReadFile(sourceFile)
 
-	opcodeDefs := makeOpcodeDefinitions()
-
 	data, dataLabels, codeLabels := generateData(source, opcodeDefs)
 
-	exports := []vputils.NameValue{}
-
-	for label, address := range codeLabels {
-		if vputils.IsUpper(label[0]) {
-			s := address.to_s()
-			nv := vputils.NameValue{label, s}
-			exports = append(exports, nv)
-		}
-	}
+	exports := makeExports(codeLabels)
 
 	code := generateCode(source, opcodeDefs, dataLabels, codeLabels)
 
