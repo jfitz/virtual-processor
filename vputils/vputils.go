@@ -351,7 +351,6 @@ type Module struct {
 	Code             []byte
 	Exports          []NameValue
 	Data             []byte
-	Name             string
 	CodeAddressWidth int
 	DataAddressWidth int
 }

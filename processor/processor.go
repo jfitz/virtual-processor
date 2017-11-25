@@ -477,7 +477,7 @@ func read(moduleFile string) (vputils.Module, error) {
 
 	data := vputils.ReadBinaryBlock(f, dataAddressWidth)
 
-	return vputils.Module{properties, code, exports, data, "", codeAddressWidth, dataAddressWidth}, nil
+	return vputils.Module{properties, code, exports, data, codeAddressWidth, dataAddressWidth}, nil
 }
 
 func main() {

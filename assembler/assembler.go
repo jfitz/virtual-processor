@@ -457,7 +457,7 @@ func main() {
 
 	code := generateCode(source, opcodeDefs, dataLabels, codeLabels)
 
-	myModule := vputils.Module{properties, code, exports, data, "", codeAddressWidth, dataAddressWidth}
+	myModule := vputils.Module{properties, code, exports, data, codeAddressWidth, dataAddressWidth}
 
 	// if output specified, write module file
 	if len(moduleFile) > 0 {
