@@ -348,7 +348,17 @@ func generateCode(source []string, opcodeDefs map[string]opcodeDefinition, dataL
 	return code
 }
 
-func write(properties []vputils.NameValue, code []byte, exports []vputils.NameValue, data []byte, filename string, codeAddressWidth int, dataAddressWidth int) {
+type module struct {
+	Properties       []vputils.NameValue
+	Code             []byte
+	Exports          []vputils.NameValue
+	Data             []byte
+	Name             string
+	CodeAddressWidth int
+	DataAddressWidth int
+}
+
+func write(myModule module, filename string) {
 	f, err := os.Create(filename)
 	vputils.CheckAndPanic(err)
 
@@ -356,10 +366,10 @@ func write(properties []vputils.NameValue, code []byte, exports []vputils.NameVa
 
 	vputils.WriteString(f, "module")
 
-	vputils.WriteTextTable("properties", properties, f)
-	vputils.WriteTextTable("exports", exports, f)
-	vputils.WriteBinaryBlock("code", code, f, codeAddressWidth)
-	vputils.WriteBinaryBlock("data", data, f, dataAddressWidth)
+	vputils.WriteTextTable("properties", myModule.Properties, f)
+	vputils.WriteTextTable("exports", myModule.Exports, f)
+	vputils.WriteBinaryBlock("code", myModule.Code, f, myModule.CodeAddressWidth)
+	vputils.WriteBinaryBlock("data", myModule.Data, f, myModule.DataAddressWidth)
 
 	f.Sync()
 }
@@ -432,14 +442,17 @@ func main() {
 		os.Exit(1)
 	}
 
+	// read source
 	sourceFile := args[0]
+	source := vputils.ReadFile(sourceFile)
 
+	// store output module file name
 	moduleFile := ""
-
 	if len(args) > 1 {
 		moduleFile = args[1]
 	}
 
+	// create opcode definitions
 	opcodeDefs := makeOpcodeDefinitions()
 	instructionSetVersion := "1"
 
@@ -448,16 +461,16 @@ func main() {
 
 	properties := makeProperties(instructionSetVersion, codeAddressWidth, dataAddressWidth)
 
-	source := vputils.ReadFile(sourceFile)
-
 	data, dataLabels, codeLabels := generateData(source, opcodeDefs)
 
 	exports := makeExports(codeLabels)
 
 	code := generateCode(source, opcodeDefs, dataLabels, codeLabels)
 
+	myModule := module{properties, code, exports, data, "MODULE", codeAddressWidth, dataAddressWidth}
+
 	// if output specified, write module file
 	if len(moduleFile) > 0 {
-		write(properties, code, exports, data, moduleFile, codeAddressWidth, dataAddressWidth)
+		write(myModule, moduleFile)
 	}
 }
