@@ -348,8 +348,20 @@ func generateCode(source []string, opcodeDefs map[string]opcodeDefinition, dataL
 	return code
 }
 
-func write(properties []vputils.NameValue, code []byte, codeLabels LabelTable, data []byte, filename string, codeWidth int, dataWidth int) {
+func write(code []byte, codeLabels LabelTable, data []byte, filename string, codeAddressWidth int, dataAddressWidth int) {
 	exports := []vputils.NameValue{}
+
+	properties := []vputils.NameValue{}
+
+	caws := strconv.Itoa(codeAddressWidth)
+	daws := strconv.Itoa(dataAddressWidth)
+
+	properties = append(properties, vputils.NameValue{"STACK WIDTH", "1"})
+	properties = append(properties, vputils.NameValue{"DATA WIDTH", "1"})
+	properties = append(properties, vputils.NameValue{"ADDRESS WIDTH", "1"})
+	properties = append(properties, vputils.NameValue{"CODE ADDRESS WIDTH", caws})
+	properties = append(properties, vputils.NameValue{"DATA ADDRESS WIDTH", daws})
+	properties = append(properties, vputils.NameValue{"CALL STACK SIZE", "1"})
 
 	for label, address := range codeLabels {
 		if vputils.IsUpper(label[0]) {
@@ -368,8 +380,8 @@ func write(properties []vputils.NameValue, code []byte, codeLabels LabelTable, d
 
 	vputils.WriteTextTable("properties", properties, f)
 	vputils.WriteTextTable("exports", exports, f)
-	vputils.WriteBinaryBlock("code", code, f, codeWidth)
-	vputils.WriteBinaryBlock("data", data, f, dataWidth)
+	vputils.WriteBinaryBlock("code", code, f, codeAddressWidth)
+	vputils.WriteBinaryBlock("data", data, f, dataAddressWidth)
 
 	f.Sync()
 }
@@ -389,21 +401,6 @@ func main() {
 	if len(args) > 1 {
 		moduleFile = args[1]
 	}
-
-	codeAddressWidth := 1
-	dataAddressWidth := 1
-
-	properties := []vputils.NameValue{}
-
-	caws := strconv.Itoa(codeAddressWidth)
-	daws := strconv.Itoa(dataAddressWidth)
-
-	properties = append(properties, vputils.NameValue{"STACK WIDTH", "1"})
-	properties = append(properties, vputils.NameValue{"DATA WIDTH", "1"})
-	properties = append(properties, vputils.NameValue{"ADDRESS WIDTH", "1"})
-	properties = append(properties, vputils.NameValue{"CODE ADDRESS WIDTH", caws})
-	properties = append(properties, vputils.NameValue{"DATA ADDRESS WIDTH", daws})
-	properties = append(properties, vputils.NameValue{"CALL STACK SIZE", "1"})
 
 	opcodeDefs := map[string]opcodeDefinition{}
 
@@ -430,12 +427,15 @@ func main() {
 	inc_opcodes["B"] = []byte{0x0F, 0x21, 0x22, 0x23}
 	opcodeDefs["INC"] = opcodeDefinition{0x0F, inc_opcodes, false}
 
+	codeAddressWidth := 1
+	dataAddressWidth := 1
+
 	source := vputils.ReadFile(sourceFile)
 	data, dataLabels, codeLabels := generateData(source, opcodeDefs)
 	code := generateCode(source, opcodeDefs, dataLabels, codeLabels)
 
 	// if output specified, write module file
 	if len(moduleFile) > 0 {
-		write(properties, code, codeLabels, data, moduleFile, codeAddressWidth, dataAddressWidth)
+		write(code, codeLabels, data, moduleFile, codeAddressWidth, dataAddressWidth)
 	}
 }
