@@ -426,24 +426,7 @@ func executeCode(code vector, startAddress Address, data vector, trace bool, ins
 	}
 }
 
-func main() {
-	startSymbolPtr := flag.String("start", "MAIN", "Start execution at symbol.")
-	tracePtr := flag.Bool("trace", false, "Display trace during execution.")
-
-	flag.Parse()
-
-	startSymbol := *startSymbolPtr
-	trace := *tracePtr
-
-	args := flag.Args()
-
-	if len(args) == 0 {
-		fmt.Println("No module file specified")
-		os.Exit(1)
-	}
-
-	moduleFile := args[0]
-
+func read(moduleFile string) ([]byte, []vputils.NameValue, int, []byte) {
 	f, err := os.Open(moduleFile)
 	vputils.CheckAndPanic(err)
 
@@ -483,13 +466,53 @@ func main() {
 
 	exports := vputils.ReadTextTable(f)
 
+	header = vputils.ReadString(f)
+	if header != "code" {
+		fmt.Println("Did not find code header")
+		os.Exit(2)
+	}
+
+	code := vputils.ReadBinaryBlock(f, codeAddressWidth)
+
+	header = vputils.ReadString(f)
+	if header != "data" {
+		fmt.Println("Did not find data header")
+		os.Exit(2)
+	}
+
+	data := vputils.ReadBinaryBlock(f, dataAddressWidth)
+
+	return code, exports, codeAddressWidth, data
+}
+
+func main() {
+	startSymbolPtr := flag.String("start", "MAIN", "Start execution at symbol.")
+	tracePtr := flag.Bool("trace", false, "Display trace during execution.")
+
+	flag.Parse()
+
+	startSymbol := *startSymbolPtr
+	trace := *tracePtr
+
+	args := flag.Args()
+
+	if len(args) == 0 {
+		fmt.Println("No module file specified")
+		os.Exit(1)
+	}
+
+	moduleFile := args[0]
+
+	code, exports, codeAddressWidth, data := read(moduleFile)
+
 	startAddressFound := false
 	startAddressInt := 0
 	for _, nameValue := range exports {
 		if nameValue.Name == startSymbol {
 			startAddressFound = true
-			startAddressInt, err = strconv.Atoi(nameValue.Value)
+			sai, err := strconv.Atoi(nameValue.Value)
 			vputils.CheckPrintAndExit(err, "Invalid start address")
+			startAddressInt = sai
 		}
 	}
 
@@ -500,26 +523,10 @@ func main() {
 
 	startAddress := makeAddress(startAddressInt, codeAddressWidth)
 
-	header = vputils.ReadString(f)
-	if header != "code" {
-		fmt.Println("Did not find code header")
-		os.Exit(2)
-	}
-
-	code := vputils.ReadBinaryBlock(f, codeAddressWidth)
-
 	if int(startAddress.ByteValue()) >= len(code) {
 		fmt.Println("Starting address " + startAddress.to_s() + " is not valid")
 		os.Exit(2)
 	}
-
-	header = vputils.ReadString(f)
-	if header != "data" {
-		fmt.Println("Did not find data header")
-		os.Exit(2)
-	}
-
-	data := vputils.ReadBinaryBlock(f, dataAddressWidth)
 
 	instructionDefinitions := defineInstructions()
 
