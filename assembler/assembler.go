@@ -348,17 +348,7 @@ func generateCode(source []string, opcodeDefs map[string]opcodeDefinition, dataL
 	return code
 }
 
-type module struct {
-	Properties       []vputils.NameValue
-	Code             []byte
-	Exports          []vputils.NameValue
-	Data             []byte
-	Name             string
-	CodeAddressWidth int
-	DataAddressWidth int
-}
-
-func (myModule module) write(filename string) {
+func (myModule vputils.Module) write(filename string) {
 	f, err := os.Create(filename)
 	vputils.CheckAndPanic(err)
 
@@ -467,7 +457,7 @@ func main() {
 
 	code := generateCode(source, opcodeDefs, dataLabels, codeLabels)
 
-	myModule := module{properties, code, exports, data, "", codeAddressWidth, dataAddressWidth}
+	myModule := vputils.Module{properties, code, exports, data, "", codeAddressWidth, dataAddressWidth}
 
 	// if output specified, write module file
 	if len(moduleFile) > 0 {

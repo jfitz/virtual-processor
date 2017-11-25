@@ -346,6 +346,16 @@ func WriteTextTable(name string, table []NameValue, f *os.File) {
 	CheckAndPanic(err)
 }
 
+type Module struct {
+	Properties       []NameValue
+	Code             []byte
+	Exports          []NameValue
+	Data             []byte
+	Name             string
+	CodeAddressWidth int
+	DataAddressWidth int
+}
+
 func ReadFile(sourceFile string) []string {
 	b, err := ioutil.ReadFile(sourceFile)
 	CheckAndPanic(err)
