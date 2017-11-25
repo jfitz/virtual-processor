@@ -467,7 +467,7 @@ func main() {
 
 	code := generateCode(source, opcodeDefs, dataLabels, codeLabels)
 
-	myModule := module{properties, code, exports, data, "MODULE", codeAddressWidth, dataAddressWidth}
+	myModule := module{properties, code, exports, data, "", codeAddressWidth, dataAddressWidth}
 
 	// if output specified, write module file
 	if len(moduleFile) > 0 {
