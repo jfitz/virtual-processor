@@ -348,29 +348,7 @@ func generateCode(source []string, opcodeDefs map[string]opcodeDefinition, dataL
 	return code
 }
 
-func write(code []byte, codeLabels LabelTable, data []byte, filename string, codeAddressWidth int, dataAddressWidth int) {
-	exports := []vputils.NameValue{}
-
-	properties := []vputils.NameValue{}
-
-	caws := strconv.Itoa(codeAddressWidth)
-	daws := strconv.Itoa(dataAddressWidth)
-
-	properties = append(properties, vputils.NameValue{"STACK WIDTH", "1"})
-	properties = append(properties, vputils.NameValue{"DATA WIDTH", "1"})
-	properties = append(properties, vputils.NameValue{"ADDRESS WIDTH", "1"})
-	properties = append(properties, vputils.NameValue{"CODE ADDRESS WIDTH", caws})
-	properties = append(properties, vputils.NameValue{"DATA ADDRESS WIDTH", daws})
-	properties = append(properties, vputils.NameValue{"CALL STACK SIZE", "1"})
-
-	for label, address := range codeLabels {
-		if vputils.IsUpper(label[0]) {
-			s := address.to_s()
-			nv := vputils.NameValue{label, s}
-			exports = append(exports, nv)
-		}
-	}
-
+func write(properties []vputils.NameValue, code []byte, exports []vputils.NameValue, data []byte, filename string, codeAddressWidth int, dataAddressWidth int) {
 	f, err := os.Create(filename)
 	vputils.CheckAndPanic(err)
 
@@ -386,22 +364,23 @@ func write(code []byte, codeLabels LabelTable, data []byte, filename string, cod
 	f.Sync()
 }
 
-func main() {
-	args := os.Args[1:]
+func makeProperties(codeAddressWidth int, dataAddressWidth int) []vputils.NameValue {
+	caws := strconv.Itoa(codeAddressWidth)
+	daws := strconv.Itoa(dataAddressWidth)
 
-	if len(args) == 0 {
-		fmt.Println("No source file specified")
-		os.Exit(1)
-	}
+	properties := []vputils.NameValue{}
 
-	sourceFile := args[0]
+	properties = append(properties, vputils.NameValue{"STACK WIDTH", "1"})
+	properties = append(properties, vputils.NameValue{"DATA WIDTH", "1"})
+	properties = append(properties, vputils.NameValue{"ADDRESS WIDTH", "1"})
+	properties = append(properties, vputils.NameValue{"CODE ADDRESS WIDTH", caws})
+	properties = append(properties, vputils.NameValue{"DATA ADDRESS WIDTH", daws})
+	properties = append(properties, vputils.NameValue{"CALL STACK SIZE", "1"})
 
-	moduleFile := ""
+	return properties
+}
 
-	if len(args) > 1 {
-		moduleFile = args[1]
-	}
-
+func makeOpcodeDefinitions() map[string]opcodeDefinition {
 	opcodeDefs := map[string]opcodeDefinition{}
 
 	empty_opcodes := make(opcodeAddresses)
@@ -427,15 +406,50 @@ func main() {
 	inc_opcodes["B"] = []byte{0x0F, 0x21, 0x22, 0x23}
 	opcodeDefs["INC"] = opcodeDefinition{0x0F, inc_opcodes, false}
 
+	return opcodeDefs
+}
+
+func main() {
+	args := os.Args[1:]
+
+	if len(args) == 0 {
+		fmt.Println("No source file specified")
+		os.Exit(1)
+	}
+
+	sourceFile := args[0]
+
+	moduleFile := ""
+
+	if len(args) > 1 {
+		moduleFile = args[1]
+	}
+
 	codeAddressWidth := 1
 	dataAddressWidth := 1
 
+	properties := makeProperties(codeAddressWidth, dataAddressWidth)
+
 	source := vputils.ReadFile(sourceFile)
+
+	opcodeDefs := makeOpcodeDefinitions()
+
 	data, dataLabels, codeLabels := generateData(source, opcodeDefs)
+
+	exports := []vputils.NameValue{}
+
+	for label, address := range codeLabels {
+		if vputils.IsUpper(label[0]) {
+			s := address.to_s()
+			nv := vputils.NameValue{label, s}
+			exports = append(exports, nv)
+		}
+	}
+
 	code := generateCode(source, opcodeDefs, dataLabels, codeLabels)
 
 	// if output specified, write module file
 	if len(moduleFile) > 0 {
-		write(code, codeLabels, data, moduleFile, codeAddressWidth, dataAddressWidth)
+		write(properties, code, exports, data, moduleFile, codeAddressWidth, dataAddressWidth)
 	}
 }
