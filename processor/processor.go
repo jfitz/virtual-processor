@@ -126,7 +126,6 @@ type Machine struct {
 	BytesPerDataAddress int
 	Code                vector
 	Data                vector
-	Flags               []bool
 }
 
 func (machine Machine) getImmediateByte(pc Address) byte {
@@ -175,10 +174,6 @@ func (machine Machine) getIndirectByte(pc Address) (byte, Address) {
 	return value, dataAddress
 }
 
-func (machine Machine) setFlags(value byte) {
-	machine.Flags[0] = value == 0
-}
-
 type instructionDefinition struct {
 	Name        string
 	TargetSize  string
@@ -222,8 +217,8 @@ func executeCode(code vector, startAddress Address, data vector, trace bool, ins
 	bytesPerOpcode := 1
 	bytesPerCodeAddress := 1
 	bytesPerDataAddress := 1
-	f := []bool{false}
-	machine := Machine{bytesPerOpcode, bytesPerCodeAddress, bytesPerDataAddress, code, data, f}
+	machine := Machine{bytesPerOpcode, bytesPerCodeAddress, bytesPerDataAddress, code, data}
+	flags := [1]bool{false}
 	pc := startAddress
 	vStack := make(stack, 0)
 
@@ -365,13 +360,13 @@ func executeCode(code vector, startAddress Address, data vector, trace bool, ins
 
 		case 0x11:
 			// FLAGS.B direct address
-			machine.setFlags(value)
+			flags[0] = value == 0
 
 			pc = pc.addByte(instructionSize)
 
 		case 0x12:
 			// FLAGS.B indirect address
-			machine.setFlags(value)
+			flags[0] = value == 0
 
 			pc = pc.addByte(instructionSize)
 
@@ -380,7 +375,7 @@ func executeCode(code vector, startAddress Address, data vector, trace bool, ins
 			value, err = vStack.top()
 			vputils.CheckAndPanic(err)
 
-			machine.setFlags(value)
+			flags[0] = value == 0
 
 			pc = pc.addByte(instructionSize)
 
@@ -408,7 +403,7 @@ func executeCode(code vector, startAddress Address, data vector, trace bool, ins
 
 		case 0x92:
 			// JZ
-			if machine.Flags[0] {
+			if flags[0] {
 				pc = jumpAddress
 			} else {
 				pc = pc.addByte(instructionSize)
