@@ -426,22 +426,20 @@ func executeCode(code vector, startAddress Address, data vector, trace bool, ins
 	}
 }
 
-func read(moduleFile string) ([]byte, []vputils.NameValue, int, []byte) {
+func read(moduleFile string) (vputils.Module, error) {
 	f, err := os.Open(moduleFile)
-	vputils.CheckAndPanic(err)
+	vputils.CheckAndExit(err)
 
 	defer f.Close()
 
 	header := vputils.ReadString(f)
 	if header != "module" {
-		fmt.Println("Did not find module header")
-		os.Exit(2)
+		return vputils.Module{}, errors.New("Did not find module header")
 	}
 
 	header = vputils.ReadString(f)
 	if header != "properties" {
-		fmt.Println("Did not find properties header")
-		os.Exit(2)
+		return vputils.Module{}, errors.New("Did not find properties header")
 	}
 
 	properties := vputils.ReadTextTable(f)
@@ -460,29 +458,26 @@ func read(moduleFile string) ([]byte, []vputils.NameValue, int, []byte) {
 
 	header = vputils.ReadString(f)
 	if header != "exports" {
-		fmt.Println("Did not find exports header")
-		os.Exit(2)
+		return vputils.Module{}, errors.New("Did not find exports header")
 	}
 
 	exports := vputils.ReadTextTable(f)
 
 	header = vputils.ReadString(f)
 	if header != "code" {
-		fmt.Println("Did not find code header")
-		os.Exit(2)
+		return vputils.Module{}, errors.New("Did not find code header")
 	}
 
 	code := vputils.ReadBinaryBlock(f, codeAddressWidth)
 
 	header = vputils.ReadString(f)
 	if header != "data" {
-		fmt.Println("Did not find data header")
-		os.Exit(2)
+		return vputils.Module{}, errors.New("Did not find data header")
 	}
 
 	data := vputils.ReadBinaryBlock(f, dataAddressWidth)
 
-	return code, exports, codeAddressWidth, data
+	return vputils.Module{properties, code, exports, data, "", codeAddressWidth, dataAddressWidth}, nil
 }
 
 func main() {
@@ -503,16 +498,21 @@ func main() {
 
 	moduleFile := args[0]
 
-	code, exports, codeAddressWidth, data := read(moduleFile)
+	module, err := read(moduleFile)
+	vputils.CheckAndExit(err)
+
+	code := module.Code
+	exports := module.Exports
+	codeAddressWidth := module.CodeAddressWidth
+	data := module.Data
 
 	startAddressFound := false
 	startAddressInt := 0
 	for _, nameValue := range exports {
 		if nameValue.Name == startSymbol {
 			startAddressFound = true
-			sai, err := strconv.Atoi(nameValue.Value)
+			startAddressInt, err = strconv.Atoi(nameValue.Value)
 			vputils.CheckPrintAndExit(err, "Invalid start address")
-			startAddressInt = sai
 		}
 	}
 
