@@ -403,7 +403,7 @@ type Vector []byte
 
 func (v Vector) GetByte(address Address) (byte, error) {
 	max := len(v) - 1
-	offset := int(address.ByteValue())
+	offset := address.ToInt()
 	if offset < 0 || offset > max {
 		off := strconv.Itoa(offset)
 		maxs := strconv.Itoa(max)
@@ -415,7 +415,7 @@ func (v Vector) GetByte(address Address) (byte, error) {
 
 func (v Vector) PutByte(address Address, value byte) error {
 	max := len(v) - 1
-	offset := int(address.ByteValue())
+	offset := address.ToInt()
 	if offset < 0 || offset > max {
 		off := strconv.Itoa(offset)
 		maxs := strconv.Itoa(max)
@@ -429,9 +429,9 @@ func (v Vector) PutByte(address Address, value byte) error {
 
 type Module struct {
 	Properties       []NameValue
-	Code             []byte
+	Code             Vector
 	Exports          []NameValue
-	Data             []byte
+	Data             Vector
 	CodeAddressWidth int
 	DataAddressWidth int
 }

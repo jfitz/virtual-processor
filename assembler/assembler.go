@@ -181,12 +181,12 @@ func dequoteString(s string) []byte {
 	return bytes
 }
 
-func generateData(source []string, opcodeDefs map[string]opcodeDefinition) ([]byte, LabelTable, LabelTable) {
+func generateData(source []string, opcodeDefs map[string]opcodeDefinition) (vputils.Vector, LabelTable, LabelTable) {
 	fmt.Println("\t\tDATA")
 
-	code := []byte{}
+	code := vputils.Vector{}
 	codeLabels := make(LabelTable)
-	data := []byte{}
+	data := vputils.Vector{}
 	dataLabels := make(LabelTable)
 
 	for _, line := range source {
@@ -281,10 +281,10 @@ func generateData(source []string, opcodeDefs map[string]opcodeDefinition) ([]by
 	return data, dataLabels, codeLabels
 }
 
-func generateCode(source []string, opcodeDefs map[string]opcodeDefinition, dataLabels LabelTable, codeLabels LabelTable) []byte {
+func generateCode(source []string, opcodeDefs map[string]opcodeDefinition, dataLabels LabelTable, codeLabels LabelTable) vputils.Vector {
 	fmt.Println("\t\tCODE")
 
-	code := []byte{}
+	code := vputils.Vector{}
 
 	for _, line := range source {
 		// remove comment from line
