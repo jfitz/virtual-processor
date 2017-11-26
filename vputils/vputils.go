@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -396,6 +397,34 @@ func (ca Address) AddByte(i int) Address {
 	a := ca.ByteValue() + b
 	as := []byte{a}
 	return Address{as}
+}
+
+type Vector []byte
+
+func (v Vector) GetByte(address Address) (byte, error) {
+	max := len(v) - 1
+	offset := int(address.ByteValue())
+	if offset < 0 || offset > max {
+		off := strconv.Itoa(offset)
+		maxs := strconv.Itoa(max)
+		return 0, errors.New("Index " + off + " out of range [0.." + maxs + "]")
+	}
+
+	return v[offset], nil
+}
+
+func (v Vector) PutByte(address Address, value byte) error {
+	max := len(v) - 1
+	offset := int(address.ByteValue())
+	if offset < 0 || offset > max {
+		off := strconv.Itoa(offset)
+		maxs := strconv.Itoa(max)
+		return errors.New("Index " + off + " out of range [0.." + maxs + "]")
+	}
+
+	v[offset] = value
+
+	return nil
 }
 
 type Module struct {
