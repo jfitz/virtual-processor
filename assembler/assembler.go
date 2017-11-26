@@ -50,20 +50,7 @@ func evaluateByte(expression string) byte {
 	return byteValue
 }
 
-type Address struct {
-	Bytes []byte
-}
-
-func (address Address) to_s() string {
-	value := 0
-	for _, b := range address.Bytes {
-		value += int(b)
-	}
-
-	return strconv.Itoa(value)
-}
-
-type LabelTable map[string]Address
+type LabelTable map[string]vputils.Address
 
 func buildInstruction(opcodemap opcodeAddresses, targetSize string, target string, dataLabels LabelTable) ([]byte, error) {
 	opcodes, ok := opcodemap[targetSize]
@@ -140,7 +127,7 @@ func decodeOpcode(text string, targetSize string, target string, opcodeDefs map[
 	if opcodeDef.IsJump {
 		address, ok := codeLabels[target]
 		if !ok {
-			address = Address{make([]byte, 1)}
+			address = vputils.MakeAddress(0, 1)
 		}
 		instruction = append(instruction, address.Bytes...)
 	}
@@ -221,7 +208,7 @@ func generateData(source []string, opcodeDefs map[string]opcodeDefinition) ([]by
 				if address > 255 {
 					vputils.CheckAndExit(errors.New("Exceeded data label table size"))
 				}
-				dataLabels[label] = Address{[]byte{byte(address)}}
+				dataLabels[label] = vputils.MakeAddress(address, 1)
 
 				// write the label on a line by itself
 				if len(label) > 0 {
@@ -271,7 +258,7 @@ func generateData(source []string, opcodeDefs map[string]opcodeDefinition) ([]by
 					if address > 255 {
 						vputils.CheckAndExit(errors.New("Exceeded code label table size"))
 					}
-					codeLabels[label] = Address{[]byte{byte(address)}}
+					codeLabels[label] = vputils.MakeAddress(address, 1)
 				}
 
 				target, tokens := first(tokens)
@@ -415,7 +402,8 @@ func makeExports(codeLabels LabelTable) []vputils.NameValue {
 
 	for label, address := range codeLabels {
 		if vputils.IsUpper(label[0]) {
-			s := address.to_s()
+			i := address.ToInt()
+			s := strconv.Itoa(i)
 			nv := vputils.NameValue{label, s}
 			exports = append(exports, nv)
 		}

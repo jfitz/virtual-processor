@@ -346,6 +346,58 @@ func WriteTextTable(name string, table []NameValue, f *os.File) {
 	CheckAndPanic(err)
 }
 
+type Address struct {
+	Bytes []byte
+}
+
+func MakeAddress(value int, size int) Address {
+	address := []byte{}
+
+	for i := 0; i < size; i++ {
+		b := byte(value & 0xff)
+		address = append(address, b)
+		value = value / 256
+	}
+
+	return Address{address}
+}
+
+func (address Address) Empty() bool {
+	return len(address.Bytes) == 0
+}
+
+func (address Address) ToInt() int {
+	value := 0
+	for _, b := range address.Bytes {
+		// should shift here
+		// little-endian or big-endian?
+		value += int(b)
+	}
+
+	return value
+}
+
+func (address Address) ToString() string {
+	if len(address.Bytes) == 0 {
+		return ""
+	}
+
+	value := address.ToInt()
+
+	return fmt.Sprintf("%04X", value)
+}
+
+func (address Address) ByteValue() byte {
+	return address.Bytes[0]
+}
+
+func (ca Address) AddByte(i int) Address {
+	b := byte(i)
+	a := ca.ByteValue() + b
+	as := []byte{a}
+	return Address{as}
+}
+
 type Module struct {
 	Properties       []NameValue
 	Code             []byte

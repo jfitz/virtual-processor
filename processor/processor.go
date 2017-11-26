@@ -46,55 +46,9 @@ func (s stack) toppop() (byte, stack, error) {
 	return s[last], s[:last], nil
 }
 
-type Address struct {
-	Bytes []byte
-}
-
-func makeAddress(value int, size int) Address {
-	address := []byte{}
-
-	for i := 0; i < size; i++ {
-		b := byte(value & 0xff)
-		address = append(address, b)
-		value = value / 256
-	}
-
-	return Address{address}
-}
-
-func (address Address) empty() bool {
-	return len(address.Bytes) == 0
-}
-
-func (address Address) to_s() string {
-	if len(address.Bytes) == 0 {
-		return ""
-	}
-
-	value := 0
-	for _, b := range address.Bytes {
-		// should shift here
-		// little-endian or big-endian?
-		value += int(b)
-	}
-
-	return fmt.Sprintf("%04X", value)
-}
-
-func (address Address) ByteValue() byte {
-	return address.Bytes[0]
-}
-
-func (ca Address) addByte(i int) Address {
-	b := byte(i)
-	a := ca.ByteValue() + b
-	as := []byte{a}
-	return Address{as}
-}
-
 type vector []byte
 
-func (v vector) getByte(address Address) (byte, error) {
+func (v vector) getByte(address vputils.Address) (byte, error) {
 	max := len(v) - 1
 	offset := int(address.ByteValue())
 	if offset < 0 || offset > max {
@@ -106,7 +60,7 @@ func (v vector) getByte(address Address) (byte, error) {
 	return v[offset], nil
 }
 
-func (v vector) putByte(address Address, value byte) error {
+func (v vector) putByte(address vputils.Address, value byte) error {
 	max := len(v) - 1
 	offset := int(address.ByteValue())
 	if offset < 0 || offset > max {
@@ -127,8 +81,8 @@ type Machine struct {
 	Data                vector
 }
 
-func (machine Machine) getImmediateByte(pc Address) byte {
-	codeAddress := pc.addByte(1)
+func (machine Machine) getImmediateByte(pc vputils.Address) byte {
+	codeAddress := pc.AddByte(1)
 
 	value, err := machine.Code.getByte(codeAddress)
 	vputils.CheckAndPanic(err)
@@ -136,18 +90,18 @@ func (machine Machine) getImmediateByte(pc Address) byte {
 	return value
 }
 
-func (machine Machine) getDirectAddress(pc Address) Address {
-	codeAddress := pc.addByte(1)
+func (machine Machine) getDirectAddress(pc vputils.Address) vputils.Address {
+	codeAddress := pc.AddByte(1)
 
 	dataAddr, err := machine.Code.getByte(codeAddress)
 	vputils.CheckAndPanic(err)
 	da := []byte{dataAddr}
-	dataAddress := Address{da}
+	dataAddress := vputils.Address{da}
 
 	return dataAddress
 }
 
-func (machine Machine) getDirectByte(pc Address) (byte, Address) {
+func (machine Machine) getDirectByte(pc vputils.Address) (byte, vputils.Address) {
 	dataAddress := machine.getDirectAddress(pc)
 	value, err := machine.Data.getByte(dataAddress)
 	vputils.CheckAndPanic(err)
@@ -155,17 +109,17 @@ func (machine Machine) getDirectByte(pc Address) (byte, Address) {
 	return value, dataAddress
 }
 
-func (machine Machine) getIndirectAddress(pc Address) Address {
+func (machine Machine) getIndirectAddress(pc vputils.Address) vputils.Address {
 	dataAddress := machine.getDirectAddress(pc)
 	dataAddr, err := machine.Data.getByte(dataAddress)
 	vputils.CheckAndPanic(err)
 	da := []byte{dataAddr}
-	dataAddress = Address{da}
+	dataAddress = vputils.Address{da}
 
 	return dataAddress
 }
 
-func (machine Machine) getIndirectByte(pc Address) (byte, Address) {
+func (machine Machine) getIndirectByte(pc vputils.Address) (byte, vputils.Address) {
 	dataAddress := machine.getIndirectAddress(pc)
 	value, err := machine.Data.getByte(dataAddress)
 	vputils.CheckAndPanic(err)
@@ -212,7 +166,7 @@ func defineInstructions() instructionTable {
 	return instructionDefinitions
 }
 
-func executeCode(code vector, startAddress Address, data vector, trace bool, instructionDefinitions instructionTable) {
+func executeCode(code vector, startAddress vputils.Address, data vector, trace bool, instructionDefinitions instructionTable) {
 	bytesPerCodeAddress := 1
 	bytesPerDataAddress := 1
 	machine := Machine{bytesPerCodeAddress, bytesPerDataAddress, code, data}
@@ -227,14 +181,14 @@ func executeCode(code vector, startAddress Address, data vector, trace bool, ins
 	halt := false
 	for !halt {
 		opcode, err := code.getByte(pc)
-		vputils.CheckPrintAndExit(err, "at PC "+pc.to_s())
+		vputils.CheckPrintAndExit(err, "at PC "+pc.ToString())
 
 		def := instructionDefinitions[opcode]
 		value := byte(0)
 		value_s := ""
-		dataAddress := Address{[]byte{}}
-		dataAddress1 := Address{[]byte{}}
-		jumpAddress := Address{[]byte{}}
+		dataAddress := vputils.Address{[]byte{}}
+		dataAddress1 := vputils.Address{[]byte{}}
+		jumpAddress := vputils.Address{[]byte{}}
 
 		instructionSize := 1
 		targetSize := 0
@@ -278,32 +232,32 @@ func executeCode(code vector, startAddress Address, data vector, trace bool, ins
 		if def.JumpMode == "A" {
 			instructionSize += bytesPerCodeAddress
 
-			codeAddress := pc.addByte(1)
+			codeAddress := pc.AddByte(1)
 			jumpAddr, _ := code.getByte(codeAddress)
-			jumpAddress = Address{[]byte{jumpAddr}}
+			jumpAddress = vputils.Address{[]byte{jumpAddr}}
 		}
 		if def.JumpMode == "R" {
 			instructionSize += bytesPerCodeAddress
 
-			codeAddress := pc.addByte(1)
+			codeAddress := pc.AddByte(1)
 			jumpAddr, _ := code.getByte(codeAddress)
-			jumpAddress = Address{[]byte{jumpAddr}}
+			jumpAddress = vputils.Address{[]byte{jumpAddr}}
 		}
 
 		if trace {
 			text := def.to_s()
-			line := fmt.Sprintf("%s: %02X %s", pc.to_s(), opcode, text)
-			if !dataAddress1.empty() {
-				line += " @@" + dataAddress1.to_s()
+			line := fmt.Sprintf("%s: %02X %s", pc.ToString(), opcode, text)
+			if !dataAddress1.Empty() {
+				line += " @@" + dataAddress1.ToString()
 			}
-			if !dataAddress.empty() {
-				line += " @" + dataAddress.to_s()
+			if !dataAddress.Empty() {
+				line += " @" + dataAddress.ToString()
 			}
 			if len(value_s) > 0 {
 				line += " =" + value_s
 			}
-			if !jumpAddress.empty() {
-				line += " >" + jumpAddress.to_s()
+			if !jumpAddress.Empty() {
+				line += " >" + jumpAddress.ToString()
 			}
 			fmt.Println(line)
 		}
@@ -313,25 +267,25 @@ func executeCode(code vector, startAddress Address, data vector, trace bool, ins
 			// EXIT
 			halt = true
 
-			pc = pc.addByte(instructionSize)
+			pc = pc.AddByte(instructionSize)
 
 		case 0x40:
 			// PUSH.B immediate value
 			vStack = vStack.push(value)
 
-			pc = pc.addByte(instructionSize)
+			pc = pc.AddByte(instructionSize)
 
 		case 0x41:
 			// PUSH.B direct address
 			vStack = vStack.push(value)
 
-			pc = pc.addByte(instructionSize)
+			pc = pc.AddByte(instructionSize)
 
 		case 0x42:
 			// PUSH.B indirect address
 			vStack = vStack.push(value)
 
-			pc = pc.addByte(instructionSize)
+			pc = pc.AddByte(instructionSize)
 
 		case 0x51:
 			// POP.B direct address
@@ -341,7 +295,7 @@ func executeCode(code vector, startAddress Address, data vector, trace bool, ins
 			err = data.putByte(dataAddress, value)
 			vputils.CheckAndPanic(err)
 
-			pc = pc.addByte(instructionSize)
+			pc = pc.AddByte(instructionSize)
 
 		case 0x08:
 			// OUT (implied stack)
@@ -354,19 +308,19 @@ func executeCode(code vector, startAddress Address, data vector, trace bool, ins
 				fmt.Println()
 			}
 
-			pc = pc.addByte(instructionSize)
+			pc = pc.AddByte(instructionSize)
 
 		case 0x11:
 			// FLAGS.B direct address
 			flags[0] = value == 0
 
-			pc = pc.addByte(instructionSize)
+			pc = pc.AddByte(instructionSize)
 
 		case 0x12:
 			// FLAGS.B indirect address
 			flags[0] = value == 0
 
-			pc = pc.addByte(instructionSize)
+			pc = pc.AddByte(instructionSize)
 
 		case 0x13:
 			// FLAGS.B (implied stack)
@@ -375,7 +329,7 @@ func executeCode(code vector, startAddress Address, data vector, trace bool, ins
 
 			flags[0] = value == 0
 
-			pc = pc.addByte(instructionSize)
+			pc = pc.AddByte(instructionSize)
 
 		case 0x21:
 			// INC.B direct address
@@ -384,7 +338,7 @@ func executeCode(code vector, startAddress Address, data vector, trace bool, ins
 			err = data.putByte(dataAddress, value)
 			vputils.CheckAndPanic(err)
 
-			pc = pc.addByte(instructionSize)
+			pc = pc.AddByte(instructionSize)
 
 		case 0x22:
 			// INC.B indirect address
@@ -393,7 +347,7 @@ func executeCode(code vector, startAddress Address, data vector, trace bool, ins
 			err = data.putByte(dataAddress, value)
 			vputils.CheckAndPanic(err)
 
-			pc = pc.addByte(instructionSize)
+			pc = pc.AddByte(instructionSize)
 
 		case 0x90:
 			// JUMP
@@ -404,18 +358,18 @@ func executeCode(code vector, startAddress Address, data vector, trace bool, ins
 			if flags[0] {
 				pc = jumpAddress
 			} else {
-				pc = pc.addByte(instructionSize)
+				pc = pc.AddByte(instructionSize)
 			}
 
 		default:
 			// invalid opcode
-			fmt.Printf("Invalid opcode %02x at %s\n", opcode, pc.to_s())
+			fmt.Printf("Invalid opcode %02x at %s\n", opcode, pc.ToString())
 			return
 		}
 	}
 
 	if trace {
-		fmt.Println("Execution halted at " + pc.to_s())
+		fmt.Println("Execution halted at " + pc.ToString())
 	}
 }
 
@@ -514,10 +468,10 @@ func main() {
 		os.Exit(2)
 	}
 
-	startAddress := makeAddress(startAddressInt, codeAddressWidth)
+	startAddress := vputils.MakeAddress(startAddressInt, codeAddressWidth)
 
 	if int(startAddress.ByteValue()) >= len(code) {
-		fmt.Println("Starting address " + startAddress.to_s() + " is not valid")
+		fmt.Println("Starting address " + startAddress.ToString() + " is not valid")
 		os.Exit(2)
 	}
 
