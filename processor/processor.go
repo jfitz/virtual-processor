@@ -85,6 +85,29 @@ func defineInstructions() instructionTable {
 	return instructionDefinitions
 }
 
+func (def instructionDefinition) calcInstructionSize() int {
+	return 1
+}
+
+func (def instructionDefinition) calcTargetSize() int {
+	targetSize := 0
+
+	if def.TargetSize == "B" {
+		targetSize = 1
+	}
+	if def.TargetSize == "W" {
+		targetSize = 2
+	}
+	if def.TargetSize == "L" {
+		targetSize = 4
+	}
+	if def.TargetSize == "F" {
+		targetSize = 8
+	}
+
+	return targetSize
+}
+
 func executeCode(module vputils.Module, startAddress vputils.Address, trace bool, instructionDefinitions instructionTable) {
 	bytesPerCodeAddress := 1
 	bytesPerDataAddress := 1
@@ -110,21 +133,8 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 		dataAddress1 := vputils.Address{[]byte{}}
 		jumpAddress := vputils.Address{[]byte{}}
 
-		instructionSize := 1
-		targetSize := 0
-
-		if def.TargetSize == "B" {
-			targetSize = 1
-		}
-		if def.TargetSize == "W" {
-			targetSize = 2
-		}
-		if def.TargetSize == "L" {
-			targetSize = 4
-		}
-		if def.TargetSize == "F" {
-			targetSize = 8
-		}
+		instructionSize := def.calcInstructionSize()
+		targetSize := def.calcTargetSize()
 
 		if def.AddressMode == "V" {
 			instructionSize += targetSize
