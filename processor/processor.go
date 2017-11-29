@@ -109,8 +109,6 @@ func (def instructionDefinition) calcTargetSize() int {
 }
 
 func executeCode(module vputils.Module, startAddress vputils.Address, trace bool, instructionDefinitions instructionTable) {
-	bytesPerCodeAddress := 1
-	bytesPerDataAddress := 1
 	flags := [1]bool{false}
 	pc := startAddress
 	vStack := make(stack, 0)
@@ -137,41 +135,41 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 		targetSize := def.calcTargetSize()
 
 		if def.AddressMode == "V" {
-			instructionSize += targetSize
-
 			value = module.GetImmediateByte(pc)
 			value_s = fmt.Sprintf("%02X", value)
+
+			instructionSize += targetSize
 		}
 		if def.AddressMode == "D" {
-			instructionSize += bytesPerDataAddress
-
 			dataAddress = module.GetDirectAddress(pc)
 
 			value, _ = module.GetDirectByte(pc)
 			value_s = fmt.Sprintf("%02X", value)
+
+			instructionSize += dataAddress.Size()
 		}
 		if def.AddressMode == "I" {
-			instructionSize += bytesPerDataAddress
-
 			dataAddress1 = module.GetDirectAddress(pc)
 			dataAddress = module.GetIndirectAddress(pc)
 			value, _ = module.GetIndirectByte(pc)
 			value_s = fmt.Sprintf("%02X", value)
+
+			instructionSize += dataAddress1.Size()
 		}
 
 		if def.JumpMode == "A" {
-			instructionSize += bytesPerCodeAddress
-
 			codeAddress := pc.AddByte(1)
 			jumpAddr, _ := code.GetByte(codeAddress)
 			jumpAddress = vputils.Address{[]byte{jumpAddr}}
+
+			instructionSize += jumpAddress.Size()
 		}
 		if def.JumpMode == "R" {
-			instructionSize += bytesPerCodeAddress
-
 			codeAddress := pc.AddByte(1)
 			jumpAddr, _ := code.GetByte(codeAddress)
 			jumpAddress = vputils.Address{[]byte{jumpAddr}}
+
+			instructionSize += jumpAddress.Size()
 		}
 
 		if trace {

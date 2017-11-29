@@ -367,6 +367,10 @@ func (address Address) Empty() bool {
 	return len(address.Bytes) == 0
 }
 
+func (address Address) Size() int {
+	return len(address.Bytes)
+}
+
 func (address Address) ToInt() int {
 	value := 0
 	for _, b := range address.Bytes {
