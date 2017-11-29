@@ -460,6 +460,16 @@ func (module Module) GetDirectAddress(pc Address) Address {
 	return dataAddress
 }
 
+func (module Module) GetOffsetAddress(pc Address) Address {
+	codeAddress := pc.AddByte(1)
+
+	offset, err := module.Code.GetByte(codeAddress)
+	CheckAndPanic(err)
+	dataAddress := pc.AddByte(int(offset))
+
+	return dataAddress
+}
+
 func (module Module) GetDirectByte(pc Address) (byte, Address) {
 	dataAddress := module.GetDirectAddress(pc)
 	value, err := module.Data.GetByte(dataAddress)

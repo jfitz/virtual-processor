@@ -81,6 +81,8 @@ func defineInstructions() instructionTable {
 	instructionDefinitions[0x22] = instructionDefinition{"INC", "B", "I", ""}
 	instructionDefinitions[0x90] = instructionDefinition{"JUMP", "", "", "A"}
 	instructionDefinitions[0x92] = instructionDefinition{"JZ", "", "", "A"}
+	instructionDefinitions[0x98] = instructionDefinition{"JR", "", "", "R"}
+	instructionDefinitions[0x9A] = instructionDefinition{"JRZ", "", "", "R"}
 
 	return instructionDefinitions
 }
@@ -130,6 +132,8 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 		dataAddress := vputils.Address{[]byte{}}
 		dataAddress1 := vputils.Address{[]byte{}}
 		jumpAddress := vputils.Address{[]byte{}}
+		offset := byte(0)
+		offset_s := ""
 
 		instructionSize := def.calcInstructionSize()
 		targetSize := def.calcTargetSize()
@@ -158,18 +162,20 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 		}
 
 		if def.JumpMode == "A" {
-			codeAddress := pc.AddByte(1)
-			jumpAddr, _ := code.GetByte(codeAddress)
-			jumpAddress = vputils.Address{[]byte{jumpAddr}}
+			jumpAddress = module.GetDirectAddress(pc)
 
 			instructionSize += jumpAddress.Size()
 		}
 		if def.JumpMode == "R" {
-			codeAddress := pc.AddByte(1)
-			jumpAddr, _ := code.GetByte(codeAddress)
-			jumpAddress = vputils.Address{[]byte{jumpAddr}}
+			offset = module.GetImmediateByte(pc)
+			offset_i := int(offset)
+			if offset_i > 127 {
+				offset_i = offset_i - 256
+			}
+			offset_s = strconv.Itoa(offset_i)
+			jumpAddress = pc.AddByte(offset_i)
 
-			instructionSize += jumpAddress.Size()
+			instructionSize += 1
 		}
 
 		if trace {
@@ -183,6 +189,9 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 			}
 			if len(value_s) > 0 {
 				line += " =" + value_s
+			}
+			if len(offset_s) > 0 {
+				line += " " + offset_s
 			}
 			if !jumpAddress.Empty() {
 				line += " >" + jumpAddress.ToString()
@@ -283,6 +292,18 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 
 		case 0x92:
 			// JZ
+			if flags[0] {
+				pc = jumpAddress
+			} else {
+				pc = pc.AddByte(instructionSize)
+			}
+
+		case 0x98:
+			// JREL
+			pc = jumpAddress
+
+		case 0x9A:
+			// JRZ
 			if flags[0] {
 				pc = jumpAddress
 			} else {
