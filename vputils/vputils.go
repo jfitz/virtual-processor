@@ -436,6 +436,52 @@ type Module struct {
 	DataAddressWidth int
 }
 
+func (module Module) GetImmediateByte(pc Address) byte {
+	codeAddress := pc.AddByte(1)
+
+	value, err := module.Code.GetByte(codeAddress)
+	CheckAndPanic(err)
+
+	return value
+}
+
+func (module Module) GetDirectAddress(pc Address) Address {
+	codeAddress := pc.AddByte(1)
+
+	dataAddr, err := module.Code.GetByte(codeAddress)
+	CheckAndPanic(err)
+	da := []byte{dataAddr}
+	dataAddress := Address{da}
+
+	return dataAddress
+}
+
+func (module Module) GetDirectByte(pc Address) (byte, Address) {
+	dataAddress := module.GetDirectAddress(pc)
+	value, err := module.Data.GetByte(dataAddress)
+	CheckAndPanic(err)
+
+	return value, dataAddress
+}
+
+func (module Module) GetIndirectAddress(pc Address) Address {
+	dataAddress := module.GetDirectAddress(pc)
+	dataAddr, err := module.Data.GetByte(dataAddress)
+	CheckAndPanic(err)
+	da := []byte{dataAddr}
+	dataAddress = Address{da}
+
+	return dataAddress
+}
+
+func (module Module) GetIndirectByte(pc Address) (byte, Address) {
+	dataAddress := module.GetIndirectAddress(pc)
+	value, err := module.Data.GetByte(dataAddress)
+	CheckAndPanic(err)
+
+	return value, dataAddress
+}
+
 func ReadFile(sourceFile string) []string {
 	b, err := ioutil.ReadFile(sourceFile)
 	CheckAndPanic(err)

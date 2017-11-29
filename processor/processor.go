@@ -46,59 +46,6 @@ func (s stack) toppop() (byte, stack, error) {
 	return s[last], s[:last], nil
 }
 
-type Machine struct {
-	BytesPerCodeAddress int
-	BytesPerDataAddress int
-	Code                vputils.Vector
-	Data                vputils.Vector
-}
-
-func (machine Machine) getImmediateByte(pc vputils.Address) byte {
-	codeAddress := pc.AddByte(1)
-
-	value, err := machine.Code.GetByte(codeAddress)
-	vputils.CheckAndPanic(err)
-
-	return value
-}
-
-func (machine Machine) getDirectAddress(pc vputils.Address) vputils.Address {
-	codeAddress := pc.AddByte(1)
-
-	dataAddr, err := machine.Code.GetByte(codeAddress)
-	vputils.CheckAndPanic(err)
-	da := []byte{dataAddr}
-	dataAddress := vputils.Address{da}
-
-	return dataAddress
-}
-
-func (machine Machine) getDirectByte(pc vputils.Address) (byte, vputils.Address) {
-	dataAddress := machine.getDirectAddress(pc)
-	value, err := machine.Data.GetByte(dataAddress)
-	vputils.CheckAndPanic(err)
-
-	return value, dataAddress
-}
-
-func (machine Machine) getIndirectAddress(pc vputils.Address) vputils.Address {
-	dataAddress := machine.getDirectAddress(pc)
-	dataAddr, err := machine.Data.GetByte(dataAddress)
-	vputils.CheckAndPanic(err)
-	da := []byte{dataAddr}
-	dataAddress = vputils.Address{da}
-
-	return dataAddress
-}
-
-func (machine Machine) getIndirectByte(pc vputils.Address) (byte, vputils.Address) {
-	dataAddress := machine.getIndirectAddress(pc)
-	value, err := machine.Data.GetByte(dataAddress)
-	vputils.CheckAndPanic(err)
-
-	return value, dataAddress
-}
-
 type instructionDefinition struct {
 	Name        string
 	TargetSize  string
@@ -138,10 +85,9 @@ func defineInstructions() instructionTable {
 	return instructionDefinitions
 }
 
-func executeCode(code vputils.Vector, startAddress vputils.Address, data vputils.Vector, trace bool, instructionDefinitions instructionTable) {
+func executeCode(module vputils.Module, startAddress vputils.Address, trace bool, instructionDefinitions instructionTable) {
 	bytesPerCodeAddress := 1
 	bytesPerDataAddress := 1
-	machine := Machine{bytesPerCodeAddress, bytesPerDataAddress, code, data}
 	flags := [1]bool{false}
 	pc := startAddress
 	vStack := make(stack, 0)
@@ -150,6 +96,8 @@ func executeCode(code vputils.Vector, startAddress vputils.Address, data vputils
 		fmt.Printf("Execution started at %04x\n", pc.ByteValue())
 	}
 
+	code := module.Code
+	data := module.Data
 	halt := false
 	for !halt {
 		opcode, err := code.GetByte(pc)
@@ -181,23 +129,23 @@ func executeCode(code vputils.Vector, startAddress vputils.Address, data vputils
 		if def.AddressMode == "V" {
 			instructionSize += targetSize
 
-			value = machine.getImmediateByte(pc)
+			value = module.GetImmediateByte(pc)
 			value_s = fmt.Sprintf("%02X", value)
 		}
 		if def.AddressMode == "D" {
 			instructionSize += bytesPerDataAddress
 
-			dataAddress = machine.getDirectAddress(pc)
+			dataAddress = module.GetDirectAddress(pc)
 
-			value, _ = machine.getDirectByte(pc)
+			value, _ = module.GetDirectByte(pc)
 			value_s = fmt.Sprintf("%02X", value)
 		}
 		if def.AddressMode == "I" {
 			instructionSize += bytesPerDataAddress
 
-			dataAddress1 = machine.getDirectAddress(pc)
-			dataAddress = machine.getIndirectAddress(pc)
-			value, _ = machine.getIndirectByte(pc)
+			dataAddress1 = module.GetDirectAddress(pc)
+			dataAddress = module.GetIndirectAddress(pc)
+			value, _ = module.GetIndirectByte(pc)
 			value_s = fmt.Sprintf("%02X", value)
 		}
 
@@ -423,7 +371,6 @@ func main() {
 	code := module.Code
 	exports := module.Exports
 	codeAddressWidth := module.CodeAddressWidth
-	data := module.Data
 
 	startAddressFound := false
 	startAddressInt := 0
@@ -449,5 +396,5 @@ func main() {
 
 	instructionDefinitions := defineInstructions()
 
-	executeCode(code, startAddress, data, trace, instructionDefinitions)
+	executeCode(module, startAddress, trace, instructionDefinitions)
 }
