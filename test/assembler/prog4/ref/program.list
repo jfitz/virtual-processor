@@ -14,10 +14,10 @@ MAIN:
 loop:
 04	42 0E	PUSH.B	@@address
 06	13	FLAGS.B	
-07	9A 07	JRZ	printnl
+07	9A 07	JZ.R	printnl
 09	08	OUT	
 0A	21 0E	INC.B	@address
-0C	98 F8	JREL	loop
+0C	98 F8	JUMP.R	loop
 printnl:
 0E	41 0F	PUSH.B	@newline
 10	08	OUT	

@@ -53,12 +53,17 @@ type instructionDefinition struct {
 	JumpMode    string
 }
 
-func (def instructionDefinition) to_s() string {
+func (def instructionDefinition) toString() string {
 	s := def.Name
 
-	if def.TargetSize != "" {
+	if len(def.TargetSize) > 0 {
 		s += "."
 		s += def.TargetSize
+	}
+
+	if len(def.JumpMode) > 0 {
+		s += "."
+		s += def.JumpMode
 	}
 
 	return s
@@ -81,8 +86,8 @@ func defineInstructions() instructionTable {
 	instructionDefinitions[0x22] = instructionDefinition{"INC", "B", "I", ""}
 	instructionDefinitions[0x90] = instructionDefinition{"JUMP", "", "", "A"}
 	instructionDefinitions[0x92] = instructionDefinition{"JZ", "", "", "A"}
-	instructionDefinitions[0x98] = instructionDefinition{"JR", "", "", "R"}
-	instructionDefinitions[0x9A] = instructionDefinition{"JRZ", "", "", "R"}
+	instructionDefinitions[0x98] = instructionDefinition{"JUMP", "", "", "R"}
+	instructionDefinitions[0x9A] = instructionDefinition{"JZ", "", "", "R"}
 
 	return instructionDefinitions
 }
@@ -179,7 +184,7 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 		}
 
 		if trace {
-			text := def.to_s()
+			text := def.toString()
 			line := fmt.Sprintf("%s: %02X %s", pc.ToString(), opcode, text)
 			if !dataAddress1.Empty() {
 				line += " @@" + dataAddress1.ToString()
@@ -287,11 +292,11 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 			pc = pc.AddByte(instructionSize)
 
 		case 0x90:
-			// JUMP
+			// JUMP.A
 			pc = jumpAddress
 
 		case 0x92:
-			// JZ
+			// JZ.A
 			if flags[0] {
 				pc = jumpAddress
 			} else {
@@ -299,11 +304,11 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 			}
 
 		case 0x98:
-			// JREL
+			// JUMP.R
 			pc = jumpAddress
 
 		case 0x9A:
-			// JRZ
+			// JZ.R
 			if flags[0] {
 				pc = jumpAddress
 			} else {
