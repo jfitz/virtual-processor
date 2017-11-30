@@ -102,8 +102,7 @@ type opcodeAddresses map[string][]byte
 type opcodeDefinition struct {
 	Opcode         byte
 	AddressOpcodes opcodeAddresses
-	IsJump         bool
-	IsRel          bool
+	JumpMode       string
 }
 
 func decodeOpcode(text string, instructionAddress vputils.Address, targetSize string, target string, opcodeDefs map[string]opcodeDefinition, codeLabels LabelTable, dataLabels LabelTable) ([]byte, error) {
@@ -125,15 +124,15 @@ func decodeOpcode(text string, instructionAddress vputils.Address, targetSize st
 	}
 
 	// for jump instructions, append the target address
-	if opcodeDef.IsJump {
+	if len(opcodeDef.JumpMode) > 0 {
 		address, ok := codeLabels[target]
 		if !ok {
 			address = vputils.MakeAddress(0, 1)
 		}
-		if !opcodeDef.IsRel {
+		if opcodeDef.JumpMode == "A" {
 			instruction = append(instruction, address.Bytes...)
 		}
-		if opcodeDef.IsRel {
+		if opcodeDef.JumpMode == "R" {
 			offset := byte(address.ToInt() - instructionAddress.ToInt())
 			instruction = append(instruction, offset)
 		}
@@ -387,28 +386,28 @@ func makeOpcodeDefinitions() map[string]opcodeDefinition {
 
 	empty_opcodes := make(opcodeAddresses)
 
-	opcodeDefs["EXIT"] = opcodeDefinition{0x00, empty_opcodes, false, false}
-	opcodeDefs["OUT"] = opcodeDefinition{0x08, empty_opcodes, false, false}
-	opcodeDefs["JUMP"] = opcodeDefinition{0x90, empty_opcodes, true, false}
-	opcodeDefs["JZ"] = opcodeDefinition{0x92, empty_opcodes, true, false}
-	opcodeDefs["JREL"] = opcodeDefinition{0x98, empty_opcodes, true, true}
-	opcodeDefs["JRZ"] = opcodeDefinition{0x9A, empty_opcodes, true, true}
+	opcodeDefs["EXIT"] = opcodeDefinition{0x00, empty_opcodes, ""}
+	opcodeDefs["OUT"] = opcodeDefinition{0x08, empty_opcodes, ""}
+	opcodeDefs["JUMP"] = opcodeDefinition{0x90, empty_opcodes, "A"}
+	opcodeDefs["JZ"] = opcodeDefinition{0x92, empty_opcodes, "A"}
+	opcodeDefs["JREL"] = opcodeDefinition{0x98, empty_opcodes, "R"}
+	opcodeDefs["JRZ"] = opcodeDefinition{0x9A, empty_opcodes, "R"}
 
 	push_opcodes := make(opcodeAddresses)
 	push_opcodes["B"] = []byte{0x40, 0x41, 0x42, 0x0F}
-	opcodeDefs["PUSH"] = opcodeDefinition{0x0F, push_opcodes, false, false}
+	opcodeDefs["PUSH"] = opcodeDefinition{0x0F, push_opcodes, ""}
 
 	pop_opcodes := make(opcodeAddresses)
 	pop_opcodes["B"] = []byte{0x0F, 0x51, 0x52, 0x0F}
-	opcodeDefs["POP"] = opcodeDefinition{0x0F, pop_opcodes, false, false}
+	opcodeDefs["POP"] = opcodeDefinition{0x0F, pop_opcodes, ""}
 
 	flags_opcodes := make(opcodeAddresses)
 	flags_opcodes["B"] = []byte{0x0F, 0x11, 0x12, 0x13}
-	opcodeDefs["FLAGS"] = opcodeDefinition{0x0F, flags_opcodes, false, false}
+	opcodeDefs["FLAGS"] = opcodeDefinition{0x0F, flags_opcodes, ""}
 
 	inc_opcodes := make(opcodeAddresses)
 	inc_opcodes["B"] = []byte{0x0F, 0x21, 0x22, 0x23}
-	opcodeDefs["INC"] = opcodeDefinition{0x0F, inc_opcodes, false, false}
+	opcodeDefs["INC"] = opcodeDefinition{0x0F, inc_opcodes, ""}
 
 	return opcodeDefs
 }
