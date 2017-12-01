@@ -1,5 +1,5 @@
 Execution started at 0000
-0000: 41 PUSH.B @0000 =48
+0000: 61 PUSH.B @0000 =48
 0002: 08 OUT
 H
 0003: 00 EXIT

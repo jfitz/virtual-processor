@@ -9,17 +9,17 @@ newline:
 
 		CODE
 MAIN:
-00	40 00	PUSH.B	message
-02	51 0E	POP.B	@address
+00	60 00	PUSH.B	message
+02	81 0E	POP.B	@address
 loop:
-04	42 0E	PUSH.B	@@address
+04	62 0E	PUSH.B	@@address
 06	13	FLAGS.B	
-07	92 0E	JZ.A	printnl
+07	D2 0E	JZ.A	printnl
 09	08	OUT	
 0A	21 0E	INC.B	@address
-0C	90 04	JUMP.A	loop
+0C	D0 04	JUMP.A	loop
 printnl:
-0E	41 0F	PUSH.B	@newline
+0E	61 0F	PUSH.B	@newline
 10	08	OUT	
 11	00	EXIT	
 		ENDSEGMENT

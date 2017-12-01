@@ -74,20 +74,20 @@ type instructionTable map[byte]instructionDefinition
 func defineInstructions() instructionTable {
 	instructionDefinitions := make(instructionTable)
 	instructionDefinitions[0x00] = instructionDefinition{"EXIT", "", "", ""}
-	instructionDefinitions[0x40] = instructionDefinition{"PUSH", "B", "V", ""}
-	instructionDefinitions[0x41] = instructionDefinition{"PUSH", "B", "D", ""}
-	instructionDefinitions[0x42] = instructionDefinition{"PUSH", "B", "I", ""}
-	instructionDefinitions[0x51] = instructionDefinition{"POP", "B", "D", ""}
+	instructionDefinitions[0x60] = instructionDefinition{"PUSH", "B", "V", ""}
+	instructionDefinitions[0x61] = instructionDefinition{"PUSH", "B", "D", ""}
+	instructionDefinitions[0x62] = instructionDefinition{"PUSH", "B", "I", ""}
+	instructionDefinitions[0x81] = instructionDefinition{"POP", "B", "D", ""}
 	instructionDefinitions[0x08] = instructionDefinition{"OUT", "", "S", ""}
 	instructionDefinitions[0x11] = instructionDefinition{"FLAGS", "B", "D", ""}
 	instructionDefinitions[0x12] = instructionDefinition{"FLAGS", "B", "I", ""}
 	instructionDefinitions[0x13] = instructionDefinition{"FLAGS", "B", "S", ""}
 	instructionDefinitions[0x21] = instructionDefinition{"INC", "B", "D", ""}
 	instructionDefinitions[0x22] = instructionDefinition{"INC", "B", "I", ""}
-	instructionDefinitions[0x90] = instructionDefinition{"JUMP", "", "", "A"}
-	instructionDefinitions[0x92] = instructionDefinition{"JZ", "", "", "A"}
-	instructionDefinitions[0x98] = instructionDefinition{"JUMP", "", "", "R"}
-	instructionDefinitions[0x9A] = instructionDefinition{"JZ", "", "", "R"}
+	instructionDefinitions[0xD0] = instructionDefinition{"JUMP", "", "", "A"}
+	instructionDefinitions[0xD2] = instructionDefinition{"JZ", "", "", "A"}
+	instructionDefinitions[0xE0] = instructionDefinition{"JUMP", "", "", "R"}
+	instructionDefinitions[0xE2] = instructionDefinition{"JZ", "", "", "R"}
 
 	return instructionDefinitions
 }
@@ -211,25 +211,25 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 
 			pc = pc.AddByte(instructionSize)
 
-		case 0x40:
+		case 0x60:
 			// PUSH.B immediate value
 			vStack = vStack.push(value)
 
 			pc = pc.AddByte(instructionSize)
 
-		case 0x41:
+		case 0x61:
 			// PUSH.B direct address
 			vStack = vStack.push(value)
 
 			pc = pc.AddByte(instructionSize)
 
-		case 0x42:
+		case 0x62:
 			// PUSH.B indirect address
 			vStack = vStack.push(value)
 
 			pc = pc.AddByte(instructionSize)
 
-		case 0x51:
+		case 0x81:
 			// POP.B direct address
 			value, vStack, err = vStack.toppop()
 			vputils.CheckAndPanic(err)
@@ -291,11 +291,11 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 
 			pc = pc.AddByte(instructionSize)
 
-		case 0x90:
+		case 0xD0:
 			// JUMP.A
 			pc = jumpAddress
 
-		case 0x92:
+		case 0xD2:
 			// JZ.A
 			if flags[0] {
 				pc = jumpAddress
@@ -303,11 +303,11 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 				pc = pc.AddByte(instructionSize)
 			}
 
-		case 0x98:
+		case 0xE0:
 			// JUMP.R
 			pc = jumpAddress
 
-		case 0x9A:
+		case 0xE2:
 			// JZ.R
 			if flags[0] {
 				pc = jumpAddress

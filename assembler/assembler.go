@@ -403,21 +403,21 @@ func makeOpcodeDefinitions() map[string]opcodeDefinition {
 	opcodeDefs["EXIT"] = opcodeDefinition{0x00, empty_opcodes, empty_opcodes}
 	opcodeDefs["OUT"] = opcodeDefinition{0x08, empty_opcodes, empty_opcodes}
 	jump_opcodes := make(opcodeList)
-	jump_opcodes["A"] = []byte{0x90, 0x92}
-	jump_opcodes["R"] = []byte{0x98, 0x9A}
+	jump_opcodes["A"] = []byte{0xD0, 0xD2}
+	jump_opcodes["R"] = []byte{0xE0, 0xE2}
 	opcodeDefs["JUMP"] = opcodeDefinition{0x0F, empty_opcodes, jump_opcodes}
 	opcodeDefs["JZ"] = opcodeDefinition{0x0F, empty_opcodes, jump_opcodes}
 
 	push_opcodes := make(opcodeList)
-	push_opcodes["B"] = []byte{0x40, 0x41, 0x42, 0x0F}
+	push_opcodes["B"] = []byte{0x60, 0x61, 0x62, 0x0F}
 	opcodeDefs["PUSH"] = opcodeDefinition{0x0F, push_opcodes, empty_opcodes}
 
 	pop_opcodes := make(opcodeList)
-	pop_opcodes["B"] = []byte{0x0F, 0x51, 0x52, 0x0F}
+	pop_opcodes["B"] = []byte{0x0F, 0x81, 0x82, 0x0F}
 	opcodeDefs["POP"] = opcodeDefinition{0x0F, pop_opcodes, empty_opcodes}
 
 	flags_opcodes := make(opcodeList)
-	flags_opcodes["B"] = []byte{0x0F, 0x11, 0x12, 0x13}
+	flags_opcodes["B"] = []byte{0x10, 0x11, 0x12, 0x13}
 	opcodeDefs["FLAGS"] = opcodeDefinition{0x0F, flags_opcodes, empty_opcodes}
 
 	inc_opcodes := make(opcodeList)
