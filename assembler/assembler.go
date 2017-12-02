@@ -362,7 +362,7 @@ func generateCode(source []string, opcodeDefs map[string]opcodeDefinition, dataL
 	return code
 }
 
-func (myModule vputils.Module) write(filename string) {
+func (module vputils.Module) write(filename string) {
 	f, err := os.Create(filename)
 	vputils.CheckAndPanic(err)
 
@@ -370,10 +370,10 @@ func (myModule vputils.Module) write(filename string) {
 
 	vputils.WriteString(f, "module")
 
-	vputils.WriteTextTable("properties", myModule.Properties, f)
-	vputils.WriteTextTable("exports", myModule.Exports, f)
-	vputils.WriteBinaryBlock("code", myModule.Code, f, myModule.CodeAddressWidth)
-	vputils.WriteBinaryBlock("data", myModule.Data, f, myModule.DataAddressWidth)
+	vputils.WriteTextTable("properties", module.Properties, f)
+	vputils.WriteTextTable("exports", module.Exports, f)
+	vputils.WriteBinaryBlock("code", module.Code, f, module.CodeAddressWidth)
+	vputils.WriteBinaryBlock("data", module.Data, f, module.DataAddressWidth)
 
 	f.Sync()
 }
@@ -475,10 +475,17 @@ func main() {
 
 	code := generateCode(source, opcodeDefs, dataLabels, codeLabels)
 
-	myModule := vputils.Module{properties, code, exports, data, codeAddressWidth, dataAddressWidth}
+	module := vputils.Module{
+		Properties:       properties,
+		Code:             code,
+		Exports:          exports,
+		Data:             data,
+		CodeAddressWidth: codeAddressWidth,
+		DataAddressWidth: dataAddressWidth,
+	}
 
 	// if output specified, write module file
 	if len(moduleFile) > 0 {
-		myModule.write(moduleFile)
+		module.write(moduleFile)
 	}
 }

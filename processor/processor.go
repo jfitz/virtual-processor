@@ -123,17 +123,18 @@ func (def instructionDefinition) calcTargetSize() int {
 
 func executeCode(module vputils.Module, startAddress vputils.Address, trace bool, instructionDefinitions instructionTable) {
 	flags := [1]bool{false}
-	pc := startAddress
+	module.SetPC(startAddress)
 	vStack := make(stack, 0)
 
 	if trace {
-		fmt.Printf("Execution started at %04x\n", pc.ByteValue())
+		fmt.Printf("Execution started at %04x\n", module.PCByteValue())
 	}
 
 	code := module.Code
 	data := module.Data
 	halt := false
 	for !halt {
+		pc := module.PC()
 		opcode, err := code.GetByte(pc)
 		vputils.CheckPrintAndExit(err, "at PC "+pc.ToString())
 
@@ -150,35 +151,35 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 		targetSize := def.calcTargetSize()
 
 		if def.AddressMode == "V" {
-			value = module.GetImmediateByte(pc)
+			value = module.ImmediateByte()
 			value_s = fmt.Sprintf("%02X", value)
 
 			instructionSize += targetSize
 		}
 		if def.AddressMode == "D" {
-			dataAddress = module.GetDirectAddress(pc)
+			dataAddress = module.DirectAddress()
 
-			value, _ = module.GetDirectByte(pc)
+			value, _ = module.DirectByte()
 			value_s = fmt.Sprintf("%02X", value)
 
 			instructionSize += dataAddress.Size()
 		}
 		if def.AddressMode == "I" {
-			dataAddress1 = module.GetDirectAddress(pc)
-			dataAddress = module.GetIndirectAddress(pc)
-			value, _ = module.GetIndirectByte(pc)
+			dataAddress1 = module.DirectAddress()
+			dataAddress = module.IndirectAddress()
+			value, _ = module.IndirectByte()
 			value_s = fmt.Sprintf("%02X", value)
 
 			instructionSize += dataAddress1.Size()
 		}
 
 		if def.JumpMode == "A" {
-			jumpAddress = module.GetDirectAddress(pc)
+			jumpAddress = module.DirectAddress()
 
 			instructionSize += jumpAddress.Size()
 		}
 		if def.JumpMode == "R" {
-			offset = module.GetImmediateByte(pc)
+			offset = module.ImmediateByte()
 			offset_i := int(offset)
 			if offset_i > 127 {
 				offset_i = offset_i - 256
@@ -210,30 +211,31 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 			fmt.Println(line)
 		}
 
+		newpc := pc
 		switch opcode {
 		case 0x00:
 			// EXIT
 			halt = true
 
-			pc = pc.AddByte(instructionSize)
+			newpc = pc.AddByte(instructionSize)
 
 		case 0x60:
 			// PUSH.B immediate value
 			vStack = vStack.push(value)
 
-			pc = pc.AddByte(instructionSize)
+			newpc = pc.AddByte(instructionSize)
 
 		case 0x61:
 			// PUSH.B direct address
 			vStack = vStack.push(value)
 
-			pc = pc.AddByte(instructionSize)
+			newpc = pc.AddByte(instructionSize)
 
 		case 0x62:
 			// PUSH.B indirect address
 			vStack = vStack.push(value)
 
-			pc = pc.AddByte(instructionSize)
+			newpc = pc.AddByte(instructionSize)
 
 		case 0x81:
 			// POP.B direct address
@@ -243,7 +245,7 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 			err = data.PutByte(dataAddress, value)
 			vputils.CheckAndPanic(err)
 
-			pc = pc.AddByte(instructionSize)
+			newpc = pc.AddByte(instructionSize)
 
 		case 0x08:
 			// OUT (implied stack)
@@ -256,19 +258,19 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 				fmt.Println()
 			}
 
-			pc = pc.AddByte(instructionSize)
+			newpc = pc.AddByte(instructionSize)
 
 		case 0x11:
 			// FLAGS.B direct address
 			flags[0] = value == 0
 
-			pc = pc.AddByte(instructionSize)
+			newpc = pc.AddByte(instructionSize)
 
 		case 0x12:
 			// FLAGS.B indirect address
 			flags[0] = value == 0
 
-			pc = pc.AddByte(instructionSize)
+			newpc = pc.AddByte(instructionSize)
 
 		case 0x13:
 			// FLAGS.B (implied stack)
@@ -277,7 +279,7 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 
 			flags[0] = value == 0
 
-			pc = pc.AddByte(instructionSize)
+			newpc = pc.AddByte(instructionSize)
 
 		case 0x21:
 			// INC.B direct address
@@ -286,7 +288,7 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 			err = data.PutByte(dataAddress, value)
 			vputils.CheckAndPanic(err)
 
-			pc = pc.AddByte(instructionSize)
+			newpc = pc.AddByte(instructionSize)
 
 		case 0x22:
 			// INC.B indirect address
@@ -295,30 +297,30 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 			err = data.PutByte(dataAddress, value)
 			vputils.CheckAndPanic(err)
 
-			pc = pc.AddByte(instructionSize)
+			newpc = pc.AddByte(instructionSize)
 
 		case 0xD0:
 			// JUMP.A
-			pc = jumpAddress
+			newpc = jumpAddress
 
 		case 0xD2:
 			// JZ.A
 			if flags[0] {
-				pc = jumpAddress
+				newpc = jumpAddress
 			} else {
-				pc = pc.AddByte(instructionSize)
+				newpc = pc.AddByte(instructionSize)
 			}
 
 		case 0xE0:
 			// JUMP.R
-			pc = jumpAddress
+			newpc = jumpAddress
 
 		case 0xE2:
 			// JZ.R
 			if flags[0] {
-				pc = jumpAddress
+				newpc = jumpAddress
 			} else {
-				pc = pc.AddByte(instructionSize)
+				newpc = pc.AddByte(instructionSize)
 			}
 
 		default:
@@ -326,9 +328,12 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 			fmt.Printf("Invalid opcode %02x at %s\n", opcode, pc.ToString())
 			return
 		}
+
+		module.SetPC(newpc)
 	}
 
 	if trace {
+		pc := module.PC()
 		fmt.Println("Execution halted at " + pc.ToString())
 	}
 }
@@ -384,7 +389,14 @@ func read(moduleFile string) (vputils.Module, error) {
 
 	data := vputils.ReadBinaryBlock(f, dataAddressWidth)
 
-	return vputils.Module{properties, code, exports, data, codeAddressWidth, dataAddressWidth}, nil
+	return vputils.Module{
+		Properties:       properties,
+		Code:             code,
+		Exports:          exports,
+		Data:             data,
+		CodeAddressWidth: codeAddressWidth,
+		DataAddressWidth: dataAddressWidth,
+	}, nil
 }
 
 func main() {

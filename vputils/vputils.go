@@ -438,10 +438,23 @@ type Module struct {
 	Data             Vector
 	CodeAddressWidth int
 	DataAddressWidth int
+	pc               Address
 }
 
-func (module Module) GetImmediateByte(pc Address) byte {
-	codeAddress := pc.AddByte(1)
+func (module *Module) SetPC(address Address) {
+	module.pc = address
+}
+
+func (module Module) PCByteValue() byte {
+	return module.pc.ByteValue()
+}
+
+func (module Module) PC() Address {
+	return module.pc
+}
+
+func (module Module) ImmediateByte() byte {
+	codeAddress := module.pc.AddByte(1)
 
 	value, err := module.Code.GetByte(codeAddress)
 	CheckAndPanic(err)
@@ -449,8 +462,8 @@ func (module Module) GetImmediateByte(pc Address) byte {
 	return value
 }
 
-func (module Module) GetDirectAddress(pc Address) Address {
-	codeAddress := pc.AddByte(1)
+func (module Module) DirectAddress() Address {
+	codeAddress := module.pc.AddByte(1)
 
 	dataAddr, err := module.Code.GetByte(codeAddress)
 	CheckAndPanic(err)
@@ -460,26 +473,26 @@ func (module Module) GetDirectAddress(pc Address) Address {
 	return dataAddress
 }
 
-func (module Module) GetOffsetAddress(pc Address) Address {
-	codeAddress := pc.AddByte(1)
+func (module Module) OffsetAddress() Address {
+	codeAddress := module.pc.AddByte(1)
 
 	offset, err := module.Code.GetByte(codeAddress)
 	CheckAndPanic(err)
-	dataAddress := pc.AddByte(int(offset))
+	dataAddress := module.pc.AddByte(int(offset))
 
 	return dataAddress
 }
 
-func (module Module) GetDirectByte(pc Address) (byte, Address) {
-	dataAddress := module.GetDirectAddress(pc)
+func (module Module) DirectByte() (byte, Address) {
+	dataAddress := module.DirectAddress()
 	value, err := module.Data.GetByte(dataAddress)
 	CheckAndPanic(err)
 
 	return value, dataAddress
 }
 
-func (module Module) GetIndirectAddress(pc Address) Address {
-	dataAddress := module.GetDirectAddress(pc)
+func (module Module) IndirectAddress() Address {
+	dataAddress := module.DirectAddress()
 	dataAddr, err := module.Data.GetByte(dataAddress)
 	CheckAndPanic(err)
 	da := []byte{dataAddr}
@@ -488,8 +501,8 @@ func (module Module) GetIndirectAddress(pc Address) Address {
 	return dataAddress
 }
 
-func (module Module) GetIndirectByte(pc Address) (byte, Address) {
-	dataAddress := module.GetIndirectAddress(pc)
+func (module Module) IndirectByte() (byte, Address) {
+	dataAddress := module.IndirectAddress()
 	value, err := module.Data.GetByte(dataAddress)
 	CheckAndPanic(err)
 
