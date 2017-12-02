@@ -88,6 +88,12 @@ func defineInstructions() instructionTable {
 	instructionDefinitions[0xD2] = instructionDefinition{"JZ", "", "", "A"}
 	instructionDefinitions[0xE0] = instructionDefinition{"JUMP", "", "", "R"}
 	instructionDefinitions[0xE2] = instructionDefinition{"JZ", "", "", "R"}
+	instructionDefinitions[0xD4] = instructionDefinition{"CALL", "", "", "A"}
+	instructionDefinitions[0xD6] = instructionDefinition{"CZ", "", "", "A"}
+	instructionDefinitions[0xE4] = instructionDefinition{"CALL", "", "", "R"}
+	instructionDefinitions[0xE6] = instructionDefinition{"CZ", "", "", "R"}
+	instructionDefinitions[0xD8] = instructionDefinition{"RET", "", "", ""}
+	instructionDefinitions[0xDA] = instructionDefinition{"RZ", "", "", ""}
 
 	return instructionDefinitions
 }
@@ -121,10 +127,44 @@ func (def instructionDefinition) calcTargetSize() int {
 	return targetSize
 }
 
+type addressStack []vputils.Address
+
+func (s addressStack) push(address vputils.Address) addressStack {
+	return append(s, address)
+}
+
+func (s addressStack) top() (vputils.Address, error) {
+	if len(s) == 0 {
+		return vputils.Address{[]byte{}}, errors.New("Stack underflow")
+	}
+
+	last := len(s) - 1
+	return s[last], nil
+}
+
+func (s addressStack) pop() (addressStack, error) {
+	if len(s) == 0 {
+		return s, errors.New("Stack underflow")
+	}
+
+	last := len(s) - 1
+	return s[:last], nil
+}
+
+func (s addressStack) toppop() (vputils.Address, addressStack, error) {
+	if len(s) == 0 {
+		return vputils.Address{[]byte{}}, s, errors.New("Stack underflow")
+	}
+
+	last := len(s) - 1
+	return s[last], s[:last], nil
+}
+
 func executeCode(module vputils.Module, startAddress vputils.Address, trace bool, instructionDefinitions instructionTable) {
 	flags := [1]bool{false}
 	module.SetPC(startAddress)
 	vStack := make(stack, 0)
+	rStack := make(addressStack, 0)
 
 	if trace {
 		fmt.Printf("Execution started at %04x\n", module.PCByteValue())
@@ -319,6 +359,52 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 			// JZ.R
 			if flags[0] {
 				newpc = jumpAddress
+			} else {
+				newpc = pc.AddByte(instructionSize)
+			}
+
+		case 0xD4:
+			// CALL.A
+			newpc = jumpAddress
+			retpc := pc.AddByte(instructionSize)
+			rStack = rStack.push(retpc)
+
+		case 0xD6:
+			// CZ.A
+			if flags[0] {
+				newpc = jumpAddress
+				retpc := pc.AddByte(instructionSize)
+				rStack = rStack.push(retpc)
+			} else {
+				newpc = pc.AddByte(instructionSize)
+			}
+
+		case 0xE4:
+			// CALL.R
+			newpc = jumpAddress
+			retpc := pc.AddByte(instructionSize)
+			rStack = rStack.push(retpc)
+
+		case 0xE6:
+			// CZ.R
+			if flags[0] {
+				newpc = jumpAddress
+				retpc := pc.AddByte(instructionSize)
+				rStack = rStack.push(retpc)
+			} else {
+				newpc = pc.AddByte(instructionSize)
+			}
+
+		case 0xD8:
+			// RET
+			newpc, rStack, err = rStack.toppop()
+			vputils.CheckAndExit(err)
+
+		case 0xDA:
+			// RZ
+			if flags[0] {
+				newpc, rStack, err = rStack.toppop()
+				vputils.CheckAndExit(err)
 			} else {
 				newpc = pc.AddByte(instructionSize)
 			}

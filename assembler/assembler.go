@@ -281,6 +281,7 @@ func generateData(source []string, opcodeDefs map[string]opcodeDefinition) (vput
 
 				// check there are no more tokens
 				if len(tokens) > 0 {
+					fmt.Println(line)
 					vputils.CheckAndExit(errors.New("Extra tokens on line"))
 				}
 
@@ -405,6 +406,16 @@ func makeOpcodeDefinitions() map[string]opcodeDefinition {
 	jz_opcodes["R"] = []byte{0xE2}
 	opcodeDefs["JUMP"] = opcodeDefinition{0x0F, empty_opcodes, jump_opcodes}
 	opcodeDefs["JZ"] = opcodeDefinition{0x0F, empty_opcodes, jz_opcodes}
+	call_opcodes := make(opcodeList)
+	call_opcodes["A"] = []byte{0xD4}
+	call_opcodes["R"] = []byte{0xE4}
+	cz_opcodes := make(opcodeList)
+	cz_opcodes["A"] = []byte{0xD6}
+	cz_opcodes["R"] = []byte{0xE6}
+	opcodeDefs["CALL"] = opcodeDefinition{0x0F, empty_opcodes, call_opcodes}
+	opcodeDefs["CZ"] = opcodeDefinition{0x0F, empty_opcodes, cz_opcodes}
+	opcodeDefs["RET"] = opcodeDefinition{0xD8, empty_opcodes, empty_opcodes}
+	opcodeDefs["RZ"] = opcodeDefinition{0xDA, empty_opcodes, empty_opcodes}
 
 	push_opcodes := make(opcodeList)
 	push_opcodes["B"] = []byte{0x60, 0x61, 0x62, 0x0F}
