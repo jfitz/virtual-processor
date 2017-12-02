@@ -13,13 +13,13 @@ import (
 	"strings"
 )
 
-type stack []byte
+type byteStack []byte
 
-func (s stack) push(v byte) stack {
+func (s byteStack) push(v byte) byteStack {
 	return append(s, v)
 }
 
-func (s stack) top() (byte, error) {
+func (s byteStack) top() (byte, error) {
 	if len(s) == 0 {
 		return 0, errors.New("Stack underflow")
 	}
@@ -28,7 +28,7 @@ func (s stack) top() (byte, error) {
 	return s[last], nil
 }
 
-func (s stack) pop() (stack, error) {
+func (s byteStack) pop() (byteStack, error) {
 	if len(s) == 0 {
 		return s, errors.New("Stack underflow")
 	}
@@ -37,7 +37,7 @@ func (s stack) pop() (stack, error) {
 	return s[:last], nil
 }
 
-func (s stack) toppop() (byte, stack, error) {
+func (s byteStack) toppop() (byte, byteStack, error) {
 	if len(s) == 0 {
 		return 0, s, errors.New("Stack underflow")
 	}
@@ -163,8 +163,8 @@ func (s addressStack) toppop() (vputils.Address, addressStack, error) {
 func executeCode(module vputils.Module, startAddress vputils.Address, trace bool, instructionDefinitions instructionTable) {
 	flags := [1]bool{false}
 	module.SetPC(startAddress)
-	vStack := make(stack, 0)
-	rStack := make(addressStack, 0)
+	vStack := make(byteStack, 0)    // value stack
+	rStack := make(addressStack, 0) // return address stack
 
 	if trace {
 		fmt.Printf("Execution started at %04x\n", module.PCByteValue())
