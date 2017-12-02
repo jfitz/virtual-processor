@@ -102,13 +102,19 @@ func (def instructionDefinition) calcTargetSize() int {
 	if def.TargetSize == "B" {
 		targetSize = 1
 	}
-	if def.TargetSize == "W" {
+	if def.TargetSize == "I16" {
 		targetSize = 2
 	}
-	if def.TargetSize == "L" {
+	if def.TargetSize == "I32" {
 		targetSize = 4
 	}
-	if def.TargetSize == "F" {
+	if def.TargetSize == "I64" {
+		targetSize = 8
+	}
+	if def.TargetSize == "F32" {
+		targetSize = 4
+	}
+	if def.TargetSize == "F64" {
 		targetSize = 8
 	}
 
