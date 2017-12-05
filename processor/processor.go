@@ -84,15 +84,22 @@ func defineInstructions() instructionTable {
 	instructionDefinitions[0x13] = instructionDefinition{"FLAGS", "B", "S", ""}
 	instructionDefinitions[0x21] = instructionDefinition{"INC", "B", "D", ""}
 	instructionDefinitions[0x22] = instructionDefinition{"INC", "B", "I", ""}
+	instructionDefinitions[0x31] = instructionDefinition{"DEC", "B", "D", ""}
+	instructionDefinitions[0x32] = instructionDefinition{"DEC", "B", "I", ""}
 	instructionDefinitions[0xD0] = instructionDefinition{"JUMP", "", "", "A"}
+	instructionDefinitions[0xD1] = instructionDefinition{"JNZ", "", "", "A"}
 	instructionDefinitions[0xD2] = instructionDefinition{"JZ", "", "", "A"}
 	instructionDefinitions[0xE0] = instructionDefinition{"JUMP", "", "", "R"}
+	instructionDefinitions[0xE1] = instructionDefinition{"JNZ", "", "", "R"}
 	instructionDefinitions[0xE2] = instructionDefinition{"JZ", "", "", "R"}
 	instructionDefinitions[0xD4] = instructionDefinition{"CALL", "", "", "A"}
+	instructionDefinitions[0xD5] = instructionDefinition{"CNZ", "", "", "A"}
 	instructionDefinitions[0xD6] = instructionDefinition{"CZ", "", "", "A"}
 	instructionDefinitions[0xE4] = instructionDefinition{"CALL", "", "", "R"}
+	instructionDefinitions[0xE5] = instructionDefinition{"CNZ", "", "", "R"}
 	instructionDefinitions[0xE6] = instructionDefinition{"CZ", "", "", "R"}
 	instructionDefinitions[0xD8] = instructionDefinition{"RET", "", "", ""}
+	instructionDefinitions[0xD9] = instructionDefinition{"RNZ", "", "", ""}
 	instructionDefinitions[0xDA] = instructionDefinition{"RZ", "", "", ""}
 
 	return instructionDefinitions
@@ -339,9 +346,35 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 
 			newpc = pc.AddByte(instructionSize)
 
+		case 0x31:
+			// DEC.B direct address
+			value -= 1
+
+			err = data.PutByte(dataAddress, value)
+			vputils.CheckAndPanic(err)
+
+			newpc = pc.AddByte(instructionSize)
+
+		case 0x32:
+			// DEC.B indirect address
+			value -= 1
+
+			err = data.PutByte(dataAddress, value)
+			vputils.CheckAndPanic(err)
+
+			newpc = pc.AddByte(instructionSize)
+
 		case 0xD0:
 			// JUMP.A
 			newpc = jumpAddress
+
+		case 0xD1:
+			// JNZ.A
+			if !flags[0] {
+				newpc = jumpAddress
+			} else {
+				newpc = pc.AddByte(instructionSize)
+			}
 
 		case 0xD2:
 			// JZ.A
@@ -354,6 +387,14 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 		case 0xE0:
 			// JUMP.R
 			newpc = jumpAddress
+
+		case 0xE1:
+			// JNZ.R
+			if !flags[0] {
+				newpc = jumpAddress
+			} else {
+				newpc = pc.AddByte(instructionSize)
+			}
 
 		case 0xE2:
 			// JZ.R
@@ -368,6 +409,16 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 			newpc = jumpAddress
 			retpc := pc.AddByte(instructionSize)
 			rStack = rStack.push(retpc)
+
+		case 0xD5:
+			// CNZ.A
+			if !flags[0] {
+				newpc = jumpAddress
+				retpc := pc.AddByte(instructionSize)
+				rStack = rStack.push(retpc)
+			} else {
+				newpc = pc.AddByte(instructionSize)
+			}
 
 		case 0xD6:
 			// CZ.A
@@ -385,6 +436,16 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 			retpc := pc.AddByte(instructionSize)
 			rStack = rStack.push(retpc)
 
+		case 0xE5:
+			// CNZ.R
+			if !flags[0] {
+				newpc = jumpAddress
+				retpc := pc.AddByte(instructionSize)
+				rStack = rStack.push(retpc)
+			} else {
+				newpc = pc.AddByte(instructionSize)
+			}
+
 		case 0xE6:
 			// CZ.R
 			if flags[0] {
@@ -399,6 +460,15 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 			// RET
 			newpc, rStack, err = rStack.toppop()
 			vputils.CheckAndExit(err)
+
+		case 0xD9:
+			// RNZ
+			if !flags[0] {
+				newpc, rStack, err = rStack.toppop()
+				vputils.CheckAndExit(err)
+			} else {
+				newpc = pc.AddByte(instructionSize)
+			}
 
 		case 0xDA:
 			// RZ

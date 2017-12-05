@@ -56,7 +56,7 @@ func buildInstruction(opcodemap opcodeList, targetSize string, target string, da
 	opcodes, ok := opcodemap[targetSize]
 
 	if !ok {
-		return nil, errors.New("Set not found")
+		return nil, errors.New("Set '" + targetSize + "' not found")
 	}
 
 	if len(target) == 0 {
@@ -133,7 +133,7 @@ func decodeOpcode(text string, instructionAddress vputils.Address, targetSize st
 
 		opcodes, ok := jumpOpcodes[targetSize]
 		if !ok {
-			return nil, errors.New("Set not found")
+			return nil, errors.New("Decode: Set '" + targetSize + "' not found for " + text)
 		}
 
 		instruction = []byte{opcodes[0]}
@@ -401,10 +401,14 @@ func makeOpcodeDefinitions() map[string]opcodeDefinition {
 	jump_opcodes := make(opcodeList)
 	jump_opcodes["A"] = []byte{0xD0}
 	jump_opcodes["R"] = []byte{0xE0}
+	jnz_opcodes := make(opcodeList)
+	jnz_opcodes["A"] = []byte{0xD1}
+	jnz_opcodes["R"] = []byte{0xE1}
 	jz_opcodes := make(opcodeList)
 	jz_opcodes["A"] = []byte{0xD2}
 	jz_opcodes["R"] = []byte{0xE2}
 	opcodeDefs["JUMP"] = opcodeDefinition{0x0F, empty_opcodes, jump_opcodes}
+	opcodeDefs["JNZ"] = opcodeDefinition{0x0F, empty_opcodes, jnz_opcodes}
 	opcodeDefs["JZ"] = opcodeDefinition{0x0F, empty_opcodes, jz_opcodes}
 	call_opcodes := make(opcodeList)
 	call_opcodes["A"] = []byte{0xD4}
@@ -432,6 +436,10 @@ func makeOpcodeDefinitions() map[string]opcodeDefinition {
 	inc_opcodes := make(opcodeList)
 	inc_opcodes["B"] = []byte{0x0F, 0x21, 0x22, 0x23}
 	opcodeDefs["INC"] = opcodeDefinition{0x0F, inc_opcodes, empty_opcodes}
+
+	dec_opcodes := make(opcodeList)
+	dec_opcodes["B"] = []byte{0x0F, 0x31, 0x32, 0x33}
+	opcodeDefs["DEC"] = opcodeDefinition{0x0F, dec_opcodes, empty_opcodes}
 
 	return opcodeDefs
 }
