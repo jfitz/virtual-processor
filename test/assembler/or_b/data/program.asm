@@ -1,0 +1,5 @@
+MAIN	PUSH.B	1
+	PUSH.B	64
+	OR.B
+	OUT
+	EXIT

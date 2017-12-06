@@ -1,0 +1,5 @@
+MAIN	PUSH.B	9
+	PUSH.B	8
+	MUL.B
+	OUT
+	EXIT

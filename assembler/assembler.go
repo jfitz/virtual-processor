@@ -60,17 +60,20 @@ func buildInstruction(opcodemap opcodeList, targetSize string, target string, da
 	}
 
 	if len(target) == 0 {
+		// stack
 		opcode := opcodes[3]
 		return []byte{opcode}, nil
 	}
 
 	if vputils.IsDigit(target[0]) {
+		// immediate value
 		opcode := opcodes[0]
 		value := evaluateByte(target)
 		return []byte{opcode, value}, nil
 	}
 
 	if vputils.IsAlpha(target[0]) {
+		// immediate value
 		opcode := opcodes[0]
 		instruction := []byte{opcode}
 		address := dataLabels[target]
@@ -79,6 +82,7 @@ func buildInstruction(opcodemap opcodeList, targetSize string, target string, da
 	}
 
 	if vputils.IsDirectAddress(target) {
+		// direct address
 		opcode := opcodes[1]
 		instruction := []byte{opcode}
 		address := dataLabels[target[1:]]
@@ -87,6 +91,7 @@ func buildInstruction(opcodemap opcodeList, targetSize string, target string, da
 	}
 
 	if vputils.IsIndirectAddress(target) {
+		// indirect address
 		opcode := opcodes[2]
 		instruction := []byte{opcode}
 		address := dataLabels[target[2:]]
@@ -398,6 +403,7 @@ func makeOpcodeDefinitions() map[string]opcodeDefinition {
 
 	opcodeDefs["EXIT"] = opcodeDefinition{0x00, empty_opcodes, empty_opcodes}
 	opcodeDefs["OUT"] = opcodeDefinition{0x08, empty_opcodes, empty_opcodes}
+
 	jump_opcodes := make(opcodeList)
 	jump_opcodes["A"] = []byte{0xD0}
 	jump_opcodes["R"] = []byte{0xE0}
@@ -410,6 +416,7 @@ func makeOpcodeDefinitions() map[string]opcodeDefinition {
 	opcodeDefs["JUMP"] = opcodeDefinition{0x0F, empty_opcodes, jump_opcodes}
 	opcodeDefs["JNZ"] = opcodeDefinition{0x0F, empty_opcodes, jnz_opcodes}
 	opcodeDefs["JZ"] = opcodeDefinition{0x0F, empty_opcodes, jz_opcodes}
+
 	call_opcodes := make(opcodeList)
 	call_opcodes["A"] = []byte{0xD4}
 	call_opcodes["R"] = []byte{0xE4}
@@ -440,6 +447,34 @@ func makeOpcodeDefinitions() map[string]opcodeDefinition {
 	dec_opcodes := make(opcodeList)
 	dec_opcodes["B"] = []byte{0x0F, 0x31, 0x32, 0x33}
 	opcodeDefs["DEC"] = opcodeDefinition{0x0F, dec_opcodes, empty_opcodes}
+
+	add_opcodes := make(opcodeList)
+	add_opcodes["B"] = []byte{0x0F, 0x0F, 0x0F, 0xA0}
+	opcodeDefs["ADD"] = opcodeDefinition{0x0F, add_opcodes, empty_opcodes}
+
+	sub_opcodes := make(opcodeList)
+	sub_opcodes["B"] = []byte{0x0F, 0x0F, 0x0F, 0xA1}
+	opcodeDefs["SUB"] = opcodeDefinition{0x0F, sub_opcodes, empty_opcodes}
+
+	mul_opcodes := make(opcodeList)
+	mul_opcodes["B"] = []byte{0x0F, 0x0F, 0x0F, 0xA2}
+	opcodeDefs["MUL"] = opcodeDefinition{0x0F, mul_opcodes, empty_opcodes}
+
+	div_opcodes := make(opcodeList)
+	div_opcodes["B"] = []byte{0x0F, 0x0F, 0x0F, 0xA3}
+	opcodeDefs["DIV"] = opcodeDefinition{0x0F, div_opcodes, empty_opcodes}
+
+	and_opcodes := make(opcodeList)
+	and_opcodes["B"] = []byte{0x0F, 0x0F, 0x0F, 0xC0}
+	opcodeDefs["AND"] = opcodeDefinition{0x0F, and_opcodes, empty_opcodes}
+
+	or_opcodes := make(opcodeList)
+	or_opcodes["B"] = []byte{0x0F, 0x0F, 0x0F, 0xC1}
+	opcodeDefs["OR"] = opcodeDefinition{0x0F, or_opcodes, empty_opcodes}
+
+	cmp_opcodes := make(opcodeList)
+	cmp_opcodes["B"] = []byte{0x0F, 0x0F, 0x0F, 0xC3}
+	opcodeDefs["CMP"] = opcodeDefinition{0x0F, cmp_opcodes, empty_opcodes}
 
 	return opcodeDefs
 }

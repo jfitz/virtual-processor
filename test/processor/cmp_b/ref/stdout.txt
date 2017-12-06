@@ -1,0 +1,11 @@
+Execution started at 0000
+0000: 60 PUSH.B =01
+0002: 60 PUSH.B =40
+0004: C3 CMP.B
+0005: E2 JZ.R 7 >000C
+0007: 60 PUSH.B =41
+0009: 08 OUT
+A
+000A: E0 JUMP.R 5 >000F
+000F: 00 EXIT
+Execution halted at 0010
