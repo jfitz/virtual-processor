@@ -383,13 +383,12 @@ func (address Address) ToInt() int {
 }
 
 func (address Address) ToString() string {
-	if len(address.Bytes) == 0 {
-		return ""
+	s := ""
+	for _, b := range address.Bytes {
+		s += fmt.Sprintf("%02X", b)
 	}
 
-	value := address.ToInt()
-
-	return fmt.Sprintf("%04X", value)
+	return s
 }
 
 func (address Address) ByteValue() byte {
@@ -414,7 +413,8 @@ func (v Vector) GetByte(address Address) (byte, error) {
 		return 0, errors.New("Index " + off + " out of range [0.." + maxs + "]")
 	}
 
-	return v[offset], nil
+	value := v[offset]
+	return value, nil
 }
 
 func (v Vector) PutByte(address Address, value byte) error {
@@ -453,20 +453,38 @@ func (module Module) PC() Address {
 	return module.pc
 }
 
-func (module Module) ImmediateByte() byte {
+func (module Module) ImmediateByte() []byte {
 	codeAddress := module.pc.AddByte(1)
 
 	value, err := module.Code.GetByte(codeAddress)
-	CheckAndPanic(err)
+	CheckAndExit(err)
 
-	return value
+	return []byte{value}
+}
+
+func (module Module) ImmediateInt() []byte {
+	codeAddress := module.pc.AddByte(1)
+
+	values := []byte{}
+
+	value, err := module.Code.GetByte(codeAddress)
+	CheckAndExit(err)
+	values = append(values, value)
+
+	codeAddress = codeAddress.AddByte(1)
+
+	value, err = module.Code.GetByte(codeAddress)
+	CheckAndExit(err)
+	values = append(values, value)
+
+	return values
 }
 
 func (module Module) DirectAddress() Address {
 	codeAddress := module.pc.AddByte(1)
 
 	dataAddr, err := module.Code.GetByte(codeAddress)
-	CheckAndPanic(err)
+	CheckAndExit(err)
 	da := []byte{dataAddr}
 	dataAddress := Address{da}
 
@@ -477,7 +495,7 @@ func (module Module) OffsetAddress() Address {
 	codeAddress := module.pc.AddByte(1)
 
 	offset, err := module.Code.GetByte(codeAddress)
-	CheckAndPanic(err)
+	CheckAndExit(err)
 	dataAddress := module.pc.AddByte(int(offset))
 
 	return dataAddress
@@ -485,8 +503,9 @@ func (module Module) OffsetAddress() Address {
 
 func (module Module) DirectByte() (byte, Address) {
 	dataAddress := module.DirectAddress()
+
 	value, err := module.Data.GetByte(dataAddress)
-	CheckAndPanic(err)
+	CheckAndExit(err)
 
 	return value, dataAddress
 }
@@ -494,7 +513,7 @@ func (module Module) DirectByte() (byte, Address) {
 func (module Module) IndirectAddress() Address {
 	dataAddress := module.DirectAddress()
 	dataAddr, err := module.Data.GetByte(dataAddress)
-	CheckAndPanic(err)
+	CheckAndExit(err)
 	da := []byte{dataAddr}
 	dataAddress = Address{da}
 
@@ -504,7 +523,7 @@ func (module Module) IndirectAddress() Address {
 func (module Module) IndirectByte() (byte, Address) {
 	dataAddress := module.IndirectAddress()
 	value, err := module.Data.GetByte(dataAddress)
-	CheckAndPanic(err)
+	CheckAndExit(err)
 
 	return value, dataAddress
 }

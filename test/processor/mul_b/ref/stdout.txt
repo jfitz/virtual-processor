@@ -1,8 +1,8 @@
-Execution started at 0000
-0000: 60 PUSH.B =09
-0002: 60 PUSH.B =08
-0004: A2 MUL.B
-0005: 08 OUT
+Execution started at  00
+00: 60 PUSH.B =09
+02: 60 PUSH.B =08
+04: A2 MUL.B
+05: 08 OUT
 H
-0006: 00 EXIT
-Execution halted at 0007
+06: 00 EXIT
+Execution halted at 07

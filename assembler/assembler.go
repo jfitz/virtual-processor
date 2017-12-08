@@ -41,13 +41,23 @@ func isDirective(s string) bool {
 	return false
 }
 
-func evaluateByte(expression string) byte {
+func evaluateByte(expression string) []byte {
 	value, err := strconv.Atoi(expression)
 	vputils.CheckAndPanic(err)
 
 	byteValue := byte(value)
 
-	return byteValue
+	return []byte{byteValue}
+}
+
+func evaluateI16(expression string) []byte {
+	value, err := strconv.Atoi(expression)
+	vputils.CheckAndPanic(err)
+
+	byteValue1 := byte(value & 0xff)
+	byteValue2 := byte((value >> 8) & 0xff)
+
+	return []byte{byteValue1, byteValue2}
 }
 
 type LabelTable map[string]vputils.Address
@@ -62,40 +72,45 @@ func buildInstruction(opcodemap opcodeList, targetSize string, target string, da
 	if len(target) == 0 {
 		// stack
 		opcode := opcodes[3]
-		return []byte{opcode}, nil
+		instruction := []byte{opcode}
+		return instruction, nil
 	}
 
 	if vputils.IsDigit(target[0]) {
 		// immediate value
-		opcode := opcodes[0]
-		value := evaluateByte(target)
-		return []byte{opcode, value}, nil
+		opcode := []byte{opcodes[0]}
+		bytes := []byte{}
+		switch targetSize {
+		case "B":
+			bytes = evaluateByte(target)
+		case "I16":
+			bytes = evaluateI16(target)
+		}
+		instruction := append(opcode, bytes...)
+		return instruction, nil
 	}
 
 	if vputils.IsAlpha(target[0]) {
 		// immediate value
-		opcode := opcodes[0]
-		instruction := []byte{opcode}
+		opcode := []byte{opcodes[0]}
 		address := dataLabels[target]
-		instruction = append(instruction, address.Bytes...)
+		instruction := append(opcode, address.Bytes...)
 		return instruction, nil
 	}
 
 	if vputils.IsDirectAddress(target) {
 		// direct address
-		opcode := opcodes[1]
-		instruction := []byte{opcode}
+		opcode := []byte{opcodes[1]}
 		address := dataLabels[target[1:]]
-		instruction = append(instruction, address.Bytes...)
+		instruction := append(opcode, address.Bytes...)
 		return instruction, nil
 	}
 
 	if vputils.IsIndirectAddress(target) {
 		// indirect address
-		opcode := opcodes[2]
-		instruction := []byte{opcode}
+		opcode := []byte{opcodes[2]}
 		address := dataLabels[target[2:]]
-		instruction = append(instruction, address.Bytes...)
+		instruction := append(opcode, address.Bytes...)
 		return instruction, nil
 	}
 
@@ -202,7 +217,8 @@ func dequoteString(s string) []byte {
 }
 
 func generateData(source []string, opcodeDefs map[string]opcodeDefinition) (vputils.Vector, LabelTable, LabelTable) {
-	fmt.Println("\t\tDATA")
+	tabs := "\t\t\t"
+	fmt.Println(tabs + "DATA")
 
 	code := vputils.Vector{}
 	codeLabels := make(LabelTable)
@@ -241,7 +257,7 @@ func generateData(source []string, opcodeDefs map[string]opcodeDefinition) (vput
 					target, _ := first(tokens)
 					// evaluate numeric or text (data label) but nothing else
 					value := evaluateByte(target)
-					values = append(values, value)
+					values = append(values, value...)
 				case "STRING":
 					target, _ := first(tokens)
 					// target must be a string
@@ -255,9 +271,9 @@ func generateData(source []string, opcodeDefs map[string]opcodeDefinition) (vput
 				location := len(data)
 
 				if len(values) == 0 {
-					fmt.Printf("%02X\t\t%s\n", location, word)
+					fmt.Printf("%02X%s%s\n", location, tabs, word)
 				} else {
-					fmt.Printf("%02X\t\t%s\t\t% X\n", location, word, values)
+					fmt.Printf("%02X%s%s\t\t% X\n", location, tabs, word, values)
 					data = append(data, values...)
 				}
 			} else {
@@ -297,14 +313,16 @@ func generateData(source []string, opcodeDefs map[string]opcodeDefinition) (vput
 			}
 		}
 	}
-	fmt.Println("\t\tENDSEGMENT")
+
+	fmt.Println(tabs + "ENDSEGMENT")
 	fmt.Println()
 
 	return data, dataLabels, codeLabels
 }
 
 func generateCode(source []string, opcodeDefs map[string]opcodeDefinition, dataLabels LabelTable, codeLabels LabelTable) vputils.Vector {
-	fmt.Println("\t\tCODE")
+	tabs := "\t\t\t"
+	fmt.Println(tabs + "CODE")
 
 	code := vputils.Vector{}
 
@@ -350,14 +368,20 @@ func generateCode(source []string, opcodeDefs map[string]opcodeDefinition, dataL
 				instruction := getInstruction(opcode, instructionAddress, targetSize, target, opcodeDefs, dataLabels, codeLabels)
 
 				location := len(code)
+				instruction_s := fmt.Sprintf("% X", instruction)
+				wordTabCount := 2 - len(instruction_s)/8
+				wordTabs := ""
+				for i := 0; i < wordTabCount; i++ {
+					wordTabs += "\t"
+				}
 
-				fmt.Printf("%02X\t% X\t%s\t%s\n", location, instruction, word, target)
+				fmt.Printf("%02X\t%s%s%s\t%s\n", location, instruction_s, wordTabs, word, target)
 
 				code = append(code, instruction...)
 			}
 		}
 	}
-	fmt.Println("\t\tENDSEGMENT")
+	fmt.Println(tabs + "ENDSEGMENT")
 	fmt.Println()
 
 	return code
@@ -430,6 +454,8 @@ func makeOpcodeDefinitions() map[string]opcodeDefinition {
 
 	push_opcodes := make(opcodeList)
 	push_opcodes["B"] = []byte{0x60, 0x61, 0x62, 0x0F}
+	opcodeDefs["PUSH"] = opcodeDefinition{0x0F, push_opcodes, empty_opcodes}
+	push_opcodes["I16"] = []byte{0x64, 0x65, 0x66, 0x0F}
 	opcodeDefs["PUSH"] = opcodeDefinition{0x0F, push_opcodes, empty_opcodes}
 
 	pop_opcodes := make(opcodeList)

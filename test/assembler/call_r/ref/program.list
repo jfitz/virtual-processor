@@ -1,30 +1,30 @@
-		DATA
+			DATA
 message:
-00		STRING		48 65 6C 6C 6F 2C 20 77 6F 72 6C 64 21 00
+00			STRING		48 65 6C 6C 6F 2C 20 77 6F 72 6C 64 21 00
 address:
-0E		BYTE		00
+0E			BYTE		00
 newline:
-0F		BYTE		0A
-		ENDSEGMENT
+0F			BYTE		0A
+			ENDSEGMENT
 
-		CODE
+			CODE
 MAIN:
-00	60 00	PUSH.B	message
-02	E4 05	CALL.R	print_s
-04	E4 0E	CALL.R	print_nl
-06	00	EXIT	
+00	60 00		PUSH.B	message
+02	E4 05		CALL.R	print_s
+04	E4 0E		CALL.R	print_nl
+06	00		EXIT	
 print_s:
-07	81 0E	POP.B	@address
+07	81 0E		POP.B	@address
 loop:
-09	62 0E	PUSH.B	@@address
-0B	13	FLAGS.B	
-0C	DA	RZ	
-0D	08	OUT	
-0E	21 0E	INC.B	@address
-10	E0 F9	JUMP.R	loop
+09	62 0E		PUSH.B	@@address
+0B	13		FLAGS.B	
+0C	DA		RZ	
+0D	08		OUT	
+0E	21 0E		INC.B	@address
+10	E0 F9		JUMP.R	loop
 print_nl:
-12	61 0F	PUSH.B	@newline
-14	08	OUT	
-15	D8	RET	
-		ENDSEGMENT
+12	61 0F		PUSH.B	@newline
+14	08		OUT	
+15	D8		RET	
+			ENDSEGMENT
 
