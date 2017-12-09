@@ -144,44 +144,10 @@ func (def instructionDefinition) calcTargetSize() int {
 	return targetSize
 }
 
-type addressStack []vputils.Address
-
-func (s addressStack) push(address vputils.Address) addressStack {
-	return append(s, address)
-}
-
-func (s addressStack) top() (vputils.Address, error) {
-	if len(s) == 0 {
-		return vputils.Address{[]byte{}}, errors.New("Stack underflow")
-	}
-
-	last := len(s) - 1
-	return s[last], nil
-}
-
-func (s addressStack) pop() (addressStack, error) {
-	if len(s) == 0 {
-		return s, errors.New("Stack underflow")
-	}
-
-	last := len(s) - 1
-	return s[:last], nil
-}
-
-func (s addressStack) toppop() (vputils.Address, addressStack, error) {
-	if len(s) == 0 {
-		return vputils.Address{[]byte{}}, s, errors.New("Stack underflow")
-	}
-
-	last := len(s) - 1
-	return s[last], s[:last], nil
-}
-
 func executeCode(module vputils.Module, startAddress vputils.Address, trace bool, instructionDefinitions instructionTable) {
 	flags := [1]bool{false}
 	module.SetPC(startAddress)
-	vStack := make(byteStack, 0)    // value stack
-	rStack := make(addressStack, 0) // return address stack
+	vStack := make(byteStack, 0) // value stack
 
 	if trace {
 		fmt.Println("Execution started at ", startAddress.ToString())
@@ -539,14 +505,14 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 			// CALL.A
 			newpc = jumpAddress
 			retpc := pc.AddByte(instructionSize)
-			rStack = rStack.push(retpc)
+			module.Push(retpc)
 
 		case 0xD5:
 			// CNZ.A
 			if !flags[0] {
 				newpc = jumpAddress
 				retpc := pc.AddByte(instructionSize)
-				rStack = rStack.push(retpc)
+				module.Push(retpc)
 			} else {
 				newpc = pc.AddByte(instructionSize)
 			}
@@ -556,7 +522,7 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 			if flags[0] {
 				newpc = jumpAddress
 				retpc := pc.AddByte(instructionSize)
-				rStack = rStack.push(retpc)
+				module.Push(retpc)
 			} else {
 				newpc = pc.AddByte(instructionSize)
 			}
@@ -565,14 +531,14 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 			// CALL.R
 			newpc = jumpAddress
 			retpc := pc.AddByte(instructionSize)
-			rStack = rStack.push(retpc)
+			module.Push(retpc)
 
 		case 0xE5:
 			// CNZ.R
 			if !flags[0] {
 				newpc = jumpAddress
 				retpc := pc.AddByte(instructionSize)
-				rStack = rStack.push(retpc)
+				module.Push(retpc)
 			} else {
 				newpc = pc.AddByte(instructionSize)
 			}
@@ -582,20 +548,20 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 			if flags[0] {
 				newpc = jumpAddress
 				retpc := pc.AddByte(instructionSize)
-				rStack = rStack.push(retpc)
+				module.Push(retpc)
 			} else {
 				newpc = pc.AddByte(instructionSize)
 			}
 
 		case 0xD8:
 			// RET
-			newpc, rStack, err = rStack.toppop()
+			newpc, err = module.TopPop()
 			vputils.CheckAndExit(err)
 
 		case 0xD9:
 			// RNZ
 			if !flags[0] {
-				newpc, rStack, err = rStack.toppop()
+				newpc, err = module.TopPop()
 				vputils.CheckAndExit(err)
 			} else {
 				newpc = pc.AddByte(instructionSize)
@@ -604,7 +570,7 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 		case 0xDA:
 			// RZ
 			if flags[0] {
-				newpc, rStack, err = rStack.toppop()
+				newpc, err = module.TopPop()
 				vputils.CheckAndExit(err)
 			} else {
 				newpc = pc.AddByte(instructionSize)
@@ -676,14 +642,18 @@ func read(moduleFile string) (vputils.Module, error) {
 
 	data := vputils.ReadBinaryBlock(f, dataAddressWidth)
 
-	return vputils.Module{
+	module := vputils.Module{
 		Properties:       properties,
 		Code:             code,
 		Exports:          exports,
 		Data:             data,
 		CodeAddressWidth: codeAddressWidth,
 		DataAddressWidth: dataAddressWidth,
-	}, nil
+	}
+
+	module.Init()
+
+	return module, nil
 }
 
 func main() {

@@ -431,6 +431,39 @@ func (v Vector) PutByte(address Address, value byte) error {
 	return nil
 }
 
+type addressStack []Address
+
+func (s addressStack) push(address Address) addressStack {
+	return append(s, address)
+}
+
+func (s addressStack) top() (Address, error) {
+	if len(s) == 0 {
+		return Address{[]byte{}}, errors.New("Stack underflow")
+	}
+
+	last := len(s) - 1
+	return s[last], nil
+}
+
+func (s addressStack) pop() (addressStack, error) {
+	if len(s) == 0 {
+		return s, errors.New("Stack underflow")
+	}
+
+	last := len(s) - 1
+	return s[:last], nil
+}
+
+func (s addressStack) toppop() (Address, addressStack, error) {
+	if len(s) == 0 {
+		return Address{[]byte{}}, s, errors.New("Stack underflow")
+	}
+
+	last := len(s) - 1
+	return s[last], s[:last], nil
+}
+
 type Module struct {
 	Properties       []NameValue
 	Code             Vector
@@ -439,6 +472,10 @@ type Module struct {
 	CodeAddressWidth int
 	DataAddressWidth int
 	pc               Address
+	RetStack         addressStack
+}
+
+func (module *Module) Init() {
 }
 
 func (module *Module) SetPC(address Address) {
@@ -526,6 +563,17 @@ func (module Module) IndirectByte() (byte, Address) {
 	CheckAndExit(err)
 
 	return value, dataAddress
+}
+
+func (module *Module) Push(address Address) {
+	module.RetStack = module.RetStack.push(address)
+}
+
+func (module *Module) TopPop() (Address, error) {
+	address, retStack, err := module.RetStack.toppop()
+	module.RetStack = retStack
+
+	return address, err
 }
 
 func ReadFile(sourceFile string) []string {
