@@ -582,6 +582,14 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 			return
 		}
 
+		if trace {
+			stack := ""
+			for _, v := range vStack {
+				stack += fmt.Sprintf(" %02X", v)
+			}
+			fmt.Println("Value stack:" + stack)
+		}
+
 		module.SetPC(newpc)
 	}
 

@@ -93,7 +93,11 @@ func buildInstruction(opcodemap opcodeList, targetSize string, target string, da
 	if vputils.IsAlpha(target[0]) {
 		// immediate value
 		opcode := []byte{opcodes[0]}
-		address := dataLabels[target]
+		address, ok := dataLabels[target]
+		if !ok {
+			err := errors.New("Undefined label '" + target + "'")
+			vputils.CheckAndExit(err)
+		}
 		instruction := append(opcode, address.Bytes...)
 		return instruction, nil
 	}
@@ -101,7 +105,11 @@ func buildInstruction(opcodemap opcodeList, targetSize string, target string, da
 	if vputils.IsDirectAddress(target) {
 		// direct address
 		opcode := []byte{opcodes[1]}
-		address := dataLabels[target[1:]]
+		address, ok := dataLabels[target[1:]]
+		if !ok {
+			err := errors.New("Undefined label '" + target + "'")
+			vputils.CheckAndExit(err)
+		}
 		instruction := append(opcode, address.Bytes...)
 		return instruction, nil
 	}
@@ -109,7 +117,11 @@ func buildInstruction(opcodemap opcodeList, targetSize string, target string, da
 	if vputils.IsIndirectAddress(target) {
 		// indirect address
 		opcode := []byte{opcodes[2]}
-		address := dataLabels[target[2:]]
+		address, ok := dataLabels[target[2:]]
+		if !ok {
+			err := errors.New("Undefined label '" + target + "'")
+			vputils.CheckAndExit(err)
+		}
 		instruction := append(opcode, address.Bytes...)
 		return instruction, nil
 	}
@@ -125,7 +137,7 @@ type opcodeDefinition struct {
 	JumpOpcodes    opcodeList
 }
 
-func decodeOpcode(text string, instructionAddress vputils.Address, targetSize string, target string, opcodeDefs map[string]opcodeDefinition, codeLabels LabelTable, dataLabels LabelTable) ([]byte, error) {
+func decodeOpcode(text string, instructionAddress vputils.Address, targetSize string, target string, opcodeDefs map[string]opcodeDefinition, resolveAddress bool, codeLabels LabelTable, dataLabels LabelTable) ([]byte, error) {
 	opcodeDef, ok := opcodeDefs[text]
 
 	if !ok {
@@ -148,7 +160,12 @@ func decodeOpcode(text string, instructionAddress vputils.Address, targetSize st
 	if len(jumpOpcodes) > 0 {
 		address, ok := codeLabels[target]
 		if !ok {
-			address = vputils.MakeAddress(0, 1)
+			if resolveAddress {
+				err = errors.New("Undefined label '" + target + "'")
+				vputils.CheckAndExit(err)
+			} else {
+				address = vputils.MakeAddress(0, 1)
+			}
 		}
 
 		opcodes, ok := jumpOpcodes[targetSize]
@@ -170,8 +187,8 @@ func decodeOpcode(text string, instructionAddress vputils.Address, targetSize st
 	return instruction, nil
 }
 
-func getInstruction(text string, instructionAddress vputils.Address, targetSize string, target string, opcodeDefs map[string]opcodeDefinition, dataLabels LabelTable, codeLabels LabelTable) []byte {
-	instruction, err := decodeOpcode(text, instructionAddress, targetSize, target, opcodeDefs, codeLabels, dataLabels)
+func getInstruction(text string, instructionAddress vputils.Address, targetSize string, target string, opcodeDefs map[string]opcodeDefinition, resolveAddress bool, dataLabels LabelTable, codeLabels LabelTable) []byte {
+	instruction, err := decodeOpcode(text, instructionAddress, targetSize, target, opcodeDefs, resolveAddress, codeLabels, dataLabels)
 	vputils.CheckAndExit(err)
 
 	if len(instruction) == 0 {
@@ -307,7 +324,7 @@ func generateData(source []string, opcodeDefs map[string]opcodeDefinition) (vput
 				}
 
 				// decode the instruction
-				instruction := getInstruction(opcode, instructionAddress, targetSize, target, opcodeDefs, dataLabels, codeLabels)
+				instruction := getInstruction(opcode, instructionAddress, targetSize, target, opcodeDefs, false, dataLabels, codeLabels)
 
 				code = append(code, instruction...)
 			}
@@ -365,7 +382,7 @@ func generateCode(source []string, opcodeDefs map[string]opcodeDefinition, dataL
 				}
 
 				// decode the instruction
-				instruction := getInstruction(opcode, instructionAddress, targetSize, target, opcodeDefs, dataLabels, codeLabels)
+				instruction := getInstruction(opcode, instructionAddress, targetSize, target, opcodeDefs, true, dataLabels, codeLabels)
 
 				location := len(code)
 				instruction_s := fmt.Sprintf("% X", instruction)
