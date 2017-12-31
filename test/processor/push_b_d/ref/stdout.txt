@@ -1,6 +1,9 @@
 Execution started at  00
 00: 61 PUSH.B @00 =48
+Value stack: 48
 02: 08 OUT
 H
+Value stack:
 03: 00 EXIT
+Value stack:
 Execution halted at 04

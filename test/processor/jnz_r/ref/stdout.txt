@@ -1,119 +1,221 @@
 Execution started at  00
 00: 60 PUSH.B =00
+Value stack: 00
 02: 81 POP.B @0E =00
+Value stack:
 04: 60 PUSH.B =0E
+Value stack: 0E
 06: 81 POP.B @0F =00
+Value stack:
 08: 31 DEC.B @0F =0E
+Value stack:
 0A: 11 FLAGS.B @0F =0D
+Value stack:
 0C: E1 JNZ.R 4 >10
+Value stack:
 10: 62 PUSH.B @@0E @00 =48
+Value stack: 48
 12: 08 OUT
 H
+Value stack:
 13: 21 INC.B @0E =00
+Value stack:
 15: E0 JUMP.R -13 >08
+Value stack:
 08: 31 DEC.B @0F =0D
+Value stack:
 0A: 11 FLAGS.B @0F =0C
+Value stack:
 0C: E1 JNZ.R 4 >10
+Value stack:
 10: 62 PUSH.B @@0E @01 =65
+Value stack: 65
 12: 08 OUT
 e
+Value stack:
 13: 21 INC.B @0E =01
+Value stack:
 15: E0 JUMP.R -13 >08
+Value stack:
 08: 31 DEC.B @0F =0C
+Value stack:
 0A: 11 FLAGS.B @0F =0B
+Value stack:
 0C: E1 JNZ.R 4 >10
+Value stack:
 10: 62 PUSH.B @@0E @02 =6C
+Value stack: 6C
 12: 08 OUT
 l
+Value stack:
 13: 21 INC.B @0E =02
+Value stack:
 15: E0 JUMP.R -13 >08
+Value stack:
 08: 31 DEC.B @0F =0B
+Value stack:
 0A: 11 FLAGS.B @0F =0A
+Value stack:
 0C: E1 JNZ.R 4 >10
+Value stack:
 10: 62 PUSH.B @@0E @03 =6C
+Value stack: 6C
 12: 08 OUT
 l
+Value stack:
 13: 21 INC.B @0E =03
+Value stack:
 15: E0 JUMP.R -13 >08
+Value stack:
 08: 31 DEC.B @0F =0A
+Value stack:
 0A: 11 FLAGS.B @0F =09
+Value stack:
 0C: E1 JNZ.R 4 >10
+Value stack:
 10: 62 PUSH.B @@0E @04 =6F
+Value stack: 6F
 12: 08 OUT
 o
+Value stack:
 13: 21 INC.B @0E =04
+Value stack:
 15: E0 JUMP.R -13 >08
+Value stack:
 08: 31 DEC.B @0F =09
+Value stack:
 0A: 11 FLAGS.B @0F =08
+Value stack:
 0C: E1 JNZ.R 4 >10
+Value stack:
 10: 62 PUSH.B @@0E @05 =2C
+Value stack: 2C
 12: 08 OUT
 ,
+Value stack:
 13: 21 INC.B @0E =05
+Value stack:
 15: E0 JUMP.R -13 >08
+Value stack:
 08: 31 DEC.B @0F =08
+Value stack:
 0A: 11 FLAGS.B @0F =07
+Value stack:
 0C: E1 JNZ.R 4 >10
+Value stack:
 10: 62 PUSH.B @@0E @06 =20
+Value stack: 20
 12: 08 OUT
  
+Value stack:
 13: 21 INC.B @0E =06
+Value stack:
 15: E0 JUMP.R -13 >08
+Value stack:
 08: 31 DEC.B @0F =07
+Value stack:
 0A: 11 FLAGS.B @0F =06
+Value stack:
 0C: E1 JNZ.R 4 >10
+Value stack:
 10: 62 PUSH.B @@0E @07 =77
+Value stack: 77
 12: 08 OUT
 w
+Value stack:
 13: 21 INC.B @0E =07
+Value stack:
 15: E0 JUMP.R -13 >08
+Value stack:
 08: 31 DEC.B @0F =06
+Value stack:
 0A: 11 FLAGS.B @0F =05
+Value stack:
 0C: E1 JNZ.R 4 >10
+Value stack:
 10: 62 PUSH.B @@0E @08 =6F
+Value stack: 6F
 12: 08 OUT
 o
+Value stack:
 13: 21 INC.B @0E =08
+Value stack:
 15: E0 JUMP.R -13 >08
+Value stack:
 08: 31 DEC.B @0F =05
+Value stack:
 0A: 11 FLAGS.B @0F =04
+Value stack:
 0C: E1 JNZ.R 4 >10
+Value stack:
 10: 62 PUSH.B @@0E @09 =72
+Value stack: 72
 12: 08 OUT
 r
+Value stack:
 13: 21 INC.B @0E =09
+Value stack:
 15: E0 JUMP.R -13 >08
+Value stack:
 08: 31 DEC.B @0F =04
+Value stack:
 0A: 11 FLAGS.B @0F =03
+Value stack:
 0C: E1 JNZ.R 4 >10
+Value stack:
 10: 62 PUSH.B @@0E @0A =6C
+Value stack: 6C
 12: 08 OUT
 l
+Value stack:
 13: 21 INC.B @0E =0A
+Value stack:
 15: E0 JUMP.R -13 >08
+Value stack:
 08: 31 DEC.B @0F =03
+Value stack:
 0A: 11 FLAGS.B @0F =02
+Value stack:
 0C: E1 JNZ.R 4 >10
+Value stack:
 10: 62 PUSH.B @@0E @0B =64
+Value stack: 64
 12: 08 OUT
 d
+Value stack:
 13: 21 INC.B @0E =0B
+Value stack:
 15: E0 JUMP.R -13 >08
+Value stack:
 08: 31 DEC.B @0F =02
+Value stack:
 0A: 11 FLAGS.B @0F =01
+Value stack:
 0C: E1 JNZ.R 4 >10
+Value stack:
 10: 62 PUSH.B @@0E @0C =21
+Value stack: 21
 12: 08 OUT
 !
+Value stack:
 13: 21 INC.B @0E =0C
+Value stack:
 15: E0 JUMP.R -13 >08
+Value stack:
 08: 31 DEC.B @0F =01
+Value stack:
 0A: 11 FLAGS.B @0F =00
+Value stack:
 0C: E1 JNZ.R 4 >10
+Value stack:
 0E: E0 JUMP.R 9 >17
+Value stack:
 17: 61 PUSH.B @10 =0A
+Value stack: 0A
 19: 08 OUT
 
 
+Value stack:
 1A: 00 EXIT
+Value stack:
 Execution halted at 1B

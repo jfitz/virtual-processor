@@ -1,8 +1,12 @@
 Execution started at  00
 00: 64 PUSH.I16 =3A48
+Value stack: 3A 48
 03: 08 OUT
 H
+Value stack: 3A
 04: 08 OUT
 :
+Value stack:
 05: 00 EXIT
+Value stack:
 Execution halted at 06

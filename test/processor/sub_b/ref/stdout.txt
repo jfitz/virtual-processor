@@ -1,8 +1,13 @@
 Execution started at  00
 00: 60 PUSH.B =48
+Value stack: 48
 02: 60 PUSH.B =0A
+Value stack: 48 0A
 04: A1 SUB.B
+Value stack: C2
 05: 08 OUT
 Â
+Value stack:
 06: 00 EXIT
+Value stack:
 Execution halted at 07

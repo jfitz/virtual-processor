@@ -1,11 +1,19 @@
 Execution started at  00
 00: 60 PUSH.B =01
+Value stack: 01
 02: 60 PUSH.B =40
+Value stack: 01 40
 04: C3 CMP.B
+Value stack:
 05: E2 JZ.R 7 >0C
+Value stack:
 07: 60 PUSH.B =41
+Value stack: 41
 09: 08 OUT
 A
+Value stack:
 0A: E0 JUMP.R 5 >0F
+Value stack:
 0F: 00 EXIT
+Value stack:
 Execution halted at 10

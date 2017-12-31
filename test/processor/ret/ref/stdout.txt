@@ -1,106 +1,195 @@
 Execution started at  00
 00: 60 PUSH.B =00
+Value stack: 00
 02: D4 CALL.A >07
+Value stack: 00
 07: 81 POP.B @0E =00
+Value stack:
 09: 62 PUSH.B @@0E @00 =48
+Value stack: 48
 0B: 13 FLAGS.B
+Value stack: 48
 0C: DA RZ
+Value stack: 48
 0D: 08 OUT
 H
+Value stack:
 0E: 21 INC.B @0E =00
+Value stack:
 10: D0 JUMP.A >09
+Value stack:
 09: 62 PUSH.B @@0E @01 =65
+Value stack: 65
 0B: 13 FLAGS.B
+Value stack: 65
 0C: DA RZ
+Value stack: 65
 0D: 08 OUT
 e
+Value stack:
 0E: 21 INC.B @0E =01
+Value stack:
 10: D0 JUMP.A >09
+Value stack:
 09: 62 PUSH.B @@0E @02 =6C
+Value stack: 6C
 0B: 13 FLAGS.B
+Value stack: 6C
 0C: DA RZ
+Value stack: 6C
 0D: 08 OUT
 l
+Value stack:
 0E: 21 INC.B @0E =02
+Value stack:
 10: D0 JUMP.A >09
+Value stack:
 09: 62 PUSH.B @@0E @03 =6C
+Value stack: 6C
 0B: 13 FLAGS.B
+Value stack: 6C
 0C: DA RZ
+Value stack: 6C
 0D: 08 OUT
 l
+Value stack:
 0E: 21 INC.B @0E =03
+Value stack:
 10: D0 JUMP.A >09
+Value stack:
 09: 62 PUSH.B @@0E @04 =6F
+Value stack: 6F
 0B: 13 FLAGS.B
+Value stack: 6F
 0C: DA RZ
+Value stack: 6F
 0D: 08 OUT
 o
+Value stack:
 0E: 21 INC.B @0E =04
+Value stack:
 10: D0 JUMP.A >09
+Value stack:
 09: 62 PUSH.B @@0E @05 =2C
+Value stack: 2C
 0B: 13 FLAGS.B
+Value stack: 2C
 0C: DA RZ
+Value stack: 2C
 0D: 08 OUT
 ,
+Value stack:
 0E: 21 INC.B @0E =05
+Value stack:
 10: D0 JUMP.A >09
+Value stack:
 09: 62 PUSH.B @@0E @06 =20
+Value stack: 20
 0B: 13 FLAGS.B
+Value stack: 20
 0C: DA RZ
+Value stack: 20
 0D: 08 OUT
  
+Value stack:
 0E: 21 INC.B @0E =06
+Value stack:
 10: D0 JUMP.A >09
+Value stack:
 09: 62 PUSH.B @@0E @07 =77
+Value stack: 77
 0B: 13 FLAGS.B
+Value stack: 77
 0C: DA RZ
+Value stack: 77
 0D: 08 OUT
 w
+Value stack:
 0E: 21 INC.B @0E =07
+Value stack:
 10: D0 JUMP.A >09
+Value stack:
 09: 62 PUSH.B @@0E @08 =6F
+Value stack: 6F
 0B: 13 FLAGS.B
+Value stack: 6F
 0C: DA RZ
+Value stack: 6F
 0D: 08 OUT
 o
+Value stack:
 0E: 21 INC.B @0E =08
+Value stack:
 10: D0 JUMP.A >09
+Value stack:
 09: 62 PUSH.B @@0E @09 =72
+Value stack: 72
 0B: 13 FLAGS.B
+Value stack: 72
 0C: DA RZ
+Value stack: 72
 0D: 08 OUT
 r
+Value stack:
 0E: 21 INC.B @0E =09
+Value stack:
 10: D0 JUMP.A >09
+Value stack:
 09: 62 PUSH.B @@0E @0A =6C
+Value stack: 6C
 0B: 13 FLAGS.B
+Value stack: 6C
 0C: DA RZ
+Value stack: 6C
 0D: 08 OUT
 l
+Value stack:
 0E: 21 INC.B @0E =0A
+Value stack:
 10: D0 JUMP.A >09
+Value stack:
 09: 62 PUSH.B @@0E @0B =64
+Value stack: 64
 0B: 13 FLAGS.B
+Value stack: 64
 0C: DA RZ
+Value stack: 64
 0D: 08 OUT
 d
+Value stack:
 0E: 21 INC.B @0E =0B
+Value stack:
 10: D0 JUMP.A >09
+Value stack:
 09: 62 PUSH.B @@0E @0C =21
+Value stack: 21
 0B: 13 FLAGS.B
+Value stack: 21
 0C: DA RZ
+Value stack: 21
 0D: 08 OUT
 !
+Value stack:
 0E: 21 INC.B @0E =0C
+Value stack:
 10: D0 JUMP.A >09
+Value stack:
 09: 62 PUSH.B @@0E @0D =00
+Value stack: 00
 0B: 13 FLAGS.B
+Value stack: 00
 0C: DA RZ
+Value stack: 00
 04: D4 CALL.A >12
+Value stack: 00
 12: 61 PUSH.B @0F =0A
+Value stack: 00 0A
 14: 08 OUT
 
 
+Value stack: 00
 15: D8 RET
+Value stack: 00
 06: 00 EXIT
+Value stack: 00
 Execution halted at 07
