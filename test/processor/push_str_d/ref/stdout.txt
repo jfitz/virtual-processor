@@ -1,0 +1,135 @@
+Execution started at  00
+00: 79 PUSH.STR @00 =48
+Value stack: 00 21 64 6C 72 6F 77 20 2C 6F 6C 6C 65 48 0E
+02: 81 POP.B @0E =00
+Value stack: 00 21 64 6C 72 6F 77 20 2C 6F 6C 6C 65 48
+04: 13 FLAGS.B
+Value stack: 00 21 64 6C 72 6F 77 20 2C 6F 6C 6C 65 48
+05: E2 JZ.R 5 >0A
+Value stack: 00 21 64 6C 72 6F 77 20 2C 6F 6C 6C 65 48
+07: 08 OUT
+H
+Value stack: 00 21 64 6C 72 6F 77 20 2C 6F 6C 6C 65
+08: E0 JUMP.R -4 >04
+Value stack: 00 21 64 6C 72 6F 77 20 2C 6F 6C 6C 65
+04: 13 FLAGS.B
+Value stack: 00 21 64 6C 72 6F 77 20 2C 6F 6C 6C 65
+05: E2 JZ.R 5 >0A
+Value stack: 00 21 64 6C 72 6F 77 20 2C 6F 6C 6C 65
+07: 08 OUT
+e
+Value stack: 00 21 64 6C 72 6F 77 20 2C 6F 6C 6C
+08: E0 JUMP.R -4 >04
+Value stack: 00 21 64 6C 72 6F 77 20 2C 6F 6C 6C
+04: 13 FLAGS.B
+Value stack: 00 21 64 6C 72 6F 77 20 2C 6F 6C 6C
+05: E2 JZ.R 5 >0A
+Value stack: 00 21 64 6C 72 6F 77 20 2C 6F 6C 6C
+07: 08 OUT
+l
+Value stack: 00 21 64 6C 72 6F 77 20 2C 6F 6C
+08: E0 JUMP.R -4 >04
+Value stack: 00 21 64 6C 72 6F 77 20 2C 6F 6C
+04: 13 FLAGS.B
+Value stack: 00 21 64 6C 72 6F 77 20 2C 6F 6C
+05: E2 JZ.R 5 >0A
+Value stack: 00 21 64 6C 72 6F 77 20 2C 6F 6C
+07: 08 OUT
+l
+Value stack: 00 21 64 6C 72 6F 77 20 2C 6F
+08: E0 JUMP.R -4 >04
+Value stack: 00 21 64 6C 72 6F 77 20 2C 6F
+04: 13 FLAGS.B
+Value stack: 00 21 64 6C 72 6F 77 20 2C 6F
+05: E2 JZ.R 5 >0A
+Value stack: 00 21 64 6C 72 6F 77 20 2C 6F
+07: 08 OUT
+o
+Value stack: 00 21 64 6C 72 6F 77 20 2C
+08: E0 JUMP.R -4 >04
+Value stack: 00 21 64 6C 72 6F 77 20 2C
+04: 13 FLAGS.B
+Value stack: 00 21 64 6C 72 6F 77 20 2C
+05: E2 JZ.R 5 >0A
+Value stack: 00 21 64 6C 72 6F 77 20 2C
+07: 08 OUT
+,
+Value stack: 00 21 64 6C 72 6F 77 20
+08: E0 JUMP.R -4 >04
+Value stack: 00 21 64 6C 72 6F 77 20
+04: 13 FLAGS.B
+Value stack: 00 21 64 6C 72 6F 77 20
+05: E2 JZ.R 5 >0A
+Value stack: 00 21 64 6C 72 6F 77 20
+07: 08 OUT
+ 
+Value stack: 00 21 64 6C 72 6F 77
+08: E0 JUMP.R -4 >04
+Value stack: 00 21 64 6C 72 6F 77
+04: 13 FLAGS.B
+Value stack: 00 21 64 6C 72 6F 77
+05: E2 JZ.R 5 >0A
+Value stack: 00 21 64 6C 72 6F 77
+07: 08 OUT
+w
+Value stack: 00 21 64 6C 72 6F
+08: E0 JUMP.R -4 >04
+Value stack: 00 21 64 6C 72 6F
+04: 13 FLAGS.B
+Value stack: 00 21 64 6C 72 6F
+05: E2 JZ.R 5 >0A
+Value stack: 00 21 64 6C 72 6F
+07: 08 OUT
+o
+Value stack: 00 21 64 6C 72
+08: E0 JUMP.R -4 >04
+Value stack: 00 21 64 6C 72
+04: 13 FLAGS.B
+Value stack: 00 21 64 6C 72
+05: E2 JZ.R 5 >0A
+Value stack: 00 21 64 6C 72
+07: 08 OUT
+r
+Value stack: 00 21 64 6C
+08: E0 JUMP.R -4 >04
+Value stack: 00 21 64 6C
+04: 13 FLAGS.B
+Value stack: 00 21 64 6C
+05: E2 JZ.R 5 >0A
+Value stack: 00 21 64 6C
+07: 08 OUT
+l
+Value stack: 00 21 64
+08: E0 JUMP.R -4 >04
+Value stack: 00 21 64
+04: 13 FLAGS.B
+Value stack: 00 21 64
+05: E2 JZ.R 5 >0A
+Value stack: 00 21 64
+07: 08 OUT
+d
+Value stack: 00 21
+08: E0 JUMP.R -4 >04
+Value stack: 00 21
+04: 13 FLAGS.B
+Value stack: 00 21
+05: E2 JZ.R 5 >0A
+Value stack: 00 21
+07: 08 OUT
+!
+Value stack: 00
+08: E0 JUMP.R -4 >04
+Value stack: 00
+04: 13 FLAGS.B
+Value stack: 00
+05: E2 JZ.R 5 >0A
+Value stack: 00
+0A: 60 PUSH.B =0A
+Value stack: 00 0A
+0C: 08 OUT
+
+
+Value stack: 00
+0D: 00 EXIT
+Value stack: 00
+Execution halted at 0E

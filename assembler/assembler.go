@@ -62,11 +62,11 @@ func evaluateI16(expression string) []byte {
 
 type LabelTable map[string]vputils.Address
 
-func buildInstruction(opcodemap opcodeList, targetSize string, target string, dataLabels LabelTable) ([]byte, error) {
-	opcodes, ok := opcodemap[targetSize]
+func buildInstruction(opcodemap opcodeList, targetType string, target string, dataLabels LabelTable) ([]byte, error) {
+	opcodes, ok := opcodemap[targetType]
 
 	if !ok {
-		return nil, errors.New("Set '" + targetSize + "' not found")
+		return nil, errors.New("Set '" + targetType + "' not found")
 	}
 
 	if len(target) == 0 {
@@ -80,7 +80,7 @@ func buildInstruction(opcodemap opcodeList, targetSize string, target string, da
 		// immediate value
 		opcode := []byte{opcodes[0]}
 		bytes := []byte{}
-		switch targetSize {
+		switch targetType {
 		case "B":
 			bytes = evaluateByte(target)
 		case "I16":
@@ -137,7 +137,7 @@ type opcodeDefinition struct {
 	JumpOpcodes    opcodeList
 }
 
-func decodeOpcode(text string, instructionAddress vputils.Address, targetSize string, target string, opcodeDefs map[string]opcodeDefinition, resolveAddress bool, codeLabels LabelTable, dataLabels LabelTable) ([]byte, error) {
+func decodeOpcode(text string, instructionAddress vputils.Address, targetType string, target string, opcodeDefs map[string]opcodeDefinition, resolveAddress bool, codeLabels LabelTable, dataLabels LabelTable) ([]byte, error) {
 	opcodeDef, ok := opcodeDefs[text]
 
 	if !ok {
@@ -152,7 +152,7 @@ func decodeOpcode(text string, instructionAddress vputils.Address, targetSize st
 	var err error
 	if len(addressOpcodes) > 0 {
 		// select instruction depends on target
-		instruction, err = buildInstruction(addressOpcodes, targetSize, target, dataLabels)
+		instruction, err = buildInstruction(addressOpcodes, targetType, target, dataLabels)
 		vputils.CheckAndExit(err)
 	}
 
@@ -168,17 +168,17 @@ func decodeOpcode(text string, instructionAddress vputils.Address, targetSize st
 			}
 		}
 
-		opcodes, ok := jumpOpcodes[targetSize]
+		opcodes, ok := jumpOpcodes[targetType]
 		if !ok {
-			return nil, errors.New("Decode: Set '" + targetSize + "' not found for " + text)
+			return nil, errors.New("Decode: Set '" + targetType + "' not found for " + text)
 		}
 
 		instruction = []byte{opcodes[0]}
 
-		if targetSize == "A" {
+		if targetType == "A" {
 			instruction = append(instruction, address.Bytes...)
 		}
-		if targetSize == "R" {
+		if targetType == "R" {
 			offset := byte(address.ToInt() - instructionAddress.ToInt())
 			instruction = append(instruction, offset)
 		}
@@ -187,8 +187,8 @@ func decodeOpcode(text string, instructionAddress vputils.Address, targetSize st
 	return instruction, nil
 }
 
-func getInstruction(text string, instructionAddress vputils.Address, targetSize string, target string, opcodeDefs map[string]opcodeDefinition, resolveAddress bool, dataLabels LabelTable, codeLabels LabelTable) []byte {
-	instruction, err := decodeOpcode(text, instructionAddress, targetSize, target, opcodeDefs, resolveAddress, codeLabels, dataLabels)
+func getInstruction(text string, instructionAddress vputils.Address, targetType string, target string, opcodeDefs map[string]opcodeDefinition, resolveAddress bool, dataLabels LabelTable, codeLabels LabelTable) []byte {
+	instruction, err := decodeOpcode(text, instructionAddress, targetType, target, opcodeDefs, resolveAddress, codeLabels, dataLabels)
 	vputils.CheckAndExit(err)
 
 	if len(instruction) == 0 {
@@ -296,11 +296,11 @@ func generateData(source []string, opcodeDefs map[string]opcodeDefinition) (vput
 			} else {
 				// process instruction
 				opcode := word
-				targetSize := ""
+				targetType := ""
 				parts := strings.Split(word, ".")
 				if len(parts) > 1 {
 					opcode = parts[0]
-					targetSize = parts[1]
+					targetType = parts[1]
 				}
 
 				address := len(code)
@@ -324,7 +324,7 @@ func generateData(source []string, opcodeDefs map[string]opcodeDefinition) (vput
 				}
 
 				// decode the instruction
-				instruction := getInstruction(opcode, instructionAddress, targetSize, target, opcodeDefs, false, dataLabels, codeLabels)
+				instruction := getInstruction(opcode, instructionAddress, targetType, target, opcodeDefs, false, dataLabels, codeLabels)
 
 				code = append(code, instruction...)
 			}
@@ -356,11 +356,11 @@ func generateCode(source []string, opcodeDefs map[string]opcodeDefinition, dataL
 			// write the directive or instruction
 			if !isDirective(word) {
 				opcode := word
-				targetSize := ""
+				targetType := ""
 				parts := strings.Split(word, ".")
 				if len(parts) > 1 {
 					opcode = parts[0]
-					targetSize = parts[1]
+					targetType = parts[1]
 				}
 
 				address := len(code)
@@ -382,7 +382,7 @@ func generateCode(source []string, opcodeDefs map[string]opcodeDefinition, dataL
 				}
 
 				// decode the instruction
-				instruction := getInstruction(opcode, instructionAddress, targetSize, target, opcodeDefs, true, dataLabels, codeLabels)
+				instruction := getInstruction(opcode, instructionAddress, targetType, target, opcodeDefs, true, dataLabels, codeLabels)
 
 				location := len(code)
 				instruction_s := fmt.Sprintf("% X", instruction)
@@ -471,8 +471,8 @@ func makeOpcodeDefinitions() map[string]opcodeDefinition {
 
 	push_opcodes := make(opcodeList)
 	push_opcodes["B"] = []byte{0x60, 0x61, 0x62, 0x0F}
-	opcodeDefs["PUSH"] = opcodeDefinition{0x0F, push_opcodes, empty_opcodes}
 	push_opcodes["I16"] = []byte{0x64, 0x65, 0x66, 0x0F}
+	push_opcodes["STR"] = []byte{0x0F, 0x79, 0x7A, 0x0F}
 	opcodeDefs["PUSH"] = opcodeDefinition{0x0F, push_opcodes, empty_opcodes}
 
 	pop_opcodes := make(opcodeList)

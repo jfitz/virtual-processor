@@ -48,7 +48,7 @@ func (s byteStack) toppop(count int) ([]byte, byteStack, error) {
 
 type instructionDefinition struct {
 	Name        string
-	TargetSize  string
+	TargetType  string
 	AddressMode string
 	JumpMode    string
 }
@@ -56,9 +56,9 @@ type instructionDefinition struct {
 func (def instructionDefinition) toString() string {
 	s := def.Name
 
-	if len(def.TargetSize) > 0 {
+	if len(def.TargetType) > 0 {
 		s += "."
-		s += def.TargetSize
+		s += def.TargetType
 	}
 
 	if len(def.JumpMode) > 0 {
@@ -73,41 +73,56 @@ type instructionTable map[byte]instructionDefinition
 
 func defineInstructions() instructionTable {
 	instructionDefinitions := make(instructionTable)
+
 	instructionDefinitions[0x00] = instructionDefinition{"EXIT", "", "", ""}
+
 	instructionDefinitions[0x60] = instructionDefinition{"PUSH", "B", "V", ""}
 	instructionDefinitions[0x61] = instructionDefinition{"PUSH", "B", "D", ""}
 	instructionDefinitions[0x62] = instructionDefinition{"PUSH", "B", "I", ""}
+
 	instructionDefinitions[0x64] = instructionDefinition{"PUSH", "I16", "V", ""}
 	instructionDefinitions[0x65] = instructionDefinition{"PUSH", "I16", "D", ""}
 	instructionDefinitions[0x66] = instructionDefinition{"PUSH", "I16", "I", ""}
+
+	instructionDefinitions[0x79] = instructionDefinition{"PUSH", "STR", "D", ""}
+
 	instructionDefinitions[0x81] = instructionDefinition{"POP", "B", "D", ""}
 	instructionDefinitions[0x08] = instructionDefinition{"OUT", "", "S", ""}
+
 	instructionDefinitions[0x11] = instructionDefinition{"FLAGS", "B", "D", ""}
 	instructionDefinitions[0x12] = instructionDefinition{"FLAGS", "B", "I", ""}
 	instructionDefinitions[0x13] = instructionDefinition{"FLAGS", "B", "S", ""}
+
 	instructionDefinitions[0x21] = instructionDefinition{"INC", "B", "D", ""}
 	instructionDefinitions[0x22] = instructionDefinition{"INC", "B", "I", ""}
 	instructionDefinitions[0x31] = instructionDefinition{"DEC", "B", "D", ""}
 	instructionDefinitions[0x32] = instructionDefinition{"DEC", "B", "I", ""}
+
 	instructionDefinitions[0xD0] = instructionDefinition{"JUMP", "", "", "A"}
 	instructionDefinitions[0xD1] = instructionDefinition{"JNZ", "", "", "A"}
 	instructionDefinitions[0xD2] = instructionDefinition{"JZ", "", "", "A"}
+
 	instructionDefinitions[0xE0] = instructionDefinition{"JUMP", "", "", "R"}
 	instructionDefinitions[0xE1] = instructionDefinition{"JNZ", "", "", "R"}
 	instructionDefinitions[0xE2] = instructionDefinition{"JZ", "", "", "R"}
+
 	instructionDefinitions[0xD4] = instructionDefinition{"CALL", "", "", "A"}
 	instructionDefinitions[0xD5] = instructionDefinition{"CNZ", "", "", "A"}
 	instructionDefinitions[0xD6] = instructionDefinition{"CZ", "", "", "A"}
+
 	instructionDefinitions[0xE4] = instructionDefinition{"CALL", "", "", "R"}
 	instructionDefinitions[0xE5] = instructionDefinition{"CNZ", "", "", "R"}
 	instructionDefinitions[0xE6] = instructionDefinition{"CZ", "", "", "R"}
+
 	instructionDefinitions[0xD8] = instructionDefinition{"RET", "", "", ""}
 	instructionDefinitions[0xD9] = instructionDefinition{"RNZ", "", "", ""}
 	instructionDefinitions[0xDA] = instructionDefinition{"RZ", "", "", ""}
+
 	instructionDefinitions[0xA0] = instructionDefinition{"ADD", "B", "", ""}
 	instructionDefinitions[0xA1] = instructionDefinition{"SUB", "B", "", ""}
 	instructionDefinitions[0xA2] = instructionDefinition{"MUL", "B", "", ""}
 	instructionDefinitions[0xA3] = instructionDefinition{"DIV", "B", "", ""}
+
 	instructionDefinitions[0xC0] = instructionDefinition{"AND", "B", "", ""}
 	instructionDefinitions[0xC1] = instructionDefinition{"OR", "B", "", ""}
 	instructionDefinitions[0xC3] = instructionDefinition{"CMP", "B", "", ""}
@@ -122,22 +137,22 @@ func (def instructionDefinition) calcInstructionSize() int {
 func (def instructionDefinition) calcTargetSize() int {
 	targetSize := 0
 
-	if def.TargetSize == "B" {
+	if def.TargetType == "B" {
 		targetSize = 1
 	}
-	if def.TargetSize == "I16" {
+	if def.TargetType == "I16" {
 		targetSize = 2
 	}
-	if def.TargetSize == "I32" {
+	if def.TargetType == "I32" {
 		targetSize = 4
 	}
-	if def.TargetSize == "I64" {
+	if def.TargetType == "I64" {
 		targetSize = 8
 	}
-	if def.TargetSize == "F32" {
+	if def.TargetType == "F32" {
 		targetSize = 4
 	}
-	if def.TargetSize == "F64" {
+	if def.TargetType == "F64" {
 		targetSize = 8
 	}
 
@@ -175,11 +190,11 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 		targetSize := def.calcTargetSize()
 
 		if def.AddressMode == "V" {
-			switch targetSize {
-			case 1:
+			switch def.TargetType {
+			case "B":
 				bytes = module.ImmediateByte()
 				value_s = fmt.Sprintf("%02X", bytes[0])
-			case 2:
+			case "I16":
 				bytes = module.ImmediateInt()
 				value_s = fmt.Sprintf("%02X%02X", bytes[1], bytes[0])
 			}
@@ -356,6 +371,32 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 			// PUSH.I16 indirect address
 			vStack = vStack.push(bytes[1])
 			vStack = vStack.push(bytes[0])
+
+			newpc = pc.AddByte(instructionSize)
+
+		case 0x79:
+			// PUSH.STR direct address
+			s := ""
+			address := dataAddress
+			b := byte(1)
+
+			for b != 0 {
+				b, err = data.GetByte(address)
+				vputils.CheckAndExit(err)
+				c := string(b)
+				s += c
+				address = address.AddByte(1)
+			}
+
+			count := len(s)
+			// push bytes to stack in reverse order
+			for i := range s {
+				c := s[count-i-1]
+				b = byte(c)
+				vStack = vStack.push(b)
+			}
+			b = byte(count)
+			vStack = vStack.push(b)
 
 			newpc = pc.AddByte(instructionSize)
 
