@@ -1,0 +1,17 @@
+Execution started at  00
+00: 79 PUSH.STR @0C =48
+Value stack: 00 21 64 6C 72 6F 77 20 2C 6F 6C 6C 65 48 0E
+02: 79 PUSH.STR @00 =6F
+Value stack: 00 21 64 6C 72 6F 77 20 2C 6F 6C 6C 65 48 0E 00 73 5F 74 75 6F 06
+04: 01 KCALL
+Hello, world!Value stack:
+05: 60 PUSH.B =0A
+Value stack: 0A
+07: 79 PUSH.STR @06 =6F
+Value stack: 0A 00 62 5F 74 75 6F 06
+09: 01 KCALL
+
+Value stack:
+0A: 00 EXIT
+Value stack:
+Execution halted at 0B

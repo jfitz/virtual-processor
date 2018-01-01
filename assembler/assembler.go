@@ -443,6 +443,7 @@ func makeOpcodeDefinitions() map[string]opcodeDefinition {
 	empty_opcodes := make(opcodeList)
 
 	opcodeDefs["EXIT"] = opcodeDefinition{0x00, empty_opcodes, empty_opcodes}
+	opcodeDefs["KCALL"] = opcodeDefinition{0x01, empty_opcodes, empty_opcodes}
 	opcodeDefs["OUT"] = opcodeDefinition{0x08, empty_opcodes, empty_opcodes}
 
 	jump_opcodes := make(opcodeList)

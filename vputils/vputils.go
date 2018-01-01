@@ -60,7 +60,7 @@ func IsAlpha(c byte) bool {
 }
 
 func IsAlnum(c byte) bool {
-	return IsDigit(c) || IsAlpha(c)
+	return IsDigit(c) || IsAlpha(c) || c == '_'
 }
 
 func IsUpper(c byte) bool {
@@ -72,7 +72,7 @@ func IsLower(c byte) bool {
 }
 
 func IsText(c byte) bool {
-	return IsAlnum(c) || c == '.' || c == '_'
+	return IsAlnum(c) || c == '.'
 }
 
 func IsDirectAddress(s string) bool {

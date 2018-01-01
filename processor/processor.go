@@ -20,25 +20,27 @@ func (s byteStack) push(v byte) byteStack {
 }
 
 func (s byteStack) top() (byte, error) {
-	if len(s) == 0 {
+	count := 1
+	if len(s) < count {
 		return 0, errors.New("Stack underflow")
 	}
 
-	last := len(s) - 1
+	last := len(s) - count
 	return s[last], nil
 }
 
 func (s byteStack) pop() (byteStack, error) {
-	if len(s) == 0 {
+	count := 1
+	if len(s) < count {
 		return s, errors.New("Stack underflow")
 	}
 
-	last := len(s) - 1
+	last := len(s) - count
 	return s[:last], nil
 }
 
 func (s byteStack) toppop(count int) ([]byte, byteStack, error) {
-	if len(s) == 0 {
+	if len(s) < count {
 		return []byte{}, s, errors.New("Stack underflow")
 	}
 
@@ -75,6 +77,7 @@ func defineInstructions() instructionTable {
 	instructionDefinitions := make(instructionTable)
 
 	instructionDefinitions[0x00] = instructionDefinition{"EXIT", "", "", ""}
+	instructionDefinitions[0x01] = instructionDefinition{"KCALL", "", "", ""}
 
 	instructionDefinitions[0x60] = instructionDefinition{"PUSH", "B", "V", ""}
 	instructionDefinitions[0x61] = instructionDefinition{"PUSH", "B", "D", ""}
@@ -157,6 +160,54 @@ func (def instructionDefinition) calcTargetSize() int {
 	}
 
 	return targetSize
+}
+
+func pop_string(vStack byteStack) (string, byteStack) {
+	// pop size of name
+	counts, vStack, err := vStack.toppop(1)
+	vputils.CheckAndExit(err)
+	count := int(counts[0])
+
+	// pop name of function
+	bytes := []byte{}
+	s := ""
+	for i := 0; i < count; i++ {
+		bytes, vStack, err = vStack.toppop(1)
+		vputils.CheckAndExit(err)
+		if bytes[0] != 0 {
+			s += string(bytes[0])
+		}
+	}
+
+	return s, vStack
+}
+
+func kernelCall(vStack byteStack) byteStack {
+	fname, vStack := pop_string(vStack)
+
+	// dispatch to function
+	bytes := []byte{}
+	s := ""
+	err := errors.New("")
+	switch fname {
+	case "out_b":
+		bytes, vStack, err = vStack.toppop(1)
+		vputils.CheckAndPanic(err)
+
+		fmt.Print(string(bytes[0]))
+
+	case "out_s":
+		s, vStack = pop_string(vStack)
+
+		fmt.Print(s)
+
+	default:
+		err = errors.New("Unknown kernel call to function '" + fname + "'")
+		vputils.CheckAndExit(err)
+	}
+
+	// return to module
+	return vStack
 }
 
 func executeCode(module vputils.Module, startAddress vputils.Address, trace bool, instructionDefinitions instructionTable) {
@@ -264,6 +315,12 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 			halt = true
 
 			newpc = pc.AddByte(instructionSize)
+
+		case 0x01:
+			// KCALL - kernel call
+			newpc = pc.AddByte(instructionSize)
+
+			vStack = kernelCall(vStack)
 
 		case 0x08:
 			// OUT (implied stack)
