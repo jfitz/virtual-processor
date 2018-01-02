@@ -19,6 +19,21 @@ func (stack byteStack) pushByte(v byte) byteStack {
 	return append(stack, v)
 }
 
+func reverseBytes(bs []byte) []byte {
+	last := len(bs) - 1
+
+	for i := 0; i < len(bs)/2; i++ {
+		bs[i], bs[last-i] = bs[last-i], bs[i]
+	}
+
+	return bs
+}
+
+func (stack byteStack) pushBytes(vs []byte) byteStack {
+	bs := reverseBytes(vs)
+	return append(stack, bs...)
+}
+
 func (stack byteStack) topByte() (byte, error) {
 	count := 1
 	if len(stack) < count {
@@ -36,6 +51,15 @@ func (stack byteStack) popByte(count int) ([]byte, byteStack, error) {
 
 	last := len(stack) - count
 	return stack[last:], stack[:last], nil
+}
+
+func (stack byteStack) pushString(s string) byteStack {
+	bs := []byte(s)
+	stack = stack.pushBytes(bs)
+	b := byte(len(s))
+	stack = stack.pushByte(b)
+
+	return stack
 }
 
 func (stack byteStack) popString() (string, byteStack) {
@@ -384,40 +408,37 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 
 		case 0x60:
 			// PUSH.B immediate value
-			vStack = vStack.pushByte(bytes[0])
+			vStack = vStack.pushBytes(bytes)
 
 			newpc = pc.AddByte(instructionSize)
 
 		case 0x61:
 			// PUSH.B direct address
-			vStack = vStack.pushByte(bytes[0])
+			vStack = vStack.pushBytes(bytes)
 
 			newpc = pc.AddByte(instructionSize)
 
 		case 0x62:
 			// PUSH.B indirect address
-			vStack = vStack.pushByte(bytes[0])
+			vStack = vStack.pushBytes(bytes)
 
 			newpc = pc.AddByte(instructionSize)
 
 		case 0x64:
 			// PUSH.I16 immediate value
-			vStack = vStack.pushByte(bytes[1])
-			vStack = vStack.pushByte(bytes[0])
+			vStack = vStack.pushBytes(bytes)
 
 			newpc = pc.AddByte(instructionSize)
 
 		case 0x65:
 			// PUSH.I16 direct address
-			vStack = vStack.pushByte(bytes[1])
-			vStack = vStack.pushByte(bytes[0])
+			vStack = vStack.pushBytes(bytes)
 
 			newpc = pc.AddByte(instructionSize)
 
 		case 0x66:
 			// PUSH.I16 indirect address
-			vStack = vStack.pushByte(bytes[1])
-			vStack = vStack.pushByte(bytes[0])
+			vStack = vStack.pushBytes(bytes)
 
 			newpc = pc.AddByte(instructionSize)
 
@@ -435,15 +456,7 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 				address = address.AddByte(1)
 			}
 
-			count := len(s)
-			// push bytes to stack in reverse order
-			for i := range s {
-				c := s[count-i-1]
-				b = byte(c)
-				vStack = vStack.pushByte(b)
-			}
-			b = byte(count)
-			vStack = vStack.pushByte(b)
+			vStack = vStack.pushString(s)
 
 			newpc = pc.AddByte(instructionSize)
 
