@@ -433,35 +433,38 @@ func (v Vector) PutByte(address Address, value byte) error {
 
 type addressStack []Address
 
-func (s addressStack) push(address Address) addressStack {
-	return append(s, address)
+func (stack addressStack) push(address Address) addressStack {
+	return append(stack, address)
 }
 
-func (s addressStack) top() (Address, error) {
-	if len(s) == 0 {
+func (stack addressStack) top() (Address, error) {
+	count := 1
+	if len(stack) < count {
 		return Address{[]byte{}}, errors.New("Stack underflow")
 	}
 
-	last := len(s) - 1
-	return s[last], nil
+	last := len(stack) - count
+	return stack[last], nil
 }
 
-func (s addressStack) pop() (addressStack, error) {
-	if len(s) == 0 {
-		return s, errors.New("Stack underflow")
+func (stack addressStack) pop() (addressStack, error) {
+	count := 1
+	if len(stack) < count {
+		return stack, errors.New("Stack underflow")
 	}
 
-	last := len(s) - 1
-	return s[:last], nil
+	last := len(stack) - count
+	return stack[:last], nil
 }
 
-func (s addressStack) toppop() (Address, addressStack, error) {
-	if len(s) == 0 {
-		return Address{[]byte{}}, s, errors.New("Stack underflow")
+func (stack addressStack) toppop() (Address, addressStack, error) {
+	count := 1
+	if len(stack) < count {
+		return Address{[]byte{}}, stack, errors.New("Stack underflow")
 	}
 
-	last := len(s) - 1
-	return s[last], s[:last], nil
+	last := len(stack) - count
+	return stack[last], stack[:last], nil
 }
 
 type Module struct {
