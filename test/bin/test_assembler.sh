@@ -31,10 +31,10 @@ echo compare done
 
 if [ -e "$TESTBED/$TESTNAME/module.dump" ]
 then
-echo Comparing module...
-diff "$TESTBED/$TESTNAME/module.dump" "$TESTROOT/$TESTGROUP/$TESTNAME/ref/module.dump"
-((ECODE+=$?))
-echo compare done
+    echo Comparing module...
+    diff "$TESTBED/$TESTNAME/module.dump" "$TESTROOT/$TESTGROUP/$TESTNAME/ref/module.dump"
+    ((ECODE+=$?))
+    echo compare done
 fi
 
 echo End test $TESTNAME
