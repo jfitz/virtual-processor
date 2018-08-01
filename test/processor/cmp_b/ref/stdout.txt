@@ -16,4 +16,4 @@ Value stack:
 Value stack:
 0F: 00 EXIT
 Value stack:
-Execution halted at 10
+Execution halted at 0F

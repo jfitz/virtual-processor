@@ -481,8 +481,13 @@ type Module struct {
 func (module *Module) Init() {
 }
 
-func (module *Module) SetPC(address Address) {
+func (module *Module) SetPC(address Address) error {
+	if int(address.ByteValue()) >= len(module.Code) {
+		return errors.New("Address out of range")
+	}
+
 	module.pc = address
+	return nil
 }
 
 func (module Module) PCByteValue() byte {

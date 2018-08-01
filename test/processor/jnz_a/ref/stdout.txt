@@ -218,4 +218,4 @@ Value stack: 0A
 Value stack:
 1A: 00 EXIT
 Value stack:
-Execution halted at 1B
+Execution halted at 1A

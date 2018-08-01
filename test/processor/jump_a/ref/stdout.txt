@@ -186,4 +186,4 @@ Value stack: 00 0A
 Value stack: 00
 11: 00 EXIT
 Value stack: 00
-Execution halted at 12
+Execution halted at 11

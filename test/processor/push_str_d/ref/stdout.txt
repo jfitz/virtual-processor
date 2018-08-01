@@ -132,4 +132,4 @@ Value stack: 00 0A
 Value stack: 00
 0D: 00 EXIT
 Value stack: 00
-Execution halted at 0E
+Execution halted at 0D

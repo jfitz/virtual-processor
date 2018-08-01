@@ -224,11 +224,19 @@ func kernelCall(vStack byteStack) byteStack {
 	return vStack
 }
 
-func executeCode(module vputils.Module, startAddress vputils.Address, trace bool, instructionDefinitions instructionTable) {
+func executeCode(module vputils.Module, startAddress vputils.Address, trace bool, instructionDefinitions instructionTable) error {
+	// initialize virtual processor
 	flags := [1]bool{false}
-	module.SetPC(startAddress)
 	vStack := make(byteStack, 0) // value stack
 
+	// initialize module
+	err := module.SetPC(startAddress)
+	if err != nil {
+		s := fmt.Sprintf("Invalid start address %s for main: %s", startAddress.ToString(), err.Error())
+		return errors.New(s)
+	}
+
+	// trace
 	if trace {
 		fmt.Println("Execution started at ", startAddress.ToString())
 	}
@@ -254,6 +262,7 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 		instructionSize := def.calcInstructionSize()
 		targetSize := def.calcTargetSize()
 
+		// decode immediate value
 		if def.AddressMode == "V" {
 			switch def.TargetType {
 			case "B":
@@ -266,6 +275,7 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 			instructionSize += targetSize
 		}
 
+		// decode memory target
 		if def.AddressMode == "D" {
 			dataAddress = module.DirectAddress()
 			bytes[0], _ = module.DirectByte()
@@ -283,6 +293,7 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 			instructionSize += dataAddress1.Size()
 		}
 
+		// decode jump target
 		if def.JumpMode == "A" {
 			jumpAddress = module.DirectAddress()
 
@@ -301,6 +312,7 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 			instructionSize += 1
 		}
 
+		// trace opcode and arguments
 		if trace {
 			text := def.toString()
 			line := fmt.Sprintf("%s: %02X %s", pc.ToString(), opcode, text)
@@ -322,13 +334,14 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 			fmt.Println(line)
 		}
 
+		// execute opcode
 		newpc := pc
 		switch opcode {
 		case 0x00:
 			// EXIT
 			halt = true
 
-			newpc = pc.AddByte(instructionSize)
+			// newpc = pc.AddByte(instructionSize)
 
 		case 0x01:
 			// KCALL - kernel call
@@ -679,10 +692,11 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 
 		default:
 			// invalid opcode
-			fmt.Printf("Invalid opcode %02x at %s\n", opcode, pc.ToString())
-			return
+			s := fmt.Sprintf("Invalid opcode %02x at %s\n", opcode, pc.ToString())
+			return errors.New(s)
 		}
 
+		// trace stack
 		if trace {
 			stack := ""
 			for _, v := range vStack {
@@ -691,13 +705,21 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 			fmt.Println("Value stack:" + stack)
 		}
 
-		module.SetPC(newpc)
+		// advance to next instruction
+		err = module.SetPC(newpc)
+		if err != nil {
+			s := fmt.Sprintf("Invalid address %s for PC in main: %s", newpc.ToString(), err.Error())
+			return errors.New(s)
+		}
 	}
 
+	// trace
 	if trace {
 		pc := module.PC()
 		fmt.Println("Execution halted at " + pc.ToString())
 	}
+
+	return nil
 }
 
 func read(moduleFile string) (vputils.Module, error) {
@@ -814,5 +836,6 @@ func main() {
 
 	instructionDefinitions := defineInstructions()
 
-	executeCode(module, startAddress, trace, instructionDefinitions)
+	err = executeCode(module, startAddress, trace, instructionDefinitions)
+	vputils.CheckAndExit(err)
 }

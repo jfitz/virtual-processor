@@ -14,4 +14,4 @@ Value stack: 0A 00 62 5F 74 75 6F 06
 Value stack:
 0A: 00 EXIT
 Value stack:
-Execution halted at 0B
+Execution halted at 0A

@@ -6,4 +6,4 @@ H
 Value stack:
 05: 00 EXIT
 Value stack:
-Execution halted at 06
+Execution halted at 05

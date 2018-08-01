@@ -176,10 +176,12 @@ func decodeOpcode(text string, instructionAddress vputils.Address, targetType st
 		instruction = []byte{opcodes[0]}
 
 		if targetType == "A" {
+			// TODO: check address is within code address width
 			instruction = append(instruction, address.Bytes...)
 		}
 		if targetType == "R" {
 			offset := byte(address.ToInt() - instructionAddress.ToInt())
+			// TODO: check offset is within range for JXX_R opcode
 			instruction = append(instruction, offset)
 		}
 	}
