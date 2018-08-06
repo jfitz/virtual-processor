@@ -1,13 +1,13 @@
 Execution started at  00
-00: 60 PUSH.B =7F
+00: 60 PUSH.B =7F z
 Value stack: 7F
-02: 60 PUSH.B =41
+02: 60 PUSH.B =41 z
 Value stack: 7F 41
-04: C0 AND.B
+04: C0 AND.B z
 Value stack: 41
-05: 08 OUT
+05: 08 OUT z
 A
 Value stack:
-06: 00 EXIT
+06: 00 EXIT z
 Value stack:
 Execution halted at 06

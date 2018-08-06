@@ -13,12 +13,16 @@ import (
 	"strings"
 )
 
+// --------------------
+// byte stack
+// --------------------
 type byteStack []byte
 
 func (stack byteStack) pushByte(v byte) byteStack {
 	return append(stack, v)
 }
 
+// --------------------
 func reverseBytes(bs []byte) []byte {
 	last := len(bs) - 1
 
@@ -29,11 +33,13 @@ func reverseBytes(bs []byte) []byte {
 	return bs
 }
 
+// --------------------
 func (stack byteStack) pushBytes(vs []byte) byteStack {
 	bs := reverseBytes(vs)
 	return append(stack, bs...)
 }
 
+// --------------------
 func (stack byteStack) topByte() (byte, error) {
 	count := 1
 	if len(stack) < count {
@@ -44,6 +50,7 @@ func (stack byteStack) topByte() (byte, error) {
 	return stack[last], nil
 }
 
+// --------------------
 func (stack byteStack) popByte(count int) ([]byte, byteStack, error) {
 	if len(stack) < count {
 		return []byte{}, stack, errors.New("Stack underflow")
@@ -53,6 +60,7 @@ func (stack byteStack) popByte(count int) ([]byte, byteStack, error) {
 	return stack[last:], stack[:last], nil
 }
 
+// --------------------
 func (stack byteStack) pushString(s string) byteStack {
 	bs := []byte(s)
 	stack = stack.pushBytes(bs)
@@ -62,6 +70,7 @@ func (stack byteStack) pushString(s string) byteStack {
 	return stack
 }
 
+// --------------------
 func (stack byteStack) popString() (string, byteStack) {
 	// pop size of name
 	counts, stack, err := stack.popByte(1)
@@ -82,6 +91,42 @@ func (stack byteStack) popString() (string, byteStack) {
 	return s, stack
 }
 
+// --------------------
+// --------------------
+
+// --------------------
+// bool stack
+// --------------------
+type boolStack []bool
+
+// --------------------
+func (stack boolStack) push(v bool) boolStack {
+	return append(stack, v)
+}
+
+// --------------------
+func (stack boolStack) top() (bool, error) {
+	if len(stack) < 1 {
+		return false, errors.New("Stack underflow")
+	}
+
+	last := len(stack) - 1
+	return stack[last], nil
+}
+
+// --------------------
+func (stack boolStack) pop() (bool, boolStack, error) {
+	if len(stack) < 1 {
+		return false, stack, errors.New("Stack underflow")
+	}
+
+	last := len(stack) - 1
+	return stack[last], stack[:last], nil
+}
+
+// --------------------
+// --------------------
+
 type instructionDefinition struct {
 	Name        string
 	TargetType  string
@@ -99,8 +144,12 @@ func (def instructionDefinition) toString() string {
 	return s
 }
 
+// --------------------
+// instructionTable
+// --------------------
 type instructionTable map[byte]instructionDefinition
 
+// --------------------
 func defineInstructions() instructionTable {
 	instructionDefinitions := make(instructionTable)
 
@@ -145,10 +194,17 @@ func defineInstructions() instructionTable {
 	return instructionDefinitions
 }
 
+// --------------------
+// --------------------
+
+// --------------------
+// instructionDefinition
+// --------------------
 func (def instructionDefinition) calcInstructionSize() int {
 	return 1
 }
 
+// --------------------
 func (def instructionDefinition) calcTargetSize() int {
 	targetSize := 0
 
@@ -173,6 +229,9 @@ func (def instructionDefinition) calcTargetSize() int {
 
 	return targetSize
 }
+
+// --------------------
+// --------------------
 
 func kernelCall(vStack byteStack) byteStack {
 	fname, vStack := vStack.popString()
@@ -226,22 +285,30 @@ func getConditionAndOpcode(code vputils.Vector, pc vputils.Address) ([]byte, byt
 	return conditionals, opcode, err
 }
 
-func evaluateConditionals(conditionals []byte, flags []bool) bool {
+func evaluateConditionals(conditionals []byte, flags []bool) (bool, error) {
 	execute := true
-	stack := []bool{}
+	stack := make(boolStack, 0)
 
 	for _, conditional := range conditionals {
 		switch conditional {
 		case 0xE0:
-			stack = append(stack, flags[0])
+			stack = stack.push(flags[0])
 		}
 	}
 
-	if len(stack) == 1 {
-		execute = stack[0]
+	if len(stack) > 1 {
+		return false, errors.New("Invalid conditionals")
 	}
 
-	return execute
+	if len(stack) == 1 {
+		exe, err := stack.top()
+		if err != nil {
+			return false, err
+		}
+		execute = exe
+	}
+
+	return execute, nil
 }
 
 func conditionalsToString(conditionals []byte) string {
@@ -288,8 +355,14 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 
 		if len(conditionals) > 0 {
 			err = module.SetPC(newpc)
+			if err != nil {
+				return err
+			}
 
-			execute = evaluateConditionals(conditionals, flags)
+			execute, err = evaluateConditionals(conditionals, flags)
+			if err != nil {
+				return err
+			}
 		}
 
 		instructionSize := len(conditionals)
@@ -620,13 +693,21 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 
 		case 0xD0:
 			// JUMP
-			newpc = jumpAddress
+			if execute {
+				newpc = jumpAddress
+			} else {
+				newpc = pc.AddByte(instructionSize)
+			}
 
 		case 0xD1:
 			// CALL
-			newpc = jumpAddress
-			retpc := pc.AddByte(instructionSize)
-			module.Push(retpc)
+			if execute {
+				newpc = jumpAddress
+				retpc := pc.AddByte(instructionSize)
+				module.Push(retpc)
+			} else {
+				newpc = pc.AddByte(instructionSize)
+			}
 
 		case 0xD2:
 			// RET

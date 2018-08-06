@@ -1,19 +1,19 @@
 Execution started at  00
-00: 60 PUSH.B =01
+00: 60 PUSH.B =01 z
 Value stack: 01
-02: 60 PUSH.B =40
+02: 60 PUSH.B =40 z
 Value stack: 01 40
-04: C3 CMP.B
+04: C3 CMP.B z
 Value stack:
-05: E2 JZ.R 7 >0C
+05: D0 Z:JUMP >0D z
 Value stack:
-07: 60 PUSH.B =41
+08: 60 PUSH.B =41 z
 Value stack: 41
-09: 08 OUT
+0A: 08 OUT z
 A
 Value stack:
-0A: E0 JUMP.R 5 >0F
+0B: D0 JUMP >10 z
 Value stack:
-0F: 00 EXIT
+10: 00 EXIT z
 Value stack:
-Execution halted at 0F
+Execution halted at 10

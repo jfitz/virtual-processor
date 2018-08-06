@@ -14,13 +14,13 @@ MAIN:
 loop:
 04	62 0E		PUSH.B	@@address
 06	13		FLAGS.B	
-07	D2 0E		JZ.A	printnl
-09	08		OUT	
-0A	21 0E		INC.B	@address
-0C	D0 04		JUMP.A	loop
+07	E0 D0 0F	Z:JUMP	printnl
+0A	08		OUT	
+0B	21 0E		INC.B	@address
+0D	D0 04		JUMP	loop
 printnl:
-0E	61 0F		PUSH.B	@newline
-10	08		OUT	
-11	00		EXIT	
+0F	61 0F		PUSH.B	@newline
+11	08		OUT	
+12	00		EXIT	
 			ENDSEGMENT
 

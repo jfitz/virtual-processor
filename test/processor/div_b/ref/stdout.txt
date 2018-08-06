@@ -1,13 +1,13 @@
 Execution started at  00
-00: 60 PUSH.B =02
+00: 60 PUSH.B =02 z
 Value stack: 02
-02: 60 PUSH.B =90
+02: 60 PUSH.B =90 z
 Value stack: 02 90
-04: A3 DIV.B
+04: A3 DIV.B z
 Value stack: 48
-05: 08 OUT
+05: 08 OUT z
 H
 Value stack:
-06: 00 EXIT
+06: 00 EXIT z
 Value stack:
 Execution halted at 06

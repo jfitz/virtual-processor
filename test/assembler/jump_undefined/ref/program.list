@@ -14,8 +14,8 @@ MAIN:
 loop:
 04	62 0E		PUSH.B	@@address
 06	13		FLAGS.B	
-07	D2 0E		JZ.A	printnl
-09	08		OUT	
-0A	21 0E		INC.B	@address
+07	E0 D0 0F	Z:JUMP	printnl
+0A	08		OUT	
+0B	21 0E		INC.B	@address
 Undefined label 'loop_wrong'
 exit status 1

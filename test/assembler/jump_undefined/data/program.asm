@@ -7,7 +7,7 @@ MAIN	PUSH.B	message
 
 loop	PUSH.B	@@address
 	FLAGS.B
-	JZ.A	printnl
+	Z:JUMP	printnl
 	OUT
 	INC.B	@address
 	JUMP.A	loop_wrong

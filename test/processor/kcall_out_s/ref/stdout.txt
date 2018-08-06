@@ -1,17 +1,17 @@
 Execution started at  00
-00: 79 PUSH.STR @0C =48
+00: 79 PUSH.STR @0C =48 z
 Value stack: 00 21 64 6C 72 6F 77 20 2C 6F 6C 6C 65 48 0E
-02: 79 PUSH.STR @00 =6F
+02: 79 PUSH.STR @00 =6F z
 Value stack: 00 21 64 6C 72 6F 77 20 2C 6F 6C 6C 65 48 0E 00 73 5F 74 75 6F 06
-04: 01 KCALL
+04: 01 KCALL z
 Hello, world!Value stack:
-05: 60 PUSH.B =0A
+05: 60 PUSH.B =0A z
 Value stack: 0A
-07: 79 PUSH.STR @06 =6F
+07: 79 PUSH.STR @06 =6F z
 Value stack: 0A 00 62 5F 74 75 6F 06
-09: 01 KCALL
+09: 01 KCALL z
 
 Value stack:
-0A: 00 EXIT
+0A: 00 EXIT z
 Value stack:
 Execution halted at 0A

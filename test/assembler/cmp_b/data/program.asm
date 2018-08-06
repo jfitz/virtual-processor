@@ -1,7 +1,7 @@
 MAIN	PUSH.B	1
 	PUSH.B	64
 	CMP.B
-	JZ.R	equal
+	Z:JUMP	equal
 	PUSH.B	65
 	OUT
 	JUMP.R 	exit
