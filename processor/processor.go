@@ -86,7 +86,6 @@ type instructionDefinition struct {
 	Name        string
 	TargetType  string
 	AddressMode string
-	JumpMode    string
 }
 
 func (def instructionDefinition) toString() string {
@@ -97,11 +96,6 @@ func (def instructionDefinition) toString() string {
 		s += def.TargetType
 	}
 
-	if len(def.JumpMode) > 0 {
-		s += "."
-		s += def.JumpMode
-	}
-
 	return s
 }
 
@@ -110,59 +104,43 @@ type instructionTable map[byte]instructionDefinition
 func defineInstructions() instructionTable {
 	instructionDefinitions := make(instructionTable)
 
-	instructionDefinitions[0x00] = instructionDefinition{"EXIT", "", "", ""}
-	instructionDefinitions[0x01] = instructionDefinition{"KCALL", "", "", ""}
+	instructionDefinitions[0x00] = instructionDefinition{"EXIT", "", ""}
+	instructionDefinitions[0x01] = instructionDefinition{"KCALL", "", ""}
 
-	instructionDefinitions[0x60] = instructionDefinition{"PUSH", "B", "V", ""}
-	instructionDefinitions[0x61] = instructionDefinition{"PUSH", "B", "D", ""}
-	instructionDefinitions[0x62] = instructionDefinition{"PUSH", "B", "I", ""}
+	instructionDefinitions[0x60] = instructionDefinition{"PUSH", "B", "V"}
+	instructionDefinitions[0x61] = instructionDefinition{"PUSH", "B", "D"}
+	instructionDefinitions[0x62] = instructionDefinition{"PUSH", "B", "I"}
 
-	instructionDefinitions[0x64] = instructionDefinition{"PUSH", "I16", "V", ""}
-	instructionDefinitions[0x65] = instructionDefinition{"PUSH", "I16", "D", ""}
-	instructionDefinitions[0x66] = instructionDefinition{"PUSH", "I16", "I", ""}
+	instructionDefinitions[0x64] = instructionDefinition{"PUSH", "I16", "V"}
+	instructionDefinitions[0x65] = instructionDefinition{"PUSH", "I16", "D"}
+	instructionDefinitions[0x66] = instructionDefinition{"PUSH", "I16", "I"}
 
-	instructionDefinitions[0x79] = instructionDefinition{"PUSH", "STR", "D", ""}
+	instructionDefinitions[0x79] = instructionDefinition{"PUSH", "STR", "D"}
 
-	instructionDefinitions[0x81] = instructionDefinition{"POP", "B", "D", ""}
-	instructionDefinitions[0x08] = instructionDefinition{"OUT", "", "S", ""}
+	instructionDefinitions[0x81] = instructionDefinition{"POP", "B", "D"}
+	instructionDefinitions[0x08] = instructionDefinition{"OUT", "", "S"}
 
-	instructionDefinitions[0x11] = instructionDefinition{"FLAGS", "B", "D", ""}
-	instructionDefinitions[0x12] = instructionDefinition{"FLAGS", "B", "I", ""}
-	instructionDefinitions[0x13] = instructionDefinition{"FLAGS", "B", "S", ""}
+	instructionDefinitions[0x11] = instructionDefinition{"FLAGS", "B", "D"}
+	instructionDefinitions[0x12] = instructionDefinition{"FLAGS", "B", "I"}
+	instructionDefinitions[0x13] = instructionDefinition{"FLAGS", "B", "S"}
 
-	instructionDefinitions[0x21] = instructionDefinition{"INC", "B", "D", ""}
-	instructionDefinitions[0x22] = instructionDefinition{"INC", "B", "I", ""}
-	instructionDefinitions[0x31] = instructionDefinition{"DEC", "B", "D", ""}
-	instructionDefinitions[0x32] = instructionDefinition{"DEC", "B", "I", ""}
+	instructionDefinitions[0x21] = instructionDefinition{"INC", "B", "D"}
+	instructionDefinitions[0x22] = instructionDefinition{"INC", "B", "I"}
+	instructionDefinitions[0x31] = instructionDefinition{"DEC", "B", "D"}
+	instructionDefinitions[0x32] = instructionDefinition{"DEC", "B", "I"}
 
-	instructionDefinitions[0xD0] = instructionDefinition{"JUMP", "", "", "A"}
-	instructionDefinitions[0xD1] = instructionDefinition{"JNZ", "", "", "A"}
-	instructionDefinitions[0xD2] = instructionDefinition{"JZ", "", "", "A"}
+	instructionDefinitions[0xD0] = instructionDefinition{"JUMP", "", ""}
+	instructionDefinitions[0xD1] = instructionDefinition{"CALL", "", ""}
+	instructionDefinitions[0xD2] = instructionDefinition{"RET", "", ""}
 
-	instructionDefinitions[0xE0] = instructionDefinition{"JUMP", "", "", "R"}
-	instructionDefinitions[0xE1] = instructionDefinition{"JNZ", "", "", "R"}
-	instructionDefinitions[0xE2] = instructionDefinition{"JZ", "", "", "R"}
+	instructionDefinitions[0xA0] = instructionDefinition{"ADD", "B", ""}
+	instructionDefinitions[0xA1] = instructionDefinition{"SUB", "B", ""}
+	instructionDefinitions[0xA2] = instructionDefinition{"MUL", "B", ""}
+	instructionDefinitions[0xA3] = instructionDefinition{"DIV", "B", ""}
 
-	instructionDefinitions[0xD4] = instructionDefinition{"CALL", "", "", "A"}
-	instructionDefinitions[0xD5] = instructionDefinition{"CNZ", "", "", "A"}
-	instructionDefinitions[0xD6] = instructionDefinition{"CZ", "", "", "A"}
-
-	instructionDefinitions[0xE4] = instructionDefinition{"CALL", "", "", "R"}
-	instructionDefinitions[0xE5] = instructionDefinition{"CNZ", "", "", "R"}
-	instructionDefinitions[0xE6] = instructionDefinition{"CZ", "", "", "R"}
-
-	instructionDefinitions[0xD8] = instructionDefinition{"RET", "", "", ""}
-	instructionDefinitions[0xD9] = instructionDefinition{"RNZ", "", "", ""}
-	instructionDefinitions[0xDA] = instructionDefinition{"RZ", "", "", ""}
-
-	instructionDefinitions[0xA0] = instructionDefinition{"ADD", "B", "", ""}
-	instructionDefinitions[0xA1] = instructionDefinition{"SUB", "B", "", ""}
-	instructionDefinitions[0xA2] = instructionDefinition{"MUL", "B", "", ""}
-	instructionDefinitions[0xA3] = instructionDefinition{"DIV", "B", "", ""}
-
-	instructionDefinitions[0xC0] = instructionDefinition{"AND", "B", "", ""}
-	instructionDefinitions[0xC1] = instructionDefinition{"OR", "B", "", ""}
-	instructionDefinitions[0xC3] = instructionDefinition{"CMP", "B", "", ""}
+	instructionDefinitions[0xC0] = instructionDefinition{"AND", "B", ""}
+	instructionDefinitions[0xC1] = instructionDefinition{"OR", "B", ""}
+	instructionDefinitions[0xC3] = instructionDefinition{"CMP", "B", ""}
 
 	return instructionDefinitions
 }
@@ -224,9 +202,64 @@ func kernelCall(vStack byteStack) byteStack {
 	return vStack
 }
 
+func getConditionAndOpcode(code vputils.Vector, pc vputils.Address) ([]byte, byte, error) {
+	conditionals := []byte{}
+	opcode := byte(0)
+	err := errors.New("")
+
+	newpc := pc
+	my_byte, err := code.GetByte(newpc)
+
+	has_conditional := true
+
+	for has_conditional {
+		if my_byte >= 0xE0 && my_byte <= 0xEF {
+			conditionals = append(conditionals, my_byte)
+			newpc := newpc.AddByte(1)
+			my_byte, err = code.GetByte(newpc)
+		} else {
+			opcode = my_byte
+			has_conditional = false
+		}
+	}
+
+	return conditionals, opcode, err
+}
+
+func evaluateConditionals(conditionals []byte, flags []bool) bool {
+	execute := true
+	stack := []bool{}
+
+	for _, conditional := range conditionals {
+		switch conditional {
+		case 0xE0:
+			stack = append(stack, flags[0])
+		}
+	}
+
+	if len(stack) == 1 {
+		execute = stack[0]
+	}
+
+	return execute
+}
+
+func conditionalsToString(conditionals []byte) string {
+	result := ""
+
+	for _, conditional := range conditionals {
+		switch conditional {
+		case 0xE0:
+			result += "Z:"
+		}
+	}
+
+	return result
+}
+
 func executeCode(module vputils.Module, startAddress vputils.Address, trace bool, instructionDefinitions instructionTable) error {
 	// initialize virtual processor
-	flags := [1]bool{false}
+	flags := []bool{false}
 	vStack := make(byteStack, 0) // value stack
 
 	// initialize module
@@ -246,20 +279,37 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 	halt := false
 	for !halt {
 		pc := module.PC()
-		opcode, err := code.GetByte(pc)
+		conditionals, opcode, err := getConditionAndOpcode(code, pc)
 		vputils.CheckPrintAndExit(err, "at PC "+pc.ToString())
 
+		newpc := pc.AddByte(len(conditionals))
+
+		execute := true
+
+		if len(conditionals) > 0 {
+			err = module.SetPC(newpc)
+
+			execute = evaluateConditionals(conditionals, flags)
+		}
+
+		instructionSize := len(conditionals)
+
+		// get opcode definition
 		def := instructionDefinitions[opcode]
+
+		// bytes for opcode
 		bytes := []byte{0}
 		bytes1 := []byte{}
 		bytes2 := []byte{}
 		value_s := ""
+
+		// addresses for opcode
 		dataAddress := vputils.Address{[]byte{}}
 		dataAddress1 := vputils.Address{[]byte{}}
 		jumpAddress := vputils.Address{[]byte{}}
 		offset_s := ""
 
-		instructionSize := def.calcInstructionSize()
+		instructionSize += def.calcInstructionSize()
 		targetSize := def.calcTargetSize()
 
 		// decode immediate value
@@ -294,28 +344,17 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 		}
 
 		// decode jump target
-		if def.JumpMode == "A" {
+		if opcode == 0xD0 || opcode == 0xD1 {
 			jumpAddress = module.DirectAddress()
 
 			instructionSize += jumpAddress.Size()
 		}
 
-		if def.JumpMode == "R" {
-			bytes = module.ImmediateByte()
-			offset_i := int(bytes[0])
-			if offset_i > 127 {
-				offset_i = offset_i - 256
-			}
-			offset_s = strconv.Itoa(offset_i)
-			jumpAddress = pc.AddByte(offset_i)
-
-			instructionSize += 1
-		}
-
 		// trace opcode and arguments
 		if trace {
 			text := def.toString()
-			line := fmt.Sprintf("%s: %02X %s", pc.ToString(), opcode, text)
+			condi_s := conditionalsToString(conditionals)
+			line := fmt.Sprintf("%s: %02X %s%s", pc.ToString(), opcode, condi_s, text)
 			if !dataAddress1.Empty() {
 				line += " @@" + dataAddress1.ToString()
 			}
@@ -331,11 +370,15 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 			if !jumpAddress.Empty() {
 				line += " >" + jumpAddress.ToString()
 			}
+			if flags[0] {
+				line += " Z"
+			} else {
+				line += " z"
+			}
 			fmt.Println(line)
 		}
 
 		// execute opcode
-		newpc := pc
 		switch opcode {
 		case 0x00:
 			// EXIT
@@ -576,114 +619,18 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 			newpc = pc.AddByte(instructionSize)
 
 		case 0xD0:
-			// JUMP.A
+			// JUMP
 			newpc = jumpAddress
 
 		case 0xD1:
-			// JNZ.A
-			if !flags[0] {
-				newpc = jumpAddress
-			} else {
-				newpc = pc.AddByte(instructionSize)
-			}
+			// CALL
+			newpc = jumpAddress
+			retpc := pc.AddByte(instructionSize)
+			module.Push(retpc)
 
 		case 0xD2:
-			// JZ.A
-			if flags[0] {
-				newpc = jumpAddress
-			} else {
-				newpc = pc.AddByte(instructionSize)
-			}
-
-		case 0xE0:
-			// JUMP.R
-			newpc = jumpAddress
-
-		case 0xE1:
-			// JNZ.R
-			if !flags[0] {
-				newpc = jumpAddress
-			} else {
-				newpc = pc.AddByte(instructionSize)
-			}
-
-		case 0xE2:
-			// JZ.R
-			if flags[0] {
-				newpc = jumpAddress
-			} else {
-				newpc = pc.AddByte(instructionSize)
-			}
-
-		case 0xD4:
-			// CALL.A
-			newpc = jumpAddress
-			retpc := pc.AddByte(instructionSize)
-			module.Push(retpc)
-
-		case 0xD5:
-			// CNZ.A
-			if !flags[0] {
-				newpc = jumpAddress
-				retpc := pc.AddByte(instructionSize)
-				module.Push(retpc)
-			} else {
-				newpc = pc.AddByte(instructionSize)
-			}
-
-		case 0xD6:
-			// CZ.A
-			if flags[0] {
-				newpc = jumpAddress
-				retpc := pc.AddByte(instructionSize)
-				module.Push(retpc)
-			} else {
-				newpc = pc.AddByte(instructionSize)
-			}
-
-		case 0xE4:
-			// CALL.R
-			newpc = jumpAddress
-			retpc := pc.AddByte(instructionSize)
-			module.Push(retpc)
-
-		case 0xE5:
-			// CNZ.R
-			if !flags[0] {
-				newpc = jumpAddress
-				retpc := pc.AddByte(instructionSize)
-				module.Push(retpc)
-			} else {
-				newpc = pc.AddByte(instructionSize)
-			}
-
-		case 0xE6:
-			// CZ.R
-			if flags[0] {
-				newpc = jumpAddress
-				retpc := pc.AddByte(instructionSize)
-				module.Push(retpc)
-			} else {
-				newpc = pc.AddByte(instructionSize)
-			}
-
-		case 0xD8:
 			// RET
-			newpc, err = module.TopPop()
-			vputils.CheckAndExit(err)
-
-		case 0xD9:
-			// RNZ
-			if !flags[0] {
-				newpc, err = module.TopPop()
-				vputils.CheckAndExit(err)
-			} else {
-				newpc = pc.AddByte(instructionSize)
-			}
-
-		case 0xDA:
-			// RZ
-			if flags[0] {
+			if execute {
 				newpc, err = module.TopPop()
 				vputils.CheckAndExit(err)
 			} else {

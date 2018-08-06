@@ -72,7 +72,7 @@ func IsLower(c byte) bool {
 }
 
 func IsText(c byte) bool {
-	return IsAlnum(c) || c == '.'
+	return IsAlnum(c) || c == '.' || c == ':'
 }
 
 func IsDirectAddress(s string) bool {
@@ -96,10 +96,12 @@ func compatible(token string, c byte) bool {
 	}
 
 	if IsDoubleQuote(token[0]) && len(token) == 1 {
+		// quote by itself accepts anything
 		return true
 	}
 
 	if IsDoubleQuote(token[0]) && len(token) > 1 && !IsDoubleQuote(token[len(token)-1]) {
+		// quote with non-quote characters accepts anything
 		return true
 	}
 
@@ -109,7 +111,7 @@ func compatible(token string, c byte) bool {
 	}
 
 	if IsAlpha(token[0]) {
-		// text token accepts alpha and digit
+		// text token accepts alpha and digit and underscore and colon
 		return IsText(c)
 	}
 

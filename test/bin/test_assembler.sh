@@ -17,7 +17,7 @@ ECODE=0
 
 echo Running program...
 go run assembler/assembler.go "$TESTBED/$TESTNAME/program.asm" "$TESTBED/$TESTNAME/program.module" >"$TESTBED/$TESTNAME/stdout.txt" 2>&1
-if [ $? == 0 ]
+if [ $? -eq 0 ]
 then
     xxd -g 1 "$TESTBED/$TESTNAME/program.module" >"$TESTBED/$TESTNAME/module.dump"
 fi
@@ -27,13 +27,24 @@ echo run finished
 echo Comparing stdout...
 diff "$TESTBED/$TESTNAME/stdout.txt" "$TESTROOT/$TESTGROUP/$TESTNAME/ref/program.list"
 ((ECODE+=$?))
+
+if [ $ECODE -ne 0 ]
+then
+    cp "$TESTBED/$TESTNAME/stdout.txt" "$TESTROOT/$TESTGROUP/$TESTNAME/ref/program.list"
+fi
+
 echo compare done
 
 if [ -e "$TESTBED/$TESTNAME/module.dump" ]
 then
     echo Comparing module...
     diff "$TESTBED/$TESTNAME/module.dump" "$TESTROOT/$TESTGROUP/$TESTNAME/ref/module.dump"
-    ((ECODE+=$?))
+
+    if [ $? -ne 0 ]
+    then
+	cp "$TESTBED/$TESTNAME/module.dump" "$TESTROOT/$TESTGROUP/$TESTNAME/ref/module.dump"
+    fi
+    
     echo compare done
 fi
 

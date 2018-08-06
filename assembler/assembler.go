@@ -62,6 +62,8 @@ func evaluateI16(expression string) []byte {
 
 type LabelTable map[string]vputils.Address
 
+type opcodeList map[string][]byte
+
 func buildInstruction(opcodemap opcodeList, targetType string, target string, dataLabels LabelTable) ([]byte, error) {
 	opcodes, ok := opcodemap[targetType]
 
@@ -129,12 +131,9 @@ func buildInstruction(opcodemap opcodeList, targetType string, target string, da
 	return nil, errors.New("Invalid opcode")
 }
 
-type opcodeList map[string][]byte
-
 type opcodeDefinition struct {
 	Opcode         byte
 	AddressOpcodes opcodeList
-	JumpOpcodes    opcodeList
 }
 
 func decodeOpcode(text string, instructionAddress vputils.Address, targetType string, target string, opcodeDefs map[string]opcodeDefinition, resolveAddress bool, codeLabels LabelTable, dataLabels LabelTable) ([]byte, error) {
@@ -147,7 +146,6 @@ func decodeOpcode(text string, instructionAddress vputils.Address, targetType st
 	// assume we have a simple opcode (with no target)
 	instruction := []byte{opcodeDef.Opcode}
 	addressOpcodes := opcodeDef.AddressOpcodes
-	jumpOpcodes := opcodeDef.JumpOpcodes
 
 	var err error
 	if len(addressOpcodes) > 0 {
@@ -157,7 +155,10 @@ func decodeOpcode(text string, instructionAddress vputils.Address, targetType st
 	}
 
 	// for jump instructions, append the target address
-	if len(jumpOpcodes) > 0 {
+	// TODO avoid hard-coded values
+	first_byte := instruction[0]
+	is_jump := first_byte == 0xD0 || first_byte == 0xD1
+	if is_jump {
 		address, ok := codeLabels[target]
 		if !ok {
 			if resolveAddress {
@@ -168,22 +169,8 @@ func decodeOpcode(text string, instructionAddress vputils.Address, targetType st
 			}
 		}
 
-		opcodes, ok := jumpOpcodes[targetType]
-		if !ok {
-			return nil, errors.New("Decode: Set '" + targetType + "' not found for " + text)
-		}
-
-		instruction = []byte{opcodes[0]}
-
-		if targetType == "A" {
-			// TODO: check address is within code address width
-			instruction = append(instruction, address.Bytes...)
-		}
-		if targetType == "R" {
-			offset := byte(address.ToInt() - instructionAddress.ToInt())
-			// TODO: check offset is within range for JXX_R opcode
-			instruction = append(instruction, offset)
-		}
+		// TODO: check address is within code address width
+		instruction = append(instruction, address.Bytes...)
 	}
 
 	return instruction, nil
@@ -233,6 +220,27 @@ func dequoteString(s string) []byte {
 	bytes = append(bytes, byte(0))
 
 	return bytes
+}
+
+func decode_conditional(s string) ([]byte, error) {
+	prefix := []byte{}
+
+	if len(s) > 0 {
+		parts := strings.Split(s, ".")
+
+		for _, part := range parts {
+			switch part {
+			case "Z":
+				prefix = append(prefix, 0xE0)
+			case "NOT":
+				prefix = append(prefix, 0xE8)
+			default:
+				return prefix, errors.New("Invalid conditional ")
+			}
+		}
+	}
+
+	return prefix, nil
 }
 
 func generateData(source []string, opcodeDefs map[string]opcodeDefinition) (vputils.Vector, LabelTable, LabelTable) {
@@ -299,16 +307,35 @@ func generateData(source []string, opcodeDefs map[string]opcodeDefinition) (vput
 				// process instruction
 				opcode := word
 				targetType := ""
-				parts := strings.Split(word, ".")
-				if len(parts) > 1 {
-					opcode = parts[0]
-					targetType = parts[1]
+				conditional := ""
+
+				parts1 := strings.Split(word, ":")
+
+				if len(parts1) > 1 {
+					conditional = parts1[0]
+					word = parts1[1]
+				} else {
+					word = parts1[0]
+				}
+
+				prefix, err := decode_conditional(conditional)
+				vputils.CheckAndExit(err)
+
+				parts2 := strings.Split(word, ".")
+
+				if len(parts2) > 1 {
+					opcode = parts2[0]
+					targetType = parts2[1]
+				} else {
+					opcode = parts2[0]
 				}
 
 				address := len(code)
+				// TODO: limit is based on address width
 				if address > 255 {
 					vputils.CheckAndExit(errors.New("Exceeded code label table size"))
 				}
+
 				instructionAddress := vputils.MakeAddress(address, 1)
 
 				if len(label) > 0 {
@@ -328,6 +355,7 @@ func generateData(source []string, opcodeDefs map[string]opcodeDefinition) (vput
 				// decode the instruction
 				instruction := getInstruction(opcode, instructionAddress, targetType, target, opcodeDefs, false, dataLabels, codeLabels)
 
+				code = append(code, prefix...)
 				code = append(code, instruction...)
 			}
 		}
@@ -358,14 +386,33 @@ func generateCode(source []string, opcodeDefs map[string]opcodeDefinition, dataL
 			// write the directive or instruction
 			if !isDirective(word) {
 				opcode := word
+				mnemonic := ""
 				targetType := ""
-				parts := strings.Split(word, ".")
-				if len(parts) > 1 {
-					opcode = parts[0]
-					targetType = parts[1]
+				conditional := ""
+
+				parts1 := strings.Split(word, ":")
+
+				if len(parts1) > 1 {
+					conditional = parts1[0]
+					mnemonic = parts1[1]
+				} else {
+					mnemonic = parts1[0]
+				}
+
+				prefix, err := decode_conditional(conditional)
+				vputils.CheckAndExit(err)
+
+				parts2 := strings.Split(mnemonic, ".")
+
+				if len(parts2) > 1 {
+					opcode = parts2[0]
+					targetType = parts2[1]
+				} else {
+					opcode = parts2[0]
 				}
 
 				address := len(code)
+				// TODO: limit is based on address width
 				if address > 255 {
 					vputils.CheckAndExit(errors.New("Exceeded code label table size"))
 				}
@@ -386,8 +433,10 @@ func generateCode(source []string, opcodeDefs map[string]opcodeDefinition, dataL
 				// decode the instruction
 				instruction := getInstruction(opcode, instructionAddress, targetType, target, opcodeDefs, true, dataLabels, codeLabels)
 
+				hex_bytes := append(prefix, instruction...)
 				location := len(code)
-				instruction_s := fmt.Sprintf("% X", instruction)
+				instruction_s := fmt.Sprintf("% X", hex_bytes)
+				// TODO: avoid hard-coded values for spacing
 				wordTabCount := 2 - len(instruction_s)/8
 				wordTabs := ""
 				for i := 0; i < wordTabCount; i++ {
@@ -396,6 +445,7 @@ func generateCode(source []string, opcodeDefs map[string]opcodeDefinition, dataL
 
 				fmt.Printf("%02X\t%s%s%s\t%s\n", location, instruction_s, wordTabs, word, target)
 
+				code = append(code, prefix...)
 				code = append(code, instruction...)
 			}
 		}
@@ -444,83 +494,65 @@ func makeOpcodeDefinitions() map[string]opcodeDefinition {
 
 	empty_opcodes := make(opcodeList)
 
-	opcodeDefs["EXIT"] = opcodeDefinition{0x00, empty_opcodes, empty_opcodes}
-	opcodeDefs["KCALL"] = opcodeDefinition{0x01, empty_opcodes, empty_opcodes}
-	opcodeDefs["OUT"] = opcodeDefinition{0x08, empty_opcodes, empty_opcodes}
+	opcodeDefs["EXIT"] = opcodeDefinition{0x00, empty_opcodes}
+	opcodeDefs["KCALL"] = opcodeDefinition{0x01, empty_opcodes}
+	opcodeDefs["OUT"] = opcodeDefinition{0x08, empty_opcodes}
 
-	jump_opcodes := make(opcodeList)
-	jump_opcodes["A"] = []byte{0xD0}
-	jump_opcodes["R"] = []byte{0xE0}
-	jnz_opcodes := make(opcodeList)
-	jnz_opcodes["A"] = []byte{0xD1}
-	jnz_opcodes["R"] = []byte{0xE1}
-	jz_opcodes := make(opcodeList)
-	jz_opcodes["A"] = []byte{0xD2}
-	jz_opcodes["R"] = []byte{0xE2}
-	opcodeDefs["JUMP"] = opcodeDefinition{0x0F, empty_opcodes, jump_opcodes}
-	opcodeDefs["JNZ"] = opcodeDefinition{0x0F, empty_opcodes, jnz_opcodes}
-	opcodeDefs["JZ"] = opcodeDefinition{0x0F, empty_opcodes, jz_opcodes}
+	opcodeDefs["JUMP"] = opcodeDefinition{0xD0, empty_opcodes}
 
-	call_opcodes := make(opcodeList)
-	call_opcodes["A"] = []byte{0xD4}
-	call_opcodes["R"] = []byte{0xE4}
-	cz_opcodes := make(opcodeList)
-	cz_opcodes["A"] = []byte{0xD6}
-	cz_opcodes["R"] = []byte{0xE6}
-	opcodeDefs["CALL"] = opcodeDefinition{0x0F, empty_opcodes, call_opcodes}
-	opcodeDefs["CZ"] = opcodeDefinition{0x0F, empty_opcodes, cz_opcodes}
-	opcodeDefs["RET"] = opcodeDefinition{0xD8, empty_opcodes, empty_opcodes}
-	opcodeDefs["RZ"] = opcodeDefinition{0xDA, empty_opcodes, empty_opcodes}
+	opcodeDefs["CALL"] = opcodeDefinition{0xD1, empty_opcodes}
+
+	opcodeDefs["RET"] = opcodeDefinition{0xD2, empty_opcodes}
 
 	push_opcodes := make(opcodeList)
 	push_opcodes["B"] = []byte{0x60, 0x61, 0x62, 0x0F}
 	push_opcodes["I16"] = []byte{0x64, 0x65, 0x66, 0x0F}
 	push_opcodes["STR"] = []byte{0x0F, 0x79, 0x7A, 0x0F}
-	opcodeDefs["PUSH"] = opcodeDefinition{0x0F, push_opcodes, empty_opcodes}
+	opcodeDefs["PUSH"] = opcodeDefinition{0x0F, push_opcodes}
 
 	pop_opcodes := make(opcodeList)
 	pop_opcodes["B"] = []byte{0x0F, 0x81, 0x82, 0x0F}
-	opcodeDefs["POP"] = opcodeDefinition{0x0F, pop_opcodes, empty_opcodes}
+	opcodeDefs["POP"] = opcodeDefinition{0x0F, pop_opcodes}
 
 	flags_opcodes := make(opcodeList)
 	flags_opcodes["B"] = []byte{0x10, 0x11, 0x12, 0x13}
-	opcodeDefs["FLAGS"] = opcodeDefinition{0x0F, flags_opcodes, empty_opcodes}
+	opcodeDefs["FLAGS"] = opcodeDefinition{0x0F, flags_opcodes}
 
 	inc_opcodes := make(opcodeList)
 	inc_opcodes["B"] = []byte{0x0F, 0x21, 0x22, 0x23}
-	opcodeDefs["INC"] = opcodeDefinition{0x0F, inc_opcodes, empty_opcodes}
+	opcodeDefs["INC"] = opcodeDefinition{0x0F, inc_opcodes}
 
 	dec_opcodes := make(opcodeList)
 	dec_opcodes["B"] = []byte{0x0F, 0x31, 0x32, 0x33}
-	opcodeDefs["DEC"] = opcodeDefinition{0x0F, dec_opcodes, empty_opcodes}
+	opcodeDefs["DEC"] = opcodeDefinition{0x0F, dec_opcodes}
 
 	add_opcodes := make(opcodeList)
 	add_opcodes["B"] = []byte{0x0F, 0x0F, 0x0F, 0xA0}
-	opcodeDefs["ADD"] = opcodeDefinition{0x0F, add_opcodes, empty_opcodes}
+	opcodeDefs["ADD"] = opcodeDefinition{0x0F, add_opcodes}
 
 	sub_opcodes := make(opcodeList)
 	sub_opcodes["B"] = []byte{0x0F, 0x0F, 0x0F, 0xA1}
-	opcodeDefs["SUB"] = opcodeDefinition{0x0F, sub_opcodes, empty_opcodes}
+	opcodeDefs["SUB"] = opcodeDefinition{0x0F, sub_opcodes}
 
 	mul_opcodes := make(opcodeList)
 	mul_opcodes["B"] = []byte{0x0F, 0x0F, 0x0F, 0xA2}
-	opcodeDefs["MUL"] = opcodeDefinition{0x0F, mul_opcodes, empty_opcodes}
+	opcodeDefs["MUL"] = opcodeDefinition{0x0F, mul_opcodes}
 
 	div_opcodes := make(opcodeList)
 	div_opcodes["B"] = []byte{0x0F, 0x0F, 0x0F, 0xA3}
-	opcodeDefs["DIV"] = opcodeDefinition{0x0F, div_opcodes, empty_opcodes}
+	opcodeDefs["DIV"] = opcodeDefinition{0x0F, div_opcodes}
 
 	and_opcodes := make(opcodeList)
 	and_opcodes["B"] = []byte{0x0F, 0x0F, 0x0F, 0xC0}
-	opcodeDefs["AND"] = opcodeDefinition{0x0F, and_opcodes, empty_opcodes}
+	opcodeDefs["AND"] = opcodeDefinition{0x0F, and_opcodes}
 
 	or_opcodes := make(opcodeList)
 	or_opcodes["B"] = []byte{0x0F, 0x0F, 0x0F, 0xC1}
-	opcodeDefs["OR"] = opcodeDefinition{0x0F, or_opcodes, empty_opcodes}
+	opcodeDefs["OR"] = opcodeDefinition{0x0F, or_opcodes}
 
 	cmp_opcodes := make(opcodeList)
 	cmp_opcodes["B"] = []byte{0x0F, 0x0F, 0x0F, 0xC3}
-	opcodeDefs["CMP"] = opcodeDefinition{0x0F, cmp_opcodes, empty_opcodes}
+	opcodeDefs["CMP"] = opcodeDefinition{0x0F, cmp_opcodes}
 
 	return opcodeDefs
 }

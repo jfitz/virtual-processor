@@ -10,21 +10,21 @@ newline:
 			CODE
 MAIN:
 00	60 00		PUSH.B	message
-02	D4 07		CALL.A	print_s
-04	D4 12		CALL.A	print_nl
+02	D1 07		CALL	print_s
+04	D1 13		CALL	print_nl
 06	00		EXIT	
 print_s:
 07	81 0E		POP.B	@address
 loop:
 09	62 0E		PUSH.B	@@address
 0B	13		FLAGS.B	
-0C	DA		RZ	
-0D	08		OUT	
-0E	21 0E		INC.B	@address
-10	D0 09		JUMP.A	loop
+0C	E0 D2		Z:RET	
+0E	08		OUT	
+0F	21 0E		INC.B	@address
+11	D0 09		JUMP	loop
 print_nl:
-12	61 0F		PUSH.B	@newline
-14	08		OUT	
-15	D8		RET	
+13	61 0F		PUSH.B	@newline
+15	08		OUT	
+16	D2		RET	
 			ENDSEGMENT
 
