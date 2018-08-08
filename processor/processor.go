@@ -499,239 +499,292 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 		switch opcode {
 		case 0x00:
 			// EXIT
-			halt = true
+			if execute {
+				halt = true
+			}
 
 			// newpc = pc.AddByte(instructionSize)
 
 		case 0x01:
 			// KCALL - kernel call
+			// update newpc before the call
 			newpc = pc.AddByte(instructionSize)
 
-			vStack = kernelCall(vStack)
+			if execute {
+				vStack = kernelCall(vStack)
+			}
 
 		case 0x08:
 			// OUT (implied stack)
-			bytes, vStack, err = vStack.popByte(1)
-			vputils.CheckAndPanic(err)
+			if execute {
+				bytes, vStack, err = vStack.popByte(1)
+				vputils.CheckAndPanic(err)
 
-			fmt.Print(string(bytes[0]))
+				fmt.Print(string(bytes[0]))
 
-			if trace {
-				fmt.Println()
+				if trace {
+					fmt.Println()
+				}
 			}
 
 			newpc = pc.AddByte(instructionSize)
 
 		case 0x11:
 			// FLAGS.B direct address
-			flags.Zero = bytes[0] == 0
+			if execute {
+				flags.Zero = bytes[0] == 0
+			}
 
 			newpc = pc.AddByte(instructionSize)
 
 		case 0x12:
 			// FLAGS.B indirect address
-			flags.Zero = bytes[0] == 0
+			if execute {
+				flags.Zero = bytes[0] == 0
+			}
 
 			newpc = pc.AddByte(instructionSize)
 
 		case 0x13:
 			// FLAGS.B (implied stack)
-			bytes[0], err = vStack.topByte()
-			vputils.CheckAndPanic(err)
+			if execute {
+				bytes[0], err = vStack.topByte()
+				vputils.CheckAndPanic(err)
 
-			flags.Zero = bytes[0] == 0
+				flags.Zero = bytes[0] == 0
+			}
 
 			newpc = pc.AddByte(instructionSize)
 
 		case 0x21:
 			// INC.B direct address
-			bytes[0] += 1
+			if execute {
+				bytes[0] += 1
 
-			err = data.PutByte(dataAddress, bytes[0])
-			vputils.CheckAndPanic(err)
+				err = data.PutByte(dataAddress, bytes[0])
+				vputils.CheckAndPanic(err)
+			}
 
 			newpc = pc.AddByte(instructionSize)
 
 		case 0x22:
 			// INC.B indirect address
-			bytes[0] += 1
+			if execute {
+				bytes[0] += 1
 
-			err = data.PutByte(dataAddress, bytes[0])
-			vputils.CheckAndPanic(err)
+				err = data.PutByte(dataAddress, bytes[0])
+				vputils.CheckAndPanic(err)
+			}
 
 			newpc = pc.AddByte(instructionSize)
 
 		case 0x31:
 			// DEC.B direct address
-			bytes[0] -= 1
+			if execute {
+				bytes[0] -= 1
 
-			err = data.PutByte(dataAddress, bytes[0])
-			vputils.CheckAndPanic(err)
+				err = data.PutByte(dataAddress, bytes[0])
+				vputils.CheckAndPanic(err)
+			}
 
 			newpc = pc.AddByte(instructionSize)
 
 		case 0x32:
 			// DEC.B indirect address
-			bytes[0] -= 1
+			if execute {
+				bytes[0] -= 1
 
-			err = data.PutByte(dataAddress, bytes[0])
-			vputils.CheckAndPanic(err)
+				err = data.PutByte(dataAddress, bytes[0])
+				vputils.CheckAndPanic(err)
+			}
 
 			newpc = pc.AddByte(instructionSize)
 
 		case 0x60:
 			// PUSH.B immediate value
-			vStack = vStack.pushBytes(bytes)
+			if execute {
+				vStack = vStack.pushBytes(bytes)
+			}
 
 			newpc = pc.AddByte(instructionSize)
 
 		case 0x61:
 			// PUSH.B direct address
-			vStack = vStack.pushBytes(bytes)
+			if execute {
+				vStack = vStack.pushBytes(bytes)
+			}
 
 			newpc = pc.AddByte(instructionSize)
 
 		case 0x62:
 			// PUSH.B indirect address
-			vStack = vStack.pushBytes(bytes)
+			if execute {
+				vStack = vStack.pushBytes(bytes)
+			}
 
 			newpc = pc.AddByte(instructionSize)
 
 		case 0x64:
 			// PUSH.I16 immediate value
-			vStack = vStack.pushBytes(bytes)
+			if execute {
+				vStack = vStack.pushBytes(bytes)
+			}
 
 			newpc = pc.AddByte(instructionSize)
 
 		case 0x65:
 			// PUSH.I16 direct address
-			vStack = vStack.pushBytes(bytes)
+			if execute {
+				vStack = vStack.pushBytes(bytes)
+			}
 
 			newpc = pc.AddByte(instructionSize)
 
 		case 0x66:
 			// PUSH.I16 indirect address
-			vStack = vStack.pushBytes(bytes)
+			if execute {
+				vStack = vStack.pushBytes(bytes)
+			}
 
 			newpc = pc.AddByte(instructionSize)
 
 		case 0x79:
 			// PUSH.STR direct address
-			s := ""
-			address := dataAddress
-			b := byte(1)
+			if execute {
+				s := ""
+				address := dataAddress
+				b := byte(1)
 
-			for b != 0 {
-				b, err = data.GetByte(address)
-				vputils.CheckAndExit(err)
-				c := string(b)
-				s += c
-				address = address.AddByte(1)
+				for b != 0 {
+					b, err = data.GetByte(address)
+					vputils.CheckAndExit(err)
+					c := string(b)
+					s += c
+					address = address.AddByte(1)
+				}
+
+				vStack = vStack.pushString(s)
 			}
-
-			vStack = vStack.pushString(s)
 
 			newpc = pc.AddByte(instructionSize)
 
 		case 0x81:
 			// POP.B direct address
-			bytes, vStack, err = vStack.popByte(1)
-			vputils.CheckAndExit(err)
+			if execute {
+				bytes, vStack, err = vStack.popByte(1)
+				vputils.CheckAndExit(err)
 
-			err = data.PutByte(dataAddress, bytes[0])
-			vputils.CheckAndPanic(err)
+				err = data.PutByte(dataAddress, bytes[0])
+				vputils.CheckAndPanic(err)
+			}
 
 			newpc = pc.AddByte(instructionSize)
 
 		case 0xA0:
 			// ADD.B
-			bytes1, vStack, err = vStack.popByte(1)
-			vputils.CheckAndExit(err)
+			if execute {
+				bytes1, vStack, err = vStack.popByte(1)
+				vputils.CheckAndExit(err)
 
-			bytes2, vStack, err = vStack.popByte(1)
-			vputils.CheckAndExit(err)
+				bytes2, vStack, err = vStack.popByte(1)
+				vputils.CheckAndExit(err)
 
-			value := bytes1[0] + bytes2[0]
-			vStack = vStack.pushByte(value)
+				value := bytes1[0] + bytes2[0]
+				vStack = vStack.pushByte(value)
+			}
 
 			newpc = pc.AddByte(instructionSize)
 
 		case 0xA1:
 			// SUB.B
-			bytes1, vStack, err = vStack.popByte(1)
-			vputils.CheckAndExit(err)
+			if execute {
+				bytes1, vStack, err = vStack.popByte(1)
+				vputils.CheckAndExit(err)
 
-			bytes2, vStack, err = vStack.popByte(1)
-			vputils.CheckAndExit(err)
+				bytes2, vStack, err = vStack.popByte(1)
+				vputils.CheckAndExit(err)
 
-			value := bytes1[0] - bytes2[0]
-			vStack = vStack.pushByte(value)
+				value := bytes1[0] - bytes2[0]
+				vStack = vStack.pushByte(value)
+			}
 
 			newpc = pc.AddByte(instructionSize)
 
 		case 0xA2:
 			// MUL.B
-			bytes1, vStack, err = vStack.popByte(1)
-			vputils.CheckAndExit(err)
+			if execute {
+				bytes1, vStack, err = vStack.popByte(1)
+				vputils.CheckAndExit(err)
 
-			bytes2, vStack, err = vStack.popByte(1)
-			vputils.CheckAndExit(err)
+				bytes2, vStack, err = vStack.popByte(1)
+				vputils.CheckAndExit(err)
 
-			value := bytes1[0] * bytes2[0]
-			vStack = vStack.pushByte(value)
+				value := bytes1[0] * bytes2[0]
+				// TODO: push 2 bytes
+				vStack = vStack.pushByte(value)
+			}
 
 			newpc = pc.AddByte(instructionSize)
 
 		case 0xA3:
 			// DIV.B
-			bytes1, vStack, err = vStack.popByte(1)
-			vputils.CheckAndExit(err)
+			if execute {
+				bytes1, vStack, err = vStack.popByte(1)
+				vputils.CheckAndExit(err)
 
-			bytes2, vStack, err = vStack.popByte(1)
-			vputils.CheckAndExit(err)
+				bytes2, vStack, err = vStack.popByte(1)
+				vputils.CheckAndExit(err)
 
-			value := bytes1[0] / bytes2[0]
-			vStack = vStack.pushByte(value)
+				value := bytes1[0] / bytes2[0]
+				// TODO: push quotient and remainder (2 bytes)
+				vStack = vStack.pushByte(value)
+			}
 
 			newpc = pc.AddByte(instructionSize)
 
 		case 0xC0:
 			// AND.B
-			bytes1, vStack, err = vStack.popByte(1)
-			vputils.CheckAndExit(err)
+			if execute {
+				bytes1, vStack, err = vStack.popByte(1)
+				vputils.CheckAndExit(err)
 
-			bytes2, vStack, err = vStack.popByte(1)
-			vputils.CheckAndExit(err)
+				bytes2, vStack, err = vStack.popByte(1)
+				vputils.CheckAndExit(err)
 
-			value := bytes1[0] & bytes2[0]
-			vStack = vStack.pushByte(value)
+				value := bytes1[0] & bytes2[0]
+				vStack = vStack.pushByte(value)
+			}
 
 			newpc = pc.AddByte(instructionSize)
 
 		case 0xC1:
 			// OR.B
-			bytes1, vStack, err = vStack.popByte(1)
-			vputils.CheckAndExit(err)
+			if execute {
+				bytes1, vStack, err = vStack.popByte(1)
+				vputils.CheckAndExit(err)
 
-			bytes2, vStack, err = vStack.popByte(1)
-			vputils.CheckAndExit(err)
+				bytes2, vStack, err = vStack.popByte(1)
+				vputils.CheckAndExit(err)
 
-			value := bytes1[0] | bytes2[0]
-			vStack = vStack.pushByte(value)
+				value := bytes1[0] | bytes2[0]
+				vStack = vStack.pushByte(value)
+			}
 
 			newpc = pc.AddByte(instructionSize)
 
 		case 0xC3:
 			// CMP.B
-			bytes1, vStack, err = vStack.popByte(1)
-			vputils.CheckAndExit(err)
+			if execute {
+				bytes1, vStack, err = vStack.popByte(1)
+				vputils.CheckAndExit(err)
 
-			bytes2, vStack, err = vStack.popByte(1)
-			vputils.CheckAndExit(err)
+				bytes2, vStack, err = vStack.popByte(1)
+				vputils.CheckAndExit(err)
 
-			value := bytes1[0] - bytes2[0]
+				value := bytes1[0] - bytes2[0]
 
-			flags.Zero = value == 0
+				flags.Zero = value == 0
+			}
 
 			newpc = pc.AddByte(instructionSize)
 
