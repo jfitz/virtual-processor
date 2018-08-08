@@ -7,7 +7,7 @@ Value stack:
 Value stack: 48
 06: 13 FLAGS.B z
 Value stack: 48
-07: D0 Z:JUMP >0F z
+07: E0 D0 Z:JUMP >0F z
 Value stack: 48
 0A: 08 OUT z
 H
@@ -20,7 +20,7 @@ Value stack:
 Value stack: 65
 06: 13 FLAGS.B z
 Value stack: 65
-07: D0 Z:JUMP >0F z
+07: E0 D0 Z:JUMP >0F z
 Value stack: 65
 0A: 08 OUT z
 e
@@ -33,7 +33,7 @@ Value stack:
 Value stack: 6C
 06: 13 FLAGS.B z
 Value stack: 6C
-07: D0 Z:JUMP >0F z
+07: E0 D0 Z:JUMP >0F z
 Value stack: 6C
 0A: 08 OUT z
 l
@@ -46,7 +46,7 @@ Value stack:
 Value stack: 6C
 06: 13 FLAGS.B z
 Value stack: 6C
-07: D0 Z:JUMP >0F z
+07: E0 D0 Z:JUMP >0F z
 Value stack: 6C
 0A: 08 OUT z
 l
@@ -59,7 +59,7 @@ Value stack:
 Value stack: 6F
 06: 13 FLAGS.B z
 Value stack: 6F
-07: D0 Z:JUMP >0F z
+07: E0 D0 Z:JUMP >0F z
 Value stack: 6F
 0A: 08 OUT z
 o
@@ -72,7 +72,7 @@ Value stack:
 Value stack: 2C
 06: 13 FLAGS.B z
 Value stack: 2C
-07: D0 Z:JUMP >0F z
+07: E0 D0 Z:JUMP >0F z
 Value stack: 2C
 0A: 08 OUT z
 ,
@@ -85,7 +85,7 @@ Value stack:
 Value stack: 20
 06: 13 FLAGS.B z
 Value stack: 20
-07: D0 Z:JUMP >0F z
+07: E0 D0 Z:JUMP >0F z
 Value stack: 20
 0A: 08 OUT z
  
@@ -98,7 +98,7 @@ Value stack:
 Value stack: 77
 06: 13 FLAGS.B z
 Value stack: 77
-07: D0 Z:JUMP >0F z
+07: E0 D0 Z:JUMP >0F z
 Value stack: 77
 0A: 08 OUT z
 w
@@ -111,7 +111,7 @@ Value stack:
 Value stack: 6F
 06: 13 FLAGS.B z
 Value stack: 6F
-07: D0 Z:JUMP >0F z
+07: E0 D0 Z:JUMP >0F z
 Value stack: 6F
 0A: 08 OUT z
 o
@@ -124,7 +124,7 @@ Value stack:
 Value stack: 72
 06: 13 FLAGS.B z
 Value stack: 72
-07: D0 Z:JUMP >0F z
+07: E0 D0 Z:JUMP >0F z
 Value stack: 72
 0A: 08 OUT z
 r
@@ -137,7 +137,7 @@ Value stack:
 Value stack: 6C
 06: 13 FLAGS.B z
 Value stack: 6C
-07: D0 Z:JUMP >0F z
+07: E0 D0 Z:JUMP >0F z
 Value stack: 6C
 0A: 08 OUT z
 l
@@ -150,7 +150,7 @@ Value stack:
 Value stack: 64
 06: 13 FLAGS.B z
 Value stack: 64
-07: D0 Z:JUMP >0F z
+07: E0 D0 Z:JUMP >0F z
 Value stack: 64
 0A: 08 OUT z
 d
@@ -163,7 +163,7 @@ Value stack:
 Value stack: 21
 06: 13 FLAGS.B z
 Value stack: 21
-07: D0 Z:JUMP >0F z
+07: E0 D0 Z:JUMP >0F z
 Value stack: 21
 0A: 08 OUT z
 !
@@ -176,7 +176,7 @@ Value stack:
 Value stack: 00
 06: 13 FLAGS.B z
 Value stack: 00
-07: D0 Z:JUMP >0F Z
+07: E0 D0 Z:JUMP >0F Z
 Value stack: 00
 0F: 61 PUSH.B @0F =0A Z
 Value stack: 00 0A

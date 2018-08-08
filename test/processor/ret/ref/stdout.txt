@@ -9,7 +9,7 @@ Value stack:
 Value stack: 48
 0B: 13 FLAGS.B z
 Value stack: 48
-0C: D2 Z:RET z
+0C: E0 D2 Z:RET z
 Value stack: 48
 0E: 08 OUT z
 H
@@ -22,7 +22,7 @@ Value stack:
 Value stack: 65
 0B: 13 FLAGS.B z
 Value stack: 65
-0C: D2 Z:RET z
+0C: E0 D2 Z:RET z
 Value stack: 65
 0E: 08 OUT z
 e
@@ -35,7 +35,7 @@ Value stack:
 Value stack: 6C
 0B: 13 FLAGS.B z
 Value stack: 6C
-0C: D2 Z:RET z
+0C: E0 D2 Z:RET z
 Value stack: 6C
 0E: 08 OUT z
 l
@@ -48,7 +48,7 @@ Value stack:
 Value stack: 6C
 0B: 13 FLAGS.B z
 Value stack: 6C
-0C: D2 Z:RET z
+0C: E0 D2 Z:RET z
 Value stack: 6C
 0E: 08 OUT z
 l
@@ -61,7 +61,7 @@ Value stack:
 Value stack: 6F
 0B: 13 FLAGS.B z
 Value stack: 6F
-0C: D2 Z:RET z
+0C: E0 D2 Z:RET z
 Value stack: 6F
 0E: 08 OUT z
 o
@@ -74,7 +74,7 @@ Value stack:
 Value stack: 2C
 0B: 13 FLAGS.B z
 Value stack: 2C
-0C: D2 Z:RET z
+0C: E0 D2 Z:RET z
 Value stack: 2C
 0E: 08 OUT z
 ,
@@ -87,7 +87,7 @@ Value stack:
 Value stack: 20
 0B: 13 FLAGS.B z
 Value stack: 20
-0C: D2 Z:RET z
+0C: E0 D2 Z:RET z
 Value stack: 20
 0E: 08 OUT z
  
@@ -100,7 +100,7 @@ Value stack:
 Value stack: 77
 0B: 13 FLAGS.B z
 Value stack: 77
-0C: D2 Z:RET z
+0C: E0 D2 Z:RET z
 Value stack: 77
 0E: 08 OUT z
 w
@@ -113,7 +113,7 @@ Value stack:
 Value stack: 6F
 0B: 13 FLAGS.B z
 Value stack: 6F
-0C: D2 Z:RET z
+0C: E0 D2 Z:RET z
 Value stack: 6F
 0E: 08 OUT z
 o
@@ -126,7 +126,7 @@ Value stack:
 Value stack: 72
 0B: 13 FLAGS.B z
 Value stack: 72
-0C: D2 Z:RET z
+0C: E0 D2 Z:RET z
 Value stack: 72
 0E: 08 OUT z
 r
@@ -139,7 +139,7 @@ Value stack:
 Value stack: 6C
 0B: 13 FLAGS.B z
 Value stack: 6C
-0C: D2 Z:RET z
+0C: E0 D2 Z:RET z
 Value stack: 6C
 0E: 08 OUT z
 l
@@ -152,7 +152,7 @@ Value stack:
 Value stack: 64
 0B: 13 FLAGS.B z
 Value stack: 64
-0C: D2 Z:RET z
+0C: E0 D2 Z:RET z
 Value stack: 64
 0E: 08 OUT z
 d
@@ -165,7 +165,7 @@ Value stack:
 Value stack: 21
 0B: 13 FLAGS.B z
 Value stack: 21
-0C: D2 Z:RET z
+0C: E0 D2 Z:RET z
 Value stack: 21
 0E: 08 OUT z
 !
@@ -178,7 +178,7 @@ Value stack:
 Value stack: 00
 0B: 13 FLAGS.B z
 Value stack: 00
-0C: D2 Z:RET Z
+0C: E0 D2 Z:RET Z
 Value stack: 00
 04: D1 CALL >13 Z
 Value stack: 00

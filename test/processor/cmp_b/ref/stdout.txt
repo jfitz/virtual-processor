@@ -5,7 +5,7 @@ Value stack: 01
 Value stack: 01 40
 04: C3 CMP.B z
 Value stack:
-05: D0 Z:JUMP >0D z
+05: E0 D0 Z:JUMP >0D z
 Value stack:
 08: 60 PUSH.B =41 z
 Value stack: 41

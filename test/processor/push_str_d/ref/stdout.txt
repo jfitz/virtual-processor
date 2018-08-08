@@ -5,7 +5,7 @@ Value stack: 00 21 64 6C 72 6F 77 20 2C 6F 6C 6C 65 48 0E
 Value stack: 00 21 64 6C 72 6F 77 20 2C 6F 6C 6C 65 48
 04: 13 FLAGS.B z
 Value stack: 00 21 64 6C 72 6F 77 20 2C 6F 6C 6C 65 48
-05: D0 Z:JUMP >0B z
+05: E0 D0 Z:JUMP >0B z
 Value stack: 00 21 64 6C 72 6F 77 20 2C 6F 6C 6C 65 48
 08: 08 OUT z
 H
@@ -14,7 +14,7 @@ Value stack: 00 21 64 6C 72 6F 77 20 2C 6F 6C 6C 65
 Value stack: 00 21 64 6C 72 6F 77 20 2C 6F 6C 6C 65
 04: 13 FLAGS.B z
 Value stack: 00 21 64 6C 72 6F 77 20 2C 6F 6C 6C 65
-05: D0 Z:JUMP >0B z
+05: E0 D0 Z:JUMP >0B z
 Value stack: 00 21 64 6C 72 6F 77 20 2C 6F 6C 6C 65
 08: 08 OUT z
 e
@@ -23,7 +23,7 @@ Value stack: 00 21 64 6C 72 6F 77 20 2C 6F 6C 6C
 Value stack: 00 21 64 6C 72 6F 77 20 2C 6F 6C 6C
 04: 13 FLAGS.B z
 Value stack: 00 21 64 6C 72 6F 77 20 2C 6F 6C 6C
-05: D0 Z:JUMP >0B z
+05: E0 D0 Z:JUMP >0B z
 Value stack: 00 21 64 6C 72 6F 77 20 2C 6F 6C 6C
 08: 08 OUT z
 l
@@ -32,7 +32,7 @@ Value stack: 00 21 64 6C 72 6F 77 20 2C 6F 6C
 Value stack: 00 21 64 6C 72 6F 77 20 2C 6F 6C
 04: 13 FLAGS.B z
 Value stack: 00 21 64 6C 72 6F 77 20 2C 6F 6C
-05: D0 Z:JUMP >0B z
+05: E0 D0 Z:JUMP >0B z
 Value stack: 00 21 64 6C 72 6F 77 20 2C 6F 6C
 08: 08 OUT z
 l
@@ -41,7 +41,7 @@ Value stack: 00 21 64 6C 72 6F 77 20 2C 6F
 Value stack: 00 21 64 6C 72 6F 77 20 2C 6F
 04: 13 FLAGS.B z
 Value stack: 00 21 64 6C 72 6F 77 20 2C 6F
-05: D0 Z:JUMP >0B z
+05: E0 D0 Z:JUMP >0B z
 Value stack: 00 21 64 6C 72 6F 77 20 2C 6F
 08: 08 OUT z
 o
@@ -50,7 +50,7 @@ Value stack: 00 21 64 6C 72 6F 77 20 2C
 Value stack: 00 21 64 6C 72 6F 77 20 2C
 04: 13 FLAGS.B z
 Value stack: 00 21 64 6C 72 6F 77 20 2C
-05: D0 Z:JUMP >0B z
+05: E0 D0 Z:JUMP >0B z
 Value stack: 00 21 64 6C 72 6F 77 20 2C
 08: 08 OUT z
 ,
@@ -59,7 +59,7 @@ Value stack: 00 21 64 6C 72 6F 77 20
 Value stack: 00 21 64 6C 72 6F 77 20
 04: 13 FLAGS.B z
 Value stack: 00 21 64 6C 72 6F 77 20
-05: D0 Z:JUMP >0B z
+05: E0 D0 Z:JUMP >0B z
 Value stack: 00 21 64 6C 72 6F 77 20
 08: 08 OUT z
  
@@ -68,7 +68,7 @@ Value stack: 00 21 64 6C 72 6F 77
 Value stack: 00 21 64 6C 72 6F 77
 04: 13 FLAGS.B z
 Value stack: 00 21 64 6C 72 6F 77
-05: D0 Z:JUMP >0B z
+05: E0 D0 Z:JUMP >0B z
 Value stack: 00 21 64 6C 72 6F 77
 08: 08 OUT z
 w
@@ -77,7 +77,7 @@ Value stack: 00 21 64 6C 72 6F
 Value stack: 00 21 64 6C 72 6F
 04: 13 FLAGS.B z
 Value stack: 00 21 64 6C 72 6F
-05: D0 Z:JUMP >0B z
+05: E0 D0 Z:JUMP >0B z
 Value stack: 00 21 64 6C 72 6F
 08: 08 OUT z
 o
@@ -86,7 +86,7 @@ Value stack: 00 21 64 6C 72
 Value stack: 00 21 64 6C 72
 04: 13 FLAGS.B z
 Value stack: 00 21 64 6C 72
-05: D0 Z:JUMP >0B z
+05: E0 D0 Z:JUMP >0B z
 Value stack: 00 21 64 6C 72
 08: 08 OUT z
 r
@@ -95,7 +95,7 @@ Value stack: 00 21 64 6C
 Value stack: 00 21 64 6C
 04: 13 FLAGS.B z
 Value stack: 00 21 64 6C
-05: D0 Z:JUMP >0B z
+05: E0 D0 Z:JUMP >0B z
 Value stack: 00 21 64 6C
 08: 08 OUT z
 l
@@ -104,7 +104,7 @@ Value stack: 00 21 64
 Value stack: 00 21 64
 04: 13 FLAGS.B z
 Value stack: 00 21 64
-05: D0 Z:JUMP >0B z
+05: E0 D0 Z:JUMP >0B z
 Value stack: 00 21 64
 08: 08 OUT z
 d
@@ -113,7 +113,7 @@ Value stack: 00 21
 Value stack: 00 21
 04: 13 FLAGS.B z
 Value stack: 00 21
-05: D0 Z:JUMP >0B z
+05: E0 D0 Z:JUMP >0B z
 Value stack: 00 21
 08: 08 OUT z
 !
@@ -122,7 +122,7 @@ Value stack: 00
 Value stack: 00
 04: 13 FLAGS.B z
 Value stack: 00
-05: D0 Z:JUMP >0B Z
+05: E0 D0 Z:JUMP >0B Z
 Value stack: 00
 0B: 60 PUSH.B =0A Z
 Value stack: 00 0A

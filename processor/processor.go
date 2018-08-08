@@ -311,17 +311,44 @@ func evaluateConditionals(conditionals []byte, flags []bool) (bool, error) {
 	return execute, nil
 }
 
-func conditionalsToString(conditionals []byte) string {
-	result := ""
+func encodeConditional(conditional byte) (string, error) {
+	condi_s := ""
 
-	for _, conditional := range conditionals {
-		switch conditional {
-		case 0xE0:
-			result += "Z:"
-		}
+	switch conditional {
+	case 0xE0:
+		condi_s = "Z"
+	case 0xE8:
+		condi_s = "NOT"
+	default:
+		return "", errors.New("Invalid conditional code")
 	}
 
-	return result
+	return condi_s, nil
+}
+
+func encodeConditionals(conditionals []byte) ([]string, error) {
+	conditionals_s := []string{}
+
+	for _, conditional := range conditionals {
+		condi_s, err := encodeConditional(conditional)
+		if err != nil {
+			return conditionals_s, err
+		}
+		conditionals_s = append(conditionals_s, condi_s)
+	}
+
+	return conditionals_s, nil
+}
+
+func conditionalsToString(conditionals []byte) (string, error) {
+	conditionals_s, err := encodeConditionals(conditionals)
+	if err != nil {
+		return "", err
+	}
+
+	result := strings.Join(conditionals_s, ".")
+
+	return result, nil
 }
 
 func executeCode(module vputils.Module, startAddress vputils.Address, trace bool, instructionDefinitions instructionTable) error {
@@ -426,8 +453,19 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 		// trace opcode and arguments
 		if trace {
 			text := def.toString()
-			condi_s := conditionalsToString(conditionals)
-			line := fmt.Sprintf("%s: %02X %s%s", pc.ToString(), opcode, condi_s, text)
+			condi_s, err := conditionalsToString(conditionals)
+
+			if err != nil {
+				fmt.Println(err.Error())
+			}
+
+			line := ""
+			if len(condi_s) > 0 {
+				line = fmt.Sprintf("%s: % 02X %02X %s:%s", pc.ToString(), conditionals, opcode, condi_s, text)
+			} else {
+				line = fmt.Sprintf("%s: %02X %s", pc.ToString(), opcode, text)
+			}
+
 			if !dataAddress1.Empty() {
 				line += " @@" + dataAddress1.ToString()
 			}
