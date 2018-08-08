@@ -285,14 +285,20 @@ func getConditionAndOpcode(code vputils.Vector, pc vputils.Address) ([]byte, byt
 	return conditionals, opcode, err
 }
 
-func evaluateConditionals(conditionals []byte, flags []bool) (bool, error) {
+type flagsGroup struct {
+	Zero     bool
+	Negative bool
+	Positive bool
+}
+
+func evaluateConditionals(conditionals []byte, flags flagsGroup) (bool, error) {
 	execute := true
 	stack := make(boolStack, 0)
 
 	for _, conditional := range conditionals {
 		switch conditional {
 		case 0xE0:
-			stack = stack.push(flags[0])
+			stack = stack.push(flags.Zero)
 		}
 	}
 
@@ -353,7 +359,7 @@ func conditionalsToString(conditionals []byte) (string, error) {
 
 func executeCode(module vputils.Module, startAddress vputils.Address, trace bool, instructionDefinitions instructionTable) error {
 	// initialize virtual processor
-	flags := []bool{false}
+	flags := flagsGroup{false, false, false}
 	vStack := make(byteStack, 0) // value stack
 
 	// initialize module
@@ -481,7 +487,7 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 			if !jumpAddress.Empty() {
 				line += " >" + jumpAddress.ToString()
 			}
-			if flags[0] {
+			if flags.Zero {
 				line += " Z"
 			} else {
 				line += " z"
@@ -518,13 +524,13 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 
 		case 0x11:
 			// FLAGS.B direct address
-			flags[0] = bytes[0] == 0
+			flags.Zero = bytes[0] == 0
 
 			newpc = pc.AddByte(instructionSize)
 
 		case 0x12:
 			// FLAGS.B indirect address
-			flags[0] = bytes[0] == 0
+			flags.Zero = bytes[0] == 0
 
 			newpc = pc.AddByte(instructionSize)
 
@@ -533,7 +539,7 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 			bytes[0], err = vStack.topByte()
 			vputils.CheckAndPanic(err)
 
-			flags[0] = bytes[0] == 0
+			flags.Zero = bytes[0] == 0
 
 			newpc = pc.AddByte(instructionSize)
 
@@ -725,7 +731,7 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 
 			value := bytes1[0] - bytes2[0]
 
-			flags[0] = value == 0
+			flags.Zero = value == 0
 
 			newpc = pc.AddByte(instructionSize)
 
