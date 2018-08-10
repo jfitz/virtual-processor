@@ -268,18 +268,18 @@ func getConditionAndOpcode(code vputils.Vector, pc vputils.Address) ([]byte, byt
 	err := errors.New("")
 
 	newpc := pc
-	my_byte, err := code.GetByte(newpc)
+	myByte, err := code.GetByte(newpc)
 
-	has_conditional := true
+	hasConditional := true
 
-	for has_conditional {
-		if my_byte >= 0xE0 && my_byte <= 0xEF {
-			conditionals = append(conditionals, my_byte)
+	for hasConditional {
+		if myByte >= 0xE0 && myByte <= 0xEF {
+			conditionals = append(conditionals, myByte)
 			newpc = newpc.AddByte(1)
-			my_byte, err = code.GetByte(newpc)
+			myByte, err = code.GetByte(newpc)
 		} else {
-			opcode = my_byte
-			has_conditional = false
+			opcode = myByte
+			hasConditional = false
 		}
 	}
 
@@ -327,41 +327,41 @@ func evaluateConditionals(conditionals []byte, flags flagsGroup) (bool, error) {
 }
 
 func encodeConditional(conditional byte) (string, error) {
-	condi_s := ""
+	condiString := ""
 
 	switch conditional {
 	case 0xE0:
-		condi_s = "Z"
+		condiString = "Z"
 	case 0xE8:
-		condi_s = "NOT"
+		condiString = "NOT"
 	default:
 		return "", errors.New("Invalid conditional code")
 	}
 
-	return condi_s, nil
+	return condiString, nil
 }
 
 func encodeConditionals(conditionals []byte) ([]string, error) {
-	conditionals_s := []string{}
+	condiStrings := []string{}
 
 	for _, conditional := range conditionals {
-		condi_s, err := encodeConditional(conditional)
+		condiString, err := encodeConditional(conditional)
 		if err != nil {
-			return conditionals_s, err
+			return condiStrings, err
 		}
-		conditionals_s = append(conditionals_s, condi_s)
+		condiStrings = append(condiStrings, condiString)
 	}
 
-	return conditionals_s, nil
+	return condiStrings, nil
 }
 
-func conditionalsToString(conditionals []byte) (string, error) {
-	conditionals_s, err := encodeConditionals(conditionals)
+func conditionalsToString(condiBytes []byte) (string, error) {
+	condiStrings, err := encodeConditionals(condiBytes)
 	if err != nil {
 		return "", err
 	}
 
-	result := strings.Join(conditionals_s, ".")
+	result := strings.Join(condiStrings, ".")
 
 	return result, nil
 }
@@ -416,13 +416,12 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 		bytes := []byte{0}
 		bytes1 := []byte{}
 		bytes2 := []byte{}
-		value_s := ""
+		valueStr := ""
 
 		// addresses for opcode
 		dataAddress := vputils.Address{[]byte{}}
 		dataAddress1 := vputils.Address{[]byte{}}
 		jumpAddress := vputils.Address{[]byte{}}
-		offset_s := ""
 
 		instructionSize += def.calcInstructionSize()
 		targetSize := def.calcTargetSize()
@@ -432,10 +431,10 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 			switch def.TargetType {
 			case "B":
 				bytes = module.ImmediateByte()
-				value_s = fmt.Sprintf("%02X", bytes[0])
+				valueStr = fmt.Sprintf("%02X", bytes[0])
 			case "I16":
 				bytes = module.ImmediateInt()
-				value_s = fmt.Sprintf("%02X%02X", bytes[1], bytes[0])
+				valueStr = fmt.Sprintf("%02X%02X", bytes[1], bytes[0])
 			}
 			instructionSize += targetSize
 		}
@@ -444,7 +443,7 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 		if def.AddressMode == "D" {
 			dataAddress = module.DirectAddress()
 			bytes[0], _ = module.DirectByte()
-			value_s = fmt.Sprintf("%02X", bytes[0])
+			valueStr = fmt.Sprintf("%02X", bytes[0])
 
 			instructionSize += dataAddress.Size()
 		}
@@ -453,7 +452,7 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 			dataAddress1 = module.DirectAddress()
 			dataAddress = module.IndirectAddress()
 			bytes[0], _ = module.IndirectByte()
-			value_s = fmt.Sprintf("%02X", bytes)
+			valueStr = fmt.Sprintf("%02X", bytes)
 
 			instructionSize += dataAddress1.Size()
 		}
@@ -468,15 +467,15 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 		// trace opcode and arguments
 		if trace {
 			text := def.toString()
-			condi_s, err := conditionalsToString(conditionals)
+			condiStr, err := conditionalsToString(conditionals)
 
 			if err != nil {
 				fmt.Println(err.Error())
 			}
 
 			line := ""
-			if len(condi_s) > 0 {
-				line = fmt.Sprintf("%s: % 02X %02X %s:%s", pc.ToString(), conditionals, opcode, condi_s, text)
+			if len(condiStr) > 0 {
+				line = fmt.Sprintf("%s: % 02X %02X %s:%s", pc.ToString(), conditionals, opcode, condiStr, text)
 			} else {
 				line = fmt.Sprintf("%s: %02X %s", pc.ToString(), opcode, text)
 			}
@@ -487,12 +486,11 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 			if !dataAddress.Empty() {
 				line += " @" + dataAddress.ToString()
 			}
-			if len(value_s) > 0 {
-				line += " =" + value_s
+
+			if len(valueStr) > 0 {
+				line += " =" + valueStr
 			}
-			if len(offset_s) > 0 {
-				line += " " + offset_s
-			}
+
 			if !jumpAddress.Empty() {
 				line += " >" + jumpAddress.ToString()
 			}
@@ -568,7 +566,7 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 		case 0x21:
 			// INC.B direct address
 			if execute {
-				bytes[0] += 1
+				bytes[0]++
 
 				err = data.PutByte(dataAddress, bytes[0])
 				vputils.CheckAndPanic(err)
@@ -579,7 +577,7 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 		case 0x22:
 			// INC.B indirect address
 			if execute {
-				bytes[0] += 1
+				bytes[0]++
 
 				err = data.PutByte(dataAddress, bytes[0])
 				vputils.CheckAndPanic(err)
@@ -590,7 +588,7 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 		case 0x31:
 			// DEC.B direct address
 			if execute {
-				bytes[0] -= 1
+				bytes[0]--
 
 				err = data.PutByte(dataAddress, bytes[0])
 				vputils.CheckAndPanic(err)
@@ -601,7 +599,7 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 		case 0x32:
 			// DEC.B indirect address
 			if execute {
-				bytes[0] -= 1
+				bytes[0]--
 
 				err = data.PutByte(dataAddress, bytes[0])
 				vputils.CheckAndPanic(err)
