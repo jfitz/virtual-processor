@@ -166,6 +166,7 @@ func defineInstructions() instructionTable {
 
 	instructionDefinitions[0x79] = instructionDefinition{"PUSH", "STR", "D"}
 
+	instructionDefinitions[0x80] = instructionDefinition{"POP", "B", "V"}
 	instructionDefinitions[0x81] = instructionDefinition{"POP", "B", "D"}
 	instructionDefinitions[0x08] = instructionDefinition{"OUT", "", "S"}
 
@@ -664,6 +665,15 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 				}
 
 				vStack = vStack.pushString(s)
+			}
+
+			newpc = pc.AddByte(instructionSize)
+
+		case 0x80:
+			// POP.B value (to nowhere)
+			if execute {
+				bytes, vStack, err = vStack.popByte(1)
+				vputils.CheckAndExit(err)
 			}
 
 			newpc = pc.AddByte(instructionSize)
