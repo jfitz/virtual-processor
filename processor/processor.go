@@ -275,7 +275,7 @@ func getConditionAndOpcode(code vputils.Vector, pc vputils.Address) ([]byte, byt
 	for has_conditional {
 		if my_byte >= 0xE0 && my_byte <= 0xEF {
 			conditionals = append(conditionals, my_byte)
-			newpc := newpc.AddByte(1)
+			newpc = newpc.AddByte(1)
 			my_byte, err = code.GetByte(newpc)
 		} else {
 			opcode = my_byte
@@ -300,6 +300,14 @@ func evaluateConditionals(conditionals []byte, flags flagsGroup) (bool, error) {
 		switch conditional {
 		case 0xE0:
 			stack = stack.push(flags.Zero)
+		case 0xE8:
+			top, stack, err := stack.pop()
+			if err != nil {
+				return false, err
+			}
+			stack = stack.push(!top)
+		default:
+			return false, errors.New("Invalid conditional")
 		}
 	}
 
@@ -669,15 +677,6 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 
 			newpc = pc.AddByte(instructionSize)
 
-		case 0x80:
-			// POP.B value (to nowhere)
-			if execute {
-				bytes, vStack, err = vStack.popByte(1)
-				vputils.CheckAndExit(err)
-			}
-
-			newpc = pc.AddByte(instructionSize)
-
 		case 0x81:
 			// POP.B direct address
 			if execute {
@@ -686,6 +685,15 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 
 				err = data.PutByte(dataAddress, bytes[0])
 				vputils.CheckAndPanic(err)
+			}
+
+			newpc = pc.AddByte(instructionSize)
+
+		case 0x83:
+			// POP.B value (to nowhere)
+			if execute {
+				bytes, vStack, err = vStack.popByte(1)
+				vputils.CheckAndExit(err)
 			}
 
 			newpc = pc.AddByte(instructionSize)

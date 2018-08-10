@@ -4,12 +4,12 @@ msg_nz	STRING	"Value is not zero"
 MAIN	PUSH.B	0
 	FLAGS.B
 	POP.B
-	Z:JUMP	zero
-	PUSH.B	msg_nz
+	Z.NOT:JUMP	nonzero
+	PUSH.B	msg_z
 	CALL	print_s
 	CALL	print_nl
 	JUMP	exit
-zero	PUSH.B	msg_z
+nonzero	PUSH.B	msg_nz
 	CALL	print_s
 	CALL	print_nl
 exit	EXIT

@@ -511,7 +511,7 @@ func makeOpcodeDefinitions() map[string]opcodeDefinition {
 	opcodeDefs["PUSH"] = opcodeDefinition{0x0F, push_opcodes}
 
 	pop_opcodes := make(opcodeList)
-	pop_opcodes["B"] = []byte{0x80, 0x81, 0x82, 0x0F}
+	pop_opcodes["B"] = []byte{0x0F, 0x81, 0x82, 0x83}
 	opcodeDefs["POP"] = opcodeDefinition{0x0F, pop_opcodes}
 
 	flags_opcodes := make(opcodeList)

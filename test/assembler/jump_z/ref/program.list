@@ -13,30 +13,30 @@ newline:
 MAIN:
 00	60 00		PUSH.B	0
 02	13		FLAGS.B	
-03	80 00		POP.B	0
-05	E0 D0 10	Z:JUMP	zero
-08	60 0E		PUSH.B	msg_nz
-0A	D1 17		CALL	print_s
-0C	D1 23		CALL	print_nl
-0E	D0 16		JUMP	exit
+03	83		POP.B	
+04	E0 D0 0F	Z:JUMP	zero
+07	60 0E		PUSH.B	msg_nz
+09	D1 16		CALL	print_s
+0B	D1 22		CALL	print_nl
+0D	D0 15		JUMP	exit
 zero:
-10	60 00		PUSH.B	msg_z
-12	D1 17		CALL	print_s
-14	D1 23		CALL	print_nl
+0F	60 00		PUSH.B	msg_z
+11	D1 16		CALL	print_s
+13	D1 22		CALL	print_nl
 exit:
-16	00		EXIT	
+15	00		EXIT	
 print_s:
-17	81 20		POP.B	@address
+16	81 20		POP.B	@address
 loop:
-19	62 20		PUSH.B	@@address
-1B	13		FLAGS.B	
-1C	E0 D2		Z:RET	
-1E	08		OUT	
-1F	21 20		INC.B	@address
-21	D0 19		JUMP	loop
+18	62 20		PUSH.B	@@address
+1A	13		FLAGS.B	
+1B	E0 D2		Z:RET	
+1D	08		OUT	
+1E	21 20		INC.B	@address
+20	D0 18		JUMP	loop
 print_nl:
-23	61 21		PUSH.B	@newline
-25	08		OUT	
-26	D2		RET	
+22	61 21		PUSH.B	@newline
+24	08		OUT	
+25	D2		RET	
 			ENDSEGMENT
 

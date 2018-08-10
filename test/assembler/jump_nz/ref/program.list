@@ -1,0 +1,42 @@
+			DATA
+msg_z:
+00			STRING		56 61 6C 75 65 20 69 73 20 7A 65 72 6F 00
+msg_nz:
+0E			STRING		56 61 6C 75 65 20 69 73 20 6E 6F 74 20 7A 65 72 6F 00
+address:
+20			BYTE		00
+newline:
+21			BYTE		0A
+			ENDSEGMENT
+
+			CODE
+MAIN:
+00	60 00		PUSH.B	0
+02	13		FLAGS.B	
+03	83		POP.B	
+04	E0 E8 D0 10	Z.NOT:JUMP	nonzero
+08	60 00		PUSH.B	msg_z
+0A	D1 17		CALL	print_s
+0C	D1 23		CALL	print_nl
+0E	D0 16		JUMP	exit
+nonzero:
+10	60 0E		PUSH.B	msg_nz
+12	D1 17		CALL	print_s
+14	D1 23		CALL	print_nl
+exit:
+16	00		EXIT	
+print_s:
+17	81 20		POP.B	@address
+loop:
+19	62 20		PUSH.B	@@address
+1B	13		FLAGS.B	
+1C	E0 D2		Z:RET	
+1E	08		OUT	
+1F	21 20		INC.B	@address
+21	D0 19		JUMP	loop
+print_nl:
+23	61 21		PUSH.B	@newline
+25	08		OUT	
+26	D2		RET	
+			ENDSEGMENT
+
