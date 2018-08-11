@@ -200,6 +200,6 @@ Value stack: 00
 Value stack: 00
 0E: D0 JUMP >16 Z
 Value stack: 00
-16: 00 EXIT Z
+16: 04 EXIT Z
 Value stack: 00
 Execution halted at 16

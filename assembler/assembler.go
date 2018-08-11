@@ -495,8 +495,9 @@ func makeOpcodeDefinitions() map[string]opcodeDefinition {
 
 	emptyOpcodes := make(opcodeList)
 
-	opcodeDefs["EXIT"] = opcodeDefinition{0x00, emptyOpcodes}
-	opcodeDefs["KCALL"] = opcodeDefinition{0x01, emptyOpcodes}
+	opcodeDefs["NOP"] = opcodeDefinition{0x00, emptyOpcodes}
+	opcodeDefs["EXIT"] = opcodeDefinition{0x04, emptyOpcodes}
+	opcodeDefs["KCALL"] = opcodeDefinition{0x05, emptyOpcodes}
 	opcodeDefs["OUT"] = opcodeDefinition{0x08, emptyOpcodes}
 
 	opcodeDefs["JUMP"] = opcodeDefinition{0xD0, emptyOpcodes}

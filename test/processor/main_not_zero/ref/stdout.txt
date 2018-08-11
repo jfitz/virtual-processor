@@ -4,6 +4,7 @@ Value stack: 48
 04: 08 OUT z
 H
 Value stack:
-05: 00 EXIT z
+05: 00 NOP z
 Value stack:
-Execution halted at 05
+Invalid address 06 for PC in main: Address out of range
+exit status 1

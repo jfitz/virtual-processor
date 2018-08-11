@@ -12,7 +12,7 @@ MAIN:
 00	60 00		PUSH.B	message
 02	D1 07		CALL	print_s
 04	D1 13		CALL	print_nl
-06	00		EXIT	
+06	04		EXIT	
 print_s:
 07	81 0E		POP.B	@address
 loop:

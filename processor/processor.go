@@ -153,8 +153,9 @@ type instructionTable map[byte]instructionDefinition
 func defineInstructions() instructionTable {
 	instructionDefinitions := make(instructionTable)
 
-	instructionDefinitions[0x00] = instructionDefinition{"EXIT", "", ""}
-	instructionDefinitions[0x01] = instructionDefinition{"KCALL", "", ""}
+	instructionDefinitions[0x00] = instructionDefinition{"NOP", "", ""}
+	instructionDefinitions[0x04] = instructionDefinition{"EXIT", "", ""}
+	instructionDefinitions[0x05] = instructionDefinition{"KCALL", "", ""}
 
 	instructionDefinitions[0x60] = instructionDefinition{"PUSH", "B", "V"}
 	instructionDefinitions[0x61] = instructionDefinition{"PUSH", "B", "D"}
@@ -505,6 +506,10 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 		// execute opcode
 		switch opcode {
 		case 0x00:
+			// NOP
+			newpc = pc.AddByte(instructionSize)
+
+		case 0x04:
 			// EXIT
 			if execute {
 				halt = true
@@ -512,7 +517,7 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 
 			// newpc = pc.AddByte(instructionSize)
 
-		case 0x01:
+		case 0x05:
 			// KCALL - kernel call
 			// update newpc before the call
 			newpc = pc.AddByte(instructionSize)

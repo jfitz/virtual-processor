@@ -184,6 +184,6 @@ Value stack: 00 0A
 
 
 Value stack: 00
-12: 00 EXIT Z
+12: 04 EXIT Z
 Value stack: 00
 Execution halted at 12

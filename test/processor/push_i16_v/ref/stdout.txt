@@ -7,6 +7,6 @@ Value stack: 3A
 04: 08 OUT z
 :
 Value stack:
-05: 00 EXIT z
+05: 04 EXIT z
 Value stack:
 Execution halted at 05

@@ -21,6 +21,6 @@ loop:
 printnl:
 0F	61 0F		PUSH.B	@newline
 11	08		OUT	
-12	00		EXIT	
+12	04		EXIT	
 			ENDSEGMENT
 

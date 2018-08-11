@@ -24,7 +24,7 @@ nonzero:
 12	D1 17		CALL	print_s
 14	D1 23		CALL	print_nl
 exit:
-16	00		EXIT	
+16	04		EXIT	
 print_s:
 17	81 20		POP.B	@address
 loop:

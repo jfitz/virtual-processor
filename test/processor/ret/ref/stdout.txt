@@ -190,6 +190,6 @@ Value stack: 00 0A
 Value stack: 00
 16: D2 RET Z
 Value stack: 00
-06: 00 EXIT Z
+06: 04 EXIT Z
 Value stack: 00
 Execution halted at 06
