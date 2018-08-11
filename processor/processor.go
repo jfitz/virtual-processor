@@ -264,7 +264,7 @@ func kernelCall(vStack byteStack) byteStack {
 }
 
 func getConditionAndOpcode(code vputils.Vector, pc vputils.Address) ([]byte, byte, error) {
-	conditionals := []byte{}
+	condiBytes := []byte{}
 	opcode := byte(0)
 	err := errors.New("")
 
@@ -275,7 +275,7 @@ func getConditionAndOpcode(code vputils.Vector, pc vputils.Address) ([]byte, byt
 
 	for hasConditional {
 		if myByte >= 0xE0 && myByte <= 0xEF {
-			conditionals = append(conditionals, myByte)
+			condiBytes = append(condiBytes, myByte)
 			newpc = newpc.AddByte(1)
 			myByte, err = code.GetByte(newpc)
 		} else {
@@ -284,7 +284,7 @@ func getConditionAndOpcode(code vputils.Vector, pc vputils.Address) ([]byte, byt
 		}
 	}
 
-	return conditionals, opcode, err
+	return condiBytes, opcode, err
 }
 
 type flagsGroup struct {
@@ -293,12 +293,12 @@ type flagsGroup struct {
 	Positive bool
 }
 
-func evaluateConditionals(conditionals []byte, flags flagsGroup) (bool, error) {
+func evaluateConditionals(condiBytes []byte, flags flagsGroup) (bool, error) {
 	execute := true
 	stack := make(boolStack, 0)
 
-	for _, conditional := range conditionals {
-		switch conditional {
+	for _, condiByte := range condiBytes {
+		switch condiByte {
 		case 0xE0:
 			stack = stack.push(flags.Zero)
 		case 0xE8:
@@ -327,10 +327,10 @@ func evaluateConditionals(conditionals []byte, flags flagsGroup) (bool, error) {
 	return execute, nil
 }
 
-func encodeConditional(conditional byte) (string, error) {
+func encodeConditional(condiByte byte) (string, error) {
 	condiString := ""
 
-	switch conditional {
+	switch condiByte {
 	case 0xE0:
 		condiString = "Z"
 	case 0xE8:
@@ -342,11 +342,11 @@ func encodeConditional(conditional byte) (string, error) {
 	return condiString, nil
 }
 
-func encodeConditionals(conditionals []byte) ([]string, error) {
+func encodeConditionals(condiBytes []byte) ([]string, error) {
 	condiStrings := []string{}
 
-	for _, conditional := range conditionals {
-		condiString, err := encodeConditional(conditional)
+	for _, condiByte := range condiBytes {
+		condiString, err := encodeConditional(condiByte)
 		if err != nil {
 			return condiStrings, err
 		}
@@ -389,26 +389,26 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 	halt := false
 	for !halt {
 		pc := module.PC()
-		conditionals, opcode, err := getConditionAndOpcode(code, pc)
+		condiBytes, opcode, err := getConditionAndOpcode(code, pc)
 		vputils.CheckPrintAndExit(err, "at PC "+pc.ToString())
 
-		newpc := pc.AddByte(len(conditionals))
+		newpc := pc.AddByte(len(condiBytes))
 
 		execute := true
 
-		if len(conditionals) > 0 {
+		if len(condiBytes) > 0 {
 			err = module.SetPC(newpc)
 			if err != nil {
 				return err
 			}
 
-			execute, err = evaluateConditionals(conditionals, flags)
+			execute, err = evaluateConditionals(condiBytes, flags)
 			if err != nil {
 				return err
 			}
 		}
 
-		instructionSize := len(conditionals)
+		instructionSize := len(condiBytes)
 
 		// get opcode definition
 		def := instructionDefinitions[opcode]
@@ -468,15 +468,16 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 		// trace opcode and arguments
 		if trace {
 			text := def.toString()
-			condiStr, err := conditionalsToString(conditionals)
+			condiStr, err := conditionalsToString(condiBytes)
 
 			if err != nil {
 				fmt.Println(err.Error())
 			}
 
 			line := ""
+
 			if len(condiStr) > 0 {
-				line = fmt.Sprintf("%s: % 02X %02X %s:%s", pc.ToString(), conditionals, opcode, condiStr, text)
+				line = fmt.Sprintf("%s: % 02X %02X %s:%s", pc.ToString(), condiBytes, opcode, condiStr, text)
 			} else {
 				line = fmt.Sprintf("%s: %02X %s", pc.ToString(), opcode, text)
 			}
@@ -495,11 +496,13 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 			if !jumpAddress.Empty() {
 				line += " >" + jumpAddress.ToString()
 			}
+
 			if flags.Zero {
 				line += " Z"
 			} else {
 				line += " z"
 			}
+
 			fmt.Println(line)
 		}
 
