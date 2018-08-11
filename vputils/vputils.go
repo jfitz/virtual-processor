@@ -350,10 +350,11 @@ func WriteTextTable(name string, table []NameValue, f *os.File) {
 }
 
 type Address struct {
-	Bytes []byte
+	Bytes   []byte
+	Maximum int
 }
 
-func MakeAddress(value int, size int) Address {
+func MakeAddress(value int, size int, maximum int) Address {
 	address := []byte{}
 
 	for i := 0; i < size; i++ {
@@ -362,14 +363,14 @@ func MakeAddress(value int, size int) Address {
 		value = value / 256
 	}
 
-	return Address{address}
+	return Address{address, maximum}
 }
 
 func (address Address) Empty() bool {
 	return len(address.Bytes) == 0
 }
 
-func (address Address) Size() int {
+func (address Address) NumBytes() int {
 	return len(address.Bytes)
 }
 
@@ -401,7 +402,7 @@ func (ca Address) AddByte(i int) Address {
 	b := byte(i)
 	a := ca.ByteValue() + b
 	as := []byte{a}
-	return Address{as}
+	return Address{as, ca.Maximum}
 }
 
 type Vector []byte
@@ -442,7 +443,7 @@ func (stack addressStack) push(address Address) addressStack {
 func (stack addressStack) top() (Address, error) {
 	count := 1
 	if len(stack) < count {
-		return Address{[]byte{}}, errors.New("Stack underflow")
+		return Address{[]byte{}, 0}, errors.New("Stack underflow")
 	}
 
 	last := len(stack) - count
@@ -462,7 +463,7 @@ func (stack addressStack) pop() (addressStack, error) {
 func (stack addressStack) toppop() (Address, addressStack, error) {
 	count := 1
 	if len(stack) < count {
-		return Address{[]byte{}}, stack, errors.New("Stack underflow")
+		return Address{[]byte{}, 0}, stack, errors.New("Stack underflow")
 	}
 
 	last := len(stack) - count
@@ -533,17 +534,7 @@ func (module Module) DirectAddress() Address {
 	dataAddr, err := module.Code.GetByte(codeAddress)
 	CheckAndExit(err)
 	da := []byte{dataAddr}
-	dataAddress := Address{da}
-
-	return dataAddress
-}
-
-func (module Module) OffsetAddress() Address {
-	codeAddress := module.pc.AddByte(1)
-
-	offset, err := module.Code.GetByte(codeAddress)
-	CheckAndExit(err)
-	dataAddress := module.pc.AddByte(int(offset))
+	dataAddress := Address{da, len(module.Data)}
 
 	return dataAddress
 }
@@ -562,7 +553,7 @@ func (module Module) IndirectAddress() Address {
 	dataAddr, err := module.Data.GetByte(dataAddress)
 	CheckAndExit(err)
 	da := []byte{dataAddr}
-	dataAddress = Address{da}
+	dataAddress = Address{da, len(module.Data)}
 
 	return dataAddress
 }

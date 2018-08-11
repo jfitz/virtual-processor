@@ -420,9 +420,9 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 		valueStr := ""
 
 		// addresses for opcode
-		dataAddress := vputils.Address{[]byte{}}
-		dataAddress1 := vputils.Address{[]byte{}}
-		jumpAddress := vputils.Address{[]byte{}}
+		dataAddress := vputils.Address{[]byte{}, 0}
+		dataAddress1 := vputils.Address{[]byte{}, 0}
+		jumpAddress := vputils.Address{[]byte{}, 0}
 
 		instructionSize += def.calcInstructionSize()
 		targetSize := def.calcTargetSize()
@@ -446,23 +446,23 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 			bytes[0], _ = module.DirectByte()
 			valueStr = fmt.Sprintf("%02X", bytes[0])
 
-			instructionSize += dataAddress.Size()
+			instructionSize += dataAddress.NumBytes()
 		}
 
 		if def.AddressMode == "I" {
 			dataAddress1 = module.DirectAddress()
 			dataAddress = module.IndirectAddress()
 			bytes[0], _ = module.IndirectByte()
-			valueStr = fmt.Sprintf("%02X", bytes)
+			valueStr = fmt.Sprintf("%02X", bytes[0])
 
-			instructionSize += dataAddress1.Size()
+			instructionSize += dataAddress1.NumBytes()
 		}
 
-		// decode jump target
+		// decode jump/call target
 		if opcode == 0xD0 || opcode == 0xD1 {
 			jumpAddress = module.DirectAddress()
 
-			instructionSize += jumpAddress.Size()
+			instructionSize += jumpAddress.NumBytes()
 		}
 
 		// trace opcode and arguments
@@ -976,7 +976,7 @@ func main() {
 		os.Exit(2)
 	}
 
-	startAddress := vputils.MakeAddress(startAddressInt, codeAddressWidth)
+	startAddress := vputils.MakeAddress(startAddressInt, codeAddressWidth, len(code))
 
 	if int(startAddress.ByteValue()) >= len(code) {
 		fmt.Println("Starting address " + startAddress.ToString() + " is not valid")
