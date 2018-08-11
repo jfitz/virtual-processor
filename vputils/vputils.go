@@ -354,16 +354,24 @@ type Address struct {
 	Maximum int
 }
 
-func MakeAddress(value int, size int, maximum int) Address {
-	address := []byte{}
+func MakeAddress(value int, size int, maximum int) (Address, error) {
+	if value < 0 {
+		return Address{[]byte{}, 0}, errors.New("Negative address")
+	}
+
+	if value > maximum {
+		return Address{[]byte{}, 0}, errors.New("Address exceeds maximum")
+	}
+
+	addressBytes := []byte{}
 
 	for i := 0; i < size; i++ {
 		b := byte(value & 0xff)
-		address = append(address, b)
+		addressBytes = append(addressBytes, b)
 		value = value / 256
 	}
 
-	return Address{address, maximum}
+	return Address{addressBytes, maximum}, nil
 }
 
 func (address Address) Empty() bool {

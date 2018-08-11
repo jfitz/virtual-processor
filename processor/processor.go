@@ -976,7 +976,8 @@ func main() {
 		os.Exit(2)
 	}
 
-	startAddress := vputils.MakeAddress(startAddressInt, codeAddressWidth, len(code))
+	startAddress, err := vputils.MakeAddress(startAddressInt, codeAddressWidth, len(code))
+	vputils.CheckAndExit(err)
 
 	if int(startAddress.ByteValue()) >= len(code) {
 		fmt.Println("Starting address " + startAddress.ToString() + " is not valid")

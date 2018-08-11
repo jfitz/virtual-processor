@@ -164,10 +164,11 @@ func decodeOpcode(text string, instructionAddress vputils.Address, targetType st
 		if !ok {
 			if resolveAddress {
 				err = errors.New("Undefined label '" + target + "'")
-				vputils.CheckAndExit(err)
 			} else {
-				address = vputils.MakeAddress(0, 1, 0)
+				address, err = vputils.MakeAddress(0, 1, 0)
 			}
+
+			vputils.CheckAndExit(err)
 		}
 
 		// TODO: check address is within code address width
@@ -268,11 +269,13 @@ func generateData(source []string, opcodeDefs map[string]opcodeDefinition) (vput
 				checkDataLabel(label, dataLabels)
 
 				// add the label to our table
-				address := len(data)
-				if address > 255 {
+				addressValue := len(data)
+				if addressValue > 255 {
 					vputils.CheckAndExit(errors.New("Exceeded data label table size"))
 				}
-				dataLabels[label] = vputils.MakeAddress(address, 1, len(data))
+				address, err := vputils.MakeAddress(addressValue, 1, len(data))
+				vputils.CheckAndExit(err)
+				dataLabels[label] = address
 
 				// write the label on a line by itself
 				if len(label) > 0 {
@@ -337,7 +340,8 @@ func generateData(source []string, opcodeDefs map[string]opcodeDefinition) (vput
 					vputils.CheckAndExit(errors.New("Exceeded code label table size"))
 				}
 
-				instructionAddress := vputils.MakeAddress(address, 1, len(code))
+				instructionAddress, err := vputils.MakeAddress(address, 1, len(code))
+				vputils.CheckAndExit(err)
 
 				if len(label) > 0 {
 					// add the label to our table
@@ -417,7 +421,8 @@ func generateCode(source []string, opcodeDefs map[string]opcodeDefinition, dataL
 				if address > 255 {
 					vputils.CheckAndExit(errors.New("Exceeded code label table size"))
 				}
-				instructionAddress := vputils.MakeAddress(address, 1, len(code))
+				instructionAddress, err := vputils.MakeAddress(address, 1, len(code))
+				vputils.CheckAndExit(err)
 
 				if len(label) > 0 {
 					// write the label on a line by itself
