@@ -7,6 +7,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/jfitz/virtual-processor/vputils"
+	"os"
+	"strings"
 )
 
 // --------------------
@@ -521,6 +523,89 @@ func (mod *Module) ExecuteOpcode(opcode byte, vStack vputils.ByteStack, pc vputi
 	}
 
 	return vStack, newpc, flags, halt, err
+}
+
+// --------------------
+func (mod Module) Write(filename string) {
+	f, err := os.Create(filename)
+	vputils.CheckAndPanic(err)
+
+	defer f.Close()
+
+	vputils.WriteString(f, "module")
+
+	vputils.WriteTextTable("properties", mod.Properties, f)
+	vputils.WriteTextTable("exports", mod.Exports, f)
+	vputils.WriteBinaryBlock("code", mod.Code, f, mod.CodeAddressWidth)
+	vputils.WriteBinaryBlock("data", mod.Data, f, mod.DataAddressWidth)
+
+	f.Sync()
+}
+
+// --------------------
+func Read(moduleFile string) (Module, error) {
+	f, err := os.Open(moduleFile)
+	vputils.CheckAndExit(err)
+
+	defer f.Close()
+
+	header := vputils.ReadString(f)
+	if header != "module" {
+		return Module{}, errors.New("Did not find module header")
+	}
+
+	header = vputils.ReadString(f)
+	if header != "properties" {
+		return Module{}, errors.New("Did not find properties header")
+	}
+
+	properties := vputils.ReadTextTable(f)
+
+	codeAddressWidth := 0
+	dataAddressWidth := 0
+	for _, nameValue := range properties {
+		shortName := strings.Replace(nameValue.Name, " ", "", -1)
+		if shortName == "CODEADDRESSWIDTH" {
+			codeAddressWidth = 1
+		}
+		if shortName == "DATAADDRESSWIDTH" {
+			dataAddressWidth = 1
+		}
+	}
+
+	header = vputils.ReadString(f)
+	if header != "exports" {
+		return Module{}, errors.New("Did not find exports header")
+	}
+
+	exports := vputils.ReadTextTable(f)
+
+	header = vputils.ReadString(f)
+	if header != "code" {
+		return Module{}, errors.New("Did not find code header")
+	}
+
+	code := vputils.ReadBinaryBlock(f, codeAddressWidth)
+
+	header = vputils.ReadString(f)
+	if header != "data" {
+		return Module{}, errors.New("Did not find data header")
+	}
+
+	data := vputils.ReadBinaryBlock(f, dataAddressWidth)
+
+	mod := Module{
+		Properties:       properties,
+		Code:             code,
+		Exports:          exports,
+		Data:             data,
+		CodeAddressWidth: codeAddressWidth,
+		DataAddressWidth: dataAddressWidth,
+	}
+
+	mod.Init()
+
+	return mod, nil
 }
 
 // --------------------

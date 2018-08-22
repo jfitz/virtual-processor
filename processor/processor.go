@@ -387,71 +387,6 @@ func executeCode(mod module.Module, startAddress vputils.Address, trace bool, in
 	return nil
 }
 
-func read(moduleFile string) (module.Module, error) {
-	f, err := os.Open(moduleFile)
-	vputils.CheckAndExit(err)
-
-	defer f.Close()
-
-	header := vputils.ReadString(f)
-	if header != "module" {
-		return module.Module{}, errors.New("Did not find module header")
-	}
-
-	header = vputils.ReadString(f)
-	if header != "properties" {
-		return module.Module{}, errors.New("Did not find properties header")
-	}
-
-	properties := vputils.ReadTextTable(f)
-
-	codeAddressWidth := 0
-	dataAddressWidth := 0
-	for _, nameValue := range properties {
-		shortName := strings.Replace(nameValue.Name, " ", "", -1)
-		if shortName == "CODEADDRESSWIDTH" {
-			codeAddressWidth = 1
-		}
-		if shortName == "DATAADDRESSWIDTH" {
-			dataAddressWidth = 1
-		}
-	}
-
-	header = vputils.ReadString(f)
-	if header != "exports" {
-		return module.Module{}, errors.New("Did not find exports header")
-	}
-
-	exports := vputils.ReadTextTable(f)
-
-	header = vputils.ReadString(f)
-	if header != "code" {
-		return module.Module{}, errors.New("Did not find code header")
-	}
-
-	code := vputils.ReadBinaryBlock(f, codeAddressWidth)
-
-	header = vputils.ReadString(f)
-	if header != "data" {
-		return module.Module{}, errors.New("Did not find data header")
-	}
-
-	data := vputils.ReadBinaryBlock(f, dataAddressWidth)
-
-	mod := module.Module{
-		Properties:       properties,
-		Code:             code,
-		Exports:          exports,
-		Data:             data,
-		CodeAddressWidth: codeAddressWidth,
-		DataAddressWidth: dataAddressWidth,
-	}
-
-	mod.Init()
-
-	return mod, nil
-}
-
 func main() {
 	startSymbolPtr := flag.String("start", "MAIN", "Start execution at symbol.")
 	tracePtr := flag.Bool("trace", false, "Display trace during execution.")
@@ -470,7 +405,7 @@ func main() {
 
 	moduleFile := args[0]
 
-	mod, err := read(moduleFile)
+	mod, err := module.Read(moduleFile)
 	vputils.CheckAndExit(err)
 
 	code := mod.Code

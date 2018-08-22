@@ -463,22 +463,6 @@ func generateCode(source []string, opcodeDefs map[string]opcodeDefinition, dataL
 	return code
 }
 
-func (mod module.Module) write(filename string) {
-	f, err := os.Create(filename)
-	vputils.CheckAndPanic(err)
-
-	defer f.Close()
-
-	vputils.WriteString(f, "module")
-
-	vputils.WriteTextTable("properties", mod.Properties, f)
-	vputils.WriteTextTable("exports", mod.Exports, f)
-	vputils.WriteBinaryBlock("code", mod.Code, f, mod.CodeAddressWidth)
-	vputils.WriteBinaryBlock("data", mod.Data, f, mod.DataAddressWidth)
-
-	f.Sync()
-}
-
 func makeProperties(instructionSetVersion string, codeAddressWidth int, dataAddressWidth int) []vputils.NameValue {
 	caws := strconv.Itoa(codeAddressWidth)
 	daws := strconv.Itoa(dataAddressWidth)
@@ -624,6 +608,6 @@ func main() {
 
 	// if output specified, write module file
 	if len(moduleFile) > 0 {
-		mod.write(moduleFile)
+		mod.Write(moduleFile)
 	}
 }
