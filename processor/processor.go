@@ -7,6 +7,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"github.com/jfitz/virtual-processor/module"
 	"github.com/jfitz/virtual-processor/vputils"
 	"os"
 	"strconv"
@@ -147,7 +148,7 @@ func getConditionAndOpcode(code vputils.Vector, pc vputils.Address) ([]byte, byt
 	return condiBytes, opcode, err
 }
 
-func evaluateConditionals(condiBytes []byte, flags vputils.FlagsGroup) (bool, error) {
+func evaluateConditionals(condiBytes []byte, flags module.FlagsGroup) (bool, error) {
 	execute := true
 	stack := make(vputils.BoolStack, 0)
 
@@ -221,13 +222,13 @@ func conditionalsToString(condiBytes []byte) (string, error) {
 	return result, nil
 }
 
-func executeCode(module vputils.Module, startAddress vputils.Address, trace bool, instructionDefinitions instructionTable) error {
+func executeCode(mod module.Module, startAddress vputils.Address, trace bool, instructionDefinitions instructionTable) error {
 	// initialize virtual processor
-	flags := vputils.FlagsGroup{false, false, false}
+	flags := module.FlagsGroup{false, false, false}
 	vStack := make(vputils.ByteStack, 0) // value stack
 
 	// initialize module
-	err := module.SetPC(startAddress)
+	err := mod.SetPC(startAddress)
 	if err != nil {
 		s := fmt.Sprintf("Invalid start address %s for main: %s", startAddress.ToString(), err.Error())
 		return errors.New(s)
@@ -238,11 +239,11 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 		fmt.Println("Execution started at ", startAddress.ToString())
 	}
 
-	code := module.Code
+	code := mod.Code
 	halt := false
 
 	for !halt {
-		pc := module.PC()
+		pc := mod.PC()
 		condiBytes, opcode, err := getConditionAndOpcode(code, pc)
 		vputils.CheckPrintAndExit(err, "at PC "+pc.ToString())
 
@@ -251,7 +252,7 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 		execute := true
 
 		if len(condiBytes) > 0 {
-			err = module.SetPC(newpc)
+			err = mod.SetPC(newpc)
 			if err != nil {
 				return err
 			}
@@ -283,10 +284,10 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 		if def.AddressMode == "V" {
 			switch def.TargetType {
 			case "B":
-				bytes = module.ImmediateByte()
+				bytes = mod.ImmediateByte()
 				valueStr = fmt.Sprintf("%02X", bytes[0])
 			case "I16":
-				bytes = module.ImmediateInt()
+				bytes = mod.ImmediateInt()
 				valueStr = fmt.Sprintf("%02X%02X", bytes[1], bytes[0])
 			}
 			instructionSize += targetSize
@@ -294,17 +295,17 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 
 		// decode memory target
 		if def.AddressMode == "D" {
-			dataAddress = module.DirectAddress()
-			bytes[0], _ = module.DirectByte()
+			dataAddress = mod.DirectAddress()
+			bytes[0], _ = mod.DirectByte()
 			valueStr = fmt.Sprintf("%02X", bytes[0])
 
 			instructionSize += dataAddress.NumBytes()
 		}
 
 		if def.AddressMode == "I" {
-			dataAddress1 = module.DirectAddress()
-			dataAddress = module.IndirectAddress()
-			bytes[0], _ = module.IndirectByte()
+			dataAddress1 = mod.DirectAddress()
+			dataAddress = mod.IndirectAddress()
+			bytes[0], _ = mod.IndirectByte()
 			valueStr = fmt.Sprintf("%02X", bytes[0])
 
 			instructionSize += dataAddress1.NumBytes()
@@ -312,7 +313,7 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 
 		// decode jump/call target
 		if opcode == 0xD0 || opcode == 0xD1 {
-			jumpAddress = module.DirectAddress()
+			jumpAddress = mod.DirectAddress()
 
 			instructionSize += jumpAddress.NumBytes()
 		}
@@ -358,7 +359,7 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 			fmt.Println(line)
 		}
 
-		vStack, newpc, flags, halt, err = module.ExecuteOpcode(opcode, vStack, pc, newpc, dataAddress, instructionSize, jumpAddress, bytes, execute, flags, trace)
+		vStack, newpc, flags, halt, err = mod.ExecuteOpcode(opcode, vStack, pc, newpc, dataAddress, instructionSize, jumpAddress, bytes, execute, flags, trace)
 
 		// trace stack
 		if trace {
@@ -370,7 +371,7 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 		}
 
 		// advance to next instruction
-		err = module.SetPC(newpc)
+		err = mod.SetPC(newpc)
 		if err != nil {
 			s := fmt.Sprintf("Invalid address %s for PC in main: %s", newpc.ToString(), err.Error())
 			return errors.New(s)
@@ -379,14 +380,14 @@ func executeCode(module vputils.Module, startAddress vputils.Address, trace bool
 
 	// trace
 	if trace {
-		pc := module.PC()
+		pc := mod.PC()
 		fmt.Println("Execution halted at " + pc.ToString())
 	}
 
 	return nil
 }
 
-func read(moduleFile string) (vputils.Module, error) {
+func read(moduleFile string) (module.Module, error) {
 	f, err := os.Open(moduleFile)
 	vputils.CheckAndExit(err)
 
@@ -394,12 +395,12 @@ func read(moduleFile string) (vputils.Module, error) {
 
 	header := vputils.ReadString(f)
 	if header != "module" {
-		return vputils.Module{}, errors.New("Did not find module header")
+		return module.Module{}, errors.New("Did not find module header")
 	}
 
 	header = vputils.ReadString(f)
 	if header != "properties" {
-		return vputils.Module{}, errors.New("Did not find properties header")
+		return module.Module{}, errors.New("Did not find properties header")
 	}
 
 	properties := vputils.ReadTextTable(f)
@@ -418,26 +419,26 @@ func read(moduleFile string) (vputils.Module, error) {
 
 	header = vputils.ReadString(f)
 	if header != "exports" {
-		return vputils.Module{}, errors.New("Did not find exports header")
+		return module.Module{}, errors.New("Did not find exports header")
 	}
 
 	exports := vputils.ReadTextTable(f)
 
 	header = vputils.ReadString(f)
 	if header != "code" {
-		return vputils.Module{}, errors.New("Did not find code header")
+		return module.Module{}, errors.New("Did not find code header")
 	}
 
 	code := vputils.ReadBinaryBlock(f, codeAddressWidth)
 
 	header = vputils.ReadString(f)
 	if header != "data" {
-		return vputils.Module{}, errors.New("Did not find data header")
+		return module.Module{}, errors.New("Did not find data header")
 	}
 
 	data := vputils.ReadBinaryBlock(f, dataAddressWidth)
 
-	module := vputils.Module{
+	mod := module.Module{
 		Properties:       properties,
 		Code:             code,
 		Exports:          exports,
@@ -446,9 +447,9 @@ func read(moduleFile string) (vputils.Module, error) {
 		DataAddressWidth: dataAddressWidth,
 	}
 
-	module.Init()
+	mod.Init()
 
-	return module, nil
+	return mod, nil
 }
 
 func main() {
@@ -469,12 +470,12 @@ func main() {
 
 	moduleFile := args[0]
 
-	module, err := read(moduleFile)
+	mod, err := read(moduleFile)
 	vputils.CheckAndExit(err)
 
-	code := module.Code
-	exports := module.Exports
-	codeAddressWidth := module.CodeAddressWidth
+	code := mod.Code
+	exports := mod.Exports
+	codeAddressWidth := mod.CodeAddressWidth
 
 	startAddressFound := false
 	startAddressInt := 0
@@ -501,6 +502,6 @@ func main() {
 
 	instructionDefinitions := defineInstructions()
 
-	err = executeCode(module, startAddress, trace, instructionDefinitions)
+	err = executeCode(mod, startAddress, trace, instructionDefinitions)
 	vputils.CheckAndExit(err)
 }

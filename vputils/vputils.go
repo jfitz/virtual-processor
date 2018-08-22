@@ -509,7 +509,7 @@ func (stack BoolStack) Pop() (bool, BoolStack, error) {
 type ByteStack []byte
 
 // --------------------
-func (stack ByteStack) pushByte(v byte) ByteStack {
+func (stack ByteStack) PushByte(v byte) ByteStack {
 	return append(stack, v)
 }
 
@@ -525,13 +525,13 @@ func reverseBytes(bs []byte) []byte {
 }
 
 // --------------------
-func (stack ByteStack) pushBytes(vs []byte) ByteStack {
+func (stack ByteStack) PushBytes(vs []byte) ByteStack {
 	bs := reverseBytes(vs)
 	return append(stack, bs...)
 }
 
 // --------------------
-func (stack ByteStack) topByte() (byte, error) {
+func (stack ByteStack) TopByte() (byte, error) {
 	count := 1
 	if len(stack) < count {
 		return 0, errors.New("Stack underflow")
@@ -542,7 +542,7 @@ func (stack ByteStack) topByte() (byte, error) {
 }
 
 // --------------------
-func (stack ByteStack) popByte(count int) ([]byte, ByteStack, error) {
+func (stack ByteStack) PopByte(count int) ([]byte, ByteStack, error) {
 	if len(stack) < count {
 		return []byte{}, stack, errors.New("Stack underflow")
 	}
@@ -552,19 +552,19 @@ func (stack ByteStack) popByte(count int) ([]byte, ByteStack, error) {
 }
 
 // --------------------
-func (stack ByteStack) pushString(s string) ByteStack {
+func (stack ByteStack) PushString(s string) ByteStack {
 	bs := []byte(s)
-	stack = stack.pushBytes(bs)
+	stack = stack.PushBytes(bs)
 	b := byte(len(s))
-	stack = stack.pushByte(b)
+	stack = stack.PushByte(b)
 
 	return stack
 }
 
 // --------------------
-func (stack ByteStack) popString() (string, ByteStack) {
+func (stack ByteStack) PopString() (string, ByteStack) {
 	// pop size of name
-	counts, stack, err := stack.popByte(1)
+	counts, stack, err := stack.PopByte(1)
 	CheckAndExit(err)
 	count := int(counts[0])
 
@@ -572,7 +572,7 @@ func (stack ByteStack) popString() (string, ByteStack) {
 	bytes := []byte{}
 	s := ""
 	for i := 0; i < count; i++ {
-		bytes, stack, err = stack.popByte(1)
+		bytes, stack, err = stack.PopByte(1)
 		CheckAndExit(err)
 		if bytes[0] != 0 {
 			s += string(bytes[0])
@@ -588,15 +588,15 @@ func (stack ByteStack) popString() (string, ByteStack) {
 // --------------------
 // address stack
 // --------------------
-type addressStack []Address
+type AddressStack []Address
 
 // --------------------
-func (stack addressStack) push(address Address) addressStack {
+func (stack AddressStack) Push(address Address) AddressStack {
 	return append(stack, address)
 }
 
 // --------------------
-func (stack addressStack) top() (Address, error) {
+func (stack AddressStack) Top() (Address, error) {
 	count := 1
 	if len(stack) < count {
 		return Address{[]byte{}, 0}, errors.New("Stack underflow")
@@ -607,7 +607,7 @@ func (stack addressStack) top() (Address, error) {
 }
 
 // --------------------
-func (stack addressStack) pop() (addressStack, error) {
+func (stack AddressStack) Pop() (AddressStack, error) {
 	count := 1
 	if len(stack) < count {
 		return stack, errors.New("Stack underflow")
@@ -618,7 +618,7 @@ func (stack addressStack) pop() (addressStack, error) {
 }
 
 // --------------------
-func (stack addressStack) toppop() (Address, addressStack, error) {
+func (stack AddressStack) TopPop() (Address, AddressStack, error) {
 	count := 1
 	if len(stack) < count {
 		return Address{[]byte{}, 0}, stack, errors.New("Stack underflow")
@@ -627,520 +627,3 @@ func (stack addressStack) toppop() (Address, addressStack, error) {
 	last := len(stack) - count
 	return stack[last], stack[:last], nil
 }
-
-// --------------------
-// flags group
-// --------------------
-type FlagsGroup struct {
-	Zero     bool
-	Negative bool
-	Positive bool
-}
-
-// --------------------
-// --------------------
-
-func kernelCall(vStack ByteStack) ByteStack {
-	fname, vStack := vStack.popString()
-
-	// dispatch to function
-	bytes := []byte{}
-	s := ""
-	err := errors.New("")
-	switch fname {
-	case "out_b":
-		bytes, vStack, err = vStack.popByte(1)
-		CheckAndPanic(err)
-
-		fmt.Print(string(bytes[0]))
-
-	case "out_s":
-		s, vStack = vStack.popString()
-
-		fmt.Print(s)
-
-	default:
-		err = errors.New("Unknown kernel call to function '" + fname + "'")
-		CheckAndExit(err)
-	}
-
-	// return to module
-	return vStack
-}
-
-// --------------------
-// Module
-// --------------------
-type Module struct {
-	Properties       []NameValue
-	Code             Vector
-	Exports          []NameValue
-	Data             Vector
-	CodeAddressWidth int
-	DataAddressWidth int
-	pc               Address
-	RetStack         addressStack
-}
-
-// --------------------
-func (module *Module) Init() {
-}
-
-// --------------------
-func (module *Module) SetPC(address Address) error {
-	if int(address.ByteValue()) >= len(module.Code) {
-		return errors.New("Address out of range")
-	}
-
-	module.pc = address
-	return nil
-}
-
-// --------------------
-func (module Module) PCByteValue() byte {
-	return module.pc.ByteValue()
-}
-
-// --------------------
-func (module Module) PC() Address {
-	return module.pc
-}
-
-// --------------------
-func (module Module) ImmediateByte() []byte {
-	codeAddress := module.pc.AddByte(1)
-
-	value, err := module.Code.GetByte(codeAddress)
-	CheckAndExit(err)
-
-	return []byte{value}
-}
-
-// --------------------
-func (module Module) ImmediateInt() []byte {
-	codeAddress := module.pc.AddByte(1)
-
-	values := []byte{}
-
-	value, err := module.Code.GetByte(codeAddress)
-	CheckAndExit(err)
-	values = append(values, value)
-
-	codeAddress = codeAddress.AddByte(1)
-
-	value, err = module.Code.GetByte(codeAddress)
-	CheckAndExit(err)
-	values = append(values, value)
-
-	return values
-}
-
-// --------------------
-func (module Module) DirectAddress() Address {
-	codeAddress := module.pc.AddByte(1)
-
-	dataAddr, err := module.Code.GetByte(codeAddress)
-	CheckAndExit(err)
-	da := []byte{dataAddr}
-	dataAddress := Address{da, len(module.Data)}
-
-	return dataAddress
-}
-
-// --------------------
-func (module Module) DirectByte() (byte, Address) {
-	dataAddress := module.DirectAddress()
-
-	value, err := module.Data.GetByte(dataAddress)
-	CheckAndExit(err)
-
-	return value, dataAddress
-}
-
-// --------------------
-func (module Module) IndirectAddress() Address {
-	dataAddress := module.DirectAddress()
-	dataAddr, err := module.Data.GetByte(dataAddress)
-	CheckAndExit(err)
-	da := []byte{dataAddr}
-	dataAddress = Address{da, len(module.Data)}
-
-	return dataAddress
-}
-
-// --------------------
-func (module Module) IndirectByte() (byte, Address) {
-	dataAddress := module.IndirectAddress()
-	value, err := module.Data.GetByte(dataAddress)
-	CheckAndExit(err)
-
-	return value, dataAddress
-}
-
-// --------------------
-func (module *Module) Push(address Address) {
-	module.RetStack = module.RetStack.push(address)
-}
-
-// --------------------
-func (module *Module) TopPop() (Address, error) {
-	address, retStack, err := module.RetStack.toppop()
-	module.RetStack = retStack
-
-	return address, err
-}
-
-// --------------------
-func (module *Module) ExecuteOpcode(opcode byte, vStack ByteStack, pc Address, newpc Address, dataAddress Address, instructionSize int, jumpAddress Address, bytes []byte, execute bool, flags FlagsGroup, trace bool) (ByteStack, Address, FlagsGroup, bool, error) {
-	err := errors.New("")
-
-	halt := false
-	data := module.Data
-
-	bytes1 := []byte{}
-	bytes2 := []byte{}
-
-	// execute opcode
-	switch opcode {
-	case 0x00:
-		// NOP
-		newpc = pc.AddByte(instructionSize)
-
-	case 0x04:
-		// EXIT
-		if execute {
-			halt = true
-		}
-
-		// newpc = pc.AddByte(instructionSize)
-
-	case 0x05:
-		// KCALL - kernel call
-		// update newpc before the call
-		newpc = pc.AddByte(instructionSize)
-
-		if execute {
-			vStack = kernelCall(vStack)
-		}
-
-	case 0x08:
-		// OUT (implied stack)
-		if execute {
-			bytes, vStack, err = vStack.popByte(1)
-			CheckAndPanic(err)
-
-			fmt.Print(string(bytes[0]))
-
-			if trace {
-				fmt.Println()
-			}
-		}
-
-		newpc = pc.AddByte(instructionSize)
-
-	case 0x11:
-		// FLAGS.B direct address
-		if execute {
-			flags.Zero = bytes[0] == 0
-		}
-
-		newpc = pc.AddByte(instructionSize)
-
-	case 0x12:
-		// FLAGS.B indirect address
-		if execute {
-			flags.Zero = bytes[0] == 0
-		}
-
-		newpc = pc.AddByte(instructionSize)
-
-	case 0x13:
-		// FLAGS.B (implied stack)
-		if execute {
-			bytes[0], err = vStack.topByte()
-			CheckAndPanic(err)
-
-			flags.Zero = bytes[0] == 0
-		}
-
-		newpc = pc.AddByte(instructionSize)
-
-	case 0x21:
-		// INC.B direct address
-		if execute {
-			bytes[0]++
-
-			err = data.PutByte(dataAddress, bytes[0])
-			CheckAndPanic(err)
-		}
-
-		newpc = pc.AddByte(instructionSize)
-
-	case 0x22:
-		// INC.B indirect address
-		if execute {
-			bytes[0]++
-
-			err = data.PutByte(dataAddress, bytes[0])
-			CheckAndPanic(err)
-		}
-
-		newpc = pc.AddByte(instructionSize)
-
-	case 0x31:
-		// DEC.B direct address
-		if execute {
-			bytes[0]--
-
-			err = data.PutByte(dataAddress, bytes[0])
-			CheckAndPanic(err)
-		}
-
-		newpc = pc.AddByte(instructionSize)
-
-	case 0x32:
-		// DEC.B indirect address
-		if execute {
-			bytes[0]--
-
-			err = data.PutByte(dataAddress, bytes[0])
-			CheckAndPanic(err)
-		}
-
-		newpc = pc.AddByte(instructionSize)
-
-	case 0x60:
-		// PUSH.B immediate value
-		if execute {
-			vStack = vStack.pushBytes(bytes)
-		}
-
-		newpc = pc.AddByte(instructionSize)
-
-	case 0x61:
-		// PUSH.B direct address
-		if execute {
-			vStack = vStack.pushBytes(bytes)
-		}
-
-		newpc = pc.AddByte(instructionSize)
-
-	case 0x62:
-		// PUSH.B indirect address
-		if execute {
-			vStack = vStack.pushBytes(bytes)
-		}
-
-		newpc = pc.AddByte(instructionSize)
-
-	case 0x64:
-		// PUSH.I16 immediate value
-		if execute {
-			vStack = vStack.pushBytes(bytes)
-		}
-
-		newpc = pc.AddByte(instructionSize)
-
-	case 0x65:
-		// PUSH.I16 direct address
-		if execute {
-			vStack = vStack.pushBytes(bytes)
-		}
-
-		newpc = pc.AddByte(instructionSize)
-
-	case 0x66:
-		// PUSH.I16 indirect address
-		if execute {
-			vStack = vStack.pushBytes(bytes)
-		}
-
-		newpc = pc.AddByte(instructionSize)
-
-	case 0x79:
-		// PUSH.STR direct address
-		if execute {
-			s := ""
-			address := dataAddress
-			b := byte(1)
-
-			for b != 0 {
-				b, err = data.GetByte(address)
-				CheckAndExit(err)
-				c := string(b)
-				s += c
-				address = address.AddByte(1)
-			}
-
-			vStack = vStack.pushString(s)
-		}
-
-		newpc = pc.AddByte(instructionSize)
-
-	case 0x81:
-		// POP.B direct address
-		if execute {
-			bytes, vStack, err = vStack.popByte(1)
-			CheckAndExit(err)
-
-			err = data.PutByte(dataAddress, bytes[0])
-			CheckAndPanic(err)
-		}
-
-		newpc = pc.AddByte(instructionSize)
-
-	case 0x83:
-		// POP.B value (to nowhere)
-		if execute {
-			bytes, vStack, err = vStack.popByte(1)
-			CheckAndExit(err)
-		}
-
-		newpc = pc.AddByte(instructionSize)
-
-	case 0xA0:
-		// ADD.B
-		if execute {
-			bytes1, vStack, err = vStack.popByte(1)
-			CheckAndExit(err)
-
-			bytes2, vStack, err = vStack.popByte(1)
-			CheckAndExit(err)
-
-			value := bytes1[0] + bytes2[0]
-			vStack = vStack.pushByte(value)
-		}
-
-		newpc = pc.AddByte(instructionSize)
-
-	case 0xA1:
-		// SUB.B
-		if execute {
-			bytes1, vStack, err = vStack.popByte(1)
-			CheckAndExit(err)
-
-			bytes2, vStack, err = vStack.popByte(1)
-			CheckAndExit(err)
-
-			value := bytes1[0] - bytes2[0]
-			vStack = vStack.pushByte(value)
-		}
-
-		newpc = pc.AddByte(instructionSize)
-
-	case 0xA2:
-		// MUL.B
-		if execute {
-			bytes1, vStack, err = vStack.popByte(1)
-			CheckAndExit(err)
-
-			bytes2, vStack, err = vStack.popByte(1)
-			CheckAndExit(err)
-
-			value := bytes1[0] * bytes2[0]
-			// TODO: push 2 bytes
-			vStack = vStack.pushByte(value)
-		}
-
-		newpc = pc.AddByte(instructionSize)
-
-	case 0xA3:
-		// DIV.B
-		if execute {
-			bytes1, vStack, err = vStack.popByte(1)
-			CheckAndExit(err)
-
-			bytes2, vStack, err = vStack.popByte(1)
-			CheckAndExit(err)
-
-			value := bytes1[0] / bytes2[0]
-			// TODO: push quotient and remainder (2 bytes)
-			vStack = vStack.pushByte(value)
-		}
-
-		newpc = pc.AddByte(instructionSize)
-
-	case 0xC0:
-		// AND.B
-		if execute {
-			bytes1, vStack, err = vStack.popByte(1)
-			CheckAndExit(err)
-
-			bytes2, vStack, err = vStack.popByte(1)
-			CheckAndExit(err)
-
-			value := bytes1[0] & bytes2[0]
-			vStack = vStack.pushByte(value)
-		}
-
-		newpc = pc.AddByte(instructionSize)
-
-	case 0xC1:
-		// OR.B
-		if execute {
-			bytes1, vStack, err = vStack.popByte(1)
-			CheckAndExit(err)
-
-			bytes2, vStack, err = vStack.popByte(1)
-			CheckAndExit(err)
-
-			value := bytes1[0] | bytes2[0]
-			vStack = vStack.pushByte(value)
-		}
-
-		newpc = pc.AddByte(instructionSize)
-
-	case 0xC3:
-		// CMP.B
-		if execute {
-			bytes1, vStack, err = vStack.popByte(1)
-			CheckAndExit(err)
-
-			bytes2, vStack, err = vStack.popByte(1)
-			CheckAndExit(err)
-
-			value := bytes1[0] - bytes2[0]
-
-			flags.Zero = value == 0
-		}
-
-		newpc = pc.AddByte(instructionSize)
-
-	case 0xD0:
-		// JUMP
-		if execute {
-			newpc = jumpAddress
-		} else {
-			newpc = pc.AddByte(instructionSize)
-		}
-
-	case 0xD1:
-		// CALL
-		if execute {
-			newpc = jumpAddress
-			retpc := pc.AddByte(instructionSize)
-			module.Push(retpc)
-		} else {
-			newpc = pc.AddByte(instructionSize)
-		}
-
-	case 0xD2:
-		// RET
-		if execute {
-			newpc, err = module.TopPop()
-			CheckAndExit(err)
-		} else {
-			newpc = pc.AddByte(instructionSize)
-		}
-
-	default:
-		// invalid opcode
-		s := fmt.Sprintf("Invalid opcode %02x at %s\n", opcode, pc.ToString())
-		return vStack, newpc, flags, halt, errors.New(s)
-	}
-
-	return vStack, newpc, flags, halt, err
-}
-
-// --------------------
-// --------------------

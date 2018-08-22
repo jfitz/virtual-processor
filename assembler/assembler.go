@@ -6,6 +6,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"github.com/jfitz/virtual-processor/module"
 	"github.com/jfitz/virtual-processor/vputils"
 	"os"
 	"strconv"
@@ -462,7 +463,7 @@ func generateCode(source []string, opcodeDefs map[string]opcodeDefinition, dataL
 	return code
 }
 
-func (module vputils.Module) write(filename string) {
+func (mod module.Module) write(filename string) {
 	f, err := os.Create(filename)
 	vputils.CheckAndPanic(err)
 
@@ -470,10 +471,10 @@ func (module vputils.Module) write(filename string) {
 
 	vputils.WriteString(f, "module")
 
-	vputils.WriteTextTable("properties", module.Properties, f)
-	vputils.WriteTextTable("exports", module.Exports, f)
-	vputils.WriteBinaryBlock("code", module.Code, f, module.CodeAddressWidth)
-	vputils.WriteBinaryBlock("data", module.Data, f, module.DataAddressWidth)
+	vputils.WriteTextTable("properties", mod.Properties, f)
+	vputils.WriteTextTable("exports", mod.Exports, f)
+	vputils.WriteBinaryBlock("code", mod.Code, f, mod.CodeAddressWidth)
+	vputils.WriteBinaryBlock("data", mod.Data, f, mod.DataAddressWidth)
 
 	f.Sync()
 }
@@ -612,7 +613,7 @@ func main() {
 
 	code := generateCode(source, opcodeDefs, dataLabels, codeLabels)
 
-	module := vputils.Module{
+	mod := module.Module{
 		Properties:       properties,
 		Code:             code,
 		Exports:          exports,
@@ -623,6 +624,6 @@ func main() {
 
 	// if output specified, write module file
 	if len(moduleFile) > 0 {
-		module.write(moduleFile)
+		mod.write(moduleFile)
 	}
 }
