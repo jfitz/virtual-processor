@@ -246,12 +246,11 @@ func executeCode(mod module.Module, startAddress vputils.Address, trace bool, in
 		condiBytes, opcode, err := getConditionAndOpcode(mod.Code, pc)
 		vputils.CheckPrintAndExit(err, "at PC "+pc.ToString())
 
-		newpc := pc.AddByte(len(condiBytes))
-
 		execute := true
 
 		if len(condiBytes) > 0 {
-			err = mod.SetPC(newpc)
+			opcodePC := pc.AddByte(len(condiBytes))
+			err = mod.SetPC(opcodePC)
 			if err != nil {
 				return err
 			}
@@ -261,8 +260,6 @@ func executeCode(mod module.Module, startAddress vputils.Address, trace bool, in
 				return err
 			}
 		}
-
-		instructionSize := len(condiBytes)
 
 		// get opcode definition
 		def := instructionDefinitions[opcode]
@@ -276,7 +273,7 @@ func executeCode(mod module.Module, startAddress vputils.Address, trace bool, in
 		jumpAddress := vputils.Address{[]byte{}, 0}
 		valueStr := ""
 
-		instructionSize += def.calcInstructionSize()
+		instructionSize := def.calcInstructionSize()
 		targetSize := def.calcTargetSize()
 
 		// decode immediate value
@@ -358,7 +355,7 @@ func executeCode(mod module.Module, startAddress vputils.Address, trace bool, in
 			fmt.Println(line)
 		}
 
-		vStack, newpc, flags, halt, err = mod.ExecuteOpcode(opcode, vStack, pc, dataAddress, instructionSize, jumpAddress, bytes, execute, flags, trace)
+		vStack, flags, halt, err = mod.ExecuteOpcode(opcode, vStack, dataAddress, instructionSize, jumpAddress, bytes, execute, flags, trace)
 
 		// trace stack
 		if trace {
@@ -367,13 +364,6 @@ func executeCode(mod module.Module, startAddress vputils.Address, trace bool, in
 				stack += fmt.Sprintf(" %02X", v)
 			}
 			fmt.Println("Value stack:" + stack)
-		}
-
-		// advance to next instruction
-		err = mod.SetPC(newpc)
-		if err != nil {
-			s := fmt.Sprintf("Invalid address %s for PC in main: %s", newpc.ToString(), err.Error())
-			return errors.New(s)
 		}
 	}
 

@@ -174,10 +174,11 @@ func (mod *Module) TopPop() (vputils.Address, error) {
 }
 
 // --------------------
-func (mod *Module) ExecuteOpcode(opcode byte, vStack vputils.ByteStack, pc vputils.Address, dataAddress vputils.Address, instructionSize int, jumpAddress vputils.Address, bytes []byte, execute bool, flags FlagsGroup, trace bool) (vputils.ByteStack, vputils.Address, FlagsGroup, bool, error) {
+func (mod *Module) ExecuteOpcode(opcode byte, vStack vputils.ByteStack, dataAddress vputils.Address, instructionSize int, jumpAddress vputils.Address, bytes []byte, execute bool, flags FlagsGroup, trace bool) (vputils.ByteStack, FlagsGroup, bool, error) {
 	err := errors.New("")
 
 	halt := false
+	pc := mod.PC()
 	newpc := pc
 
 	bytes1 := []byte{}
@@ -519,10 +520,17 @@ func (mod *Module) ExecuteOpcode(opcode byte, vStack vputils.ByteStack, pc vputi
 	default:
 		// invalid opcode
 		s := fmt.Sprintf("Invalid opcode %02x at %s\n", opcode, pc.ToString())
-		return vStack, newpc, flags, halt, errors.New(s)
+		return vStack, flags, halt, errors.New(s)
 	}
 
-	return vStack, newpc, flags, halt, err
+	// advance to next instruction
+	err = mod.SetPC(newpc)
+	if err != nil {
+		s := fmt.Sprintf("Invalid address %s for PC in main: %s", newpc.ToString(), err.Error())
+		err = errors.New(s)
+	}
+
+	return vStack, flags, halt, err
 }
 
 // --------------------
