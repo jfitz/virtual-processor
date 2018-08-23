@@ -1,5 +1,5 @@
 /*
-package of module for virtual-processor
+Package module for virtual-processor
 */
 package module
 
@@ -11,17 +11,14 @@ import (
 	"strings"
 )
 
-// --------------------
-// flags group
-// --------------------
+// FlagsGroup --------------------
 type FlagsGroup struct {
 	Zero     bool
 	Negative bool
 	Positive bool
 }
 
-// --------------------
-// --------------------
+// -------------------------------
 
 func kernelCall(vStack vputils.ByteStack) vputils.ByteStack {
 	fname, vStack := vStack.PopString()
@@ -51,9 +48,7 @@ func kernelCall(vStack vputils.ByteStack) vputils.ByteStack {
 	return vStack
 }
 
-// --------------------
-// Module
-// --------------------
+// Module --------------------
 type Module struct {
 	Properties       []vputils.NameValue
 	Code             vputils.Vector
@@ -65,11 +60,11 @@ type Module struct {
 	RetStack         vputils.AddressStack
 }
 
-// --------------------
+// Init - initialize
 func (mod *Module) Init() {
 }
 
-// --------------------
+// SetPC - set the PC
 func (mod *Module) SetPC(address vputils.Address) error {
 	if int(address.ByteValue()) >= len(mod.Code) {
 		return errors.New("Address out of range")
@@ -79,17 +74,17 @@ func (mod *Module) SetPC(address vputils.Address) error {
 	return nil
 }
 
-// --------------------
+// PCByteValue - deprecated
 func (mod Module) PCByteValue() byte {
 	return mod.pc.ByteValue()
 }
 
-// --------------------
+// PC - return current PC
 func (mod Module) PC() vputils.Address {
 	return mod.pc
 }
 
-// --------------------
+// ImmediateByte - get a byte
 func (mod Module) ImmediateByte() []byte {
 	codeAddress := mod.pc.AddByte(1)
 
@@ -99,7 +94,7 @@ func (mod Module) ImmediateByte() []byte {
 	return []byte{value}
 }
 
-// --------------------
+// ImmediateInt - get an I16
 func (mod Module) ImmediateInt() []byte {
 	codeAddress := mod.pc.AddByte(1)
 
@@ -118,7 +113,7 @@ func (mod Module) ImmediateInt() []byte {
 	return values
 }
 
-// --------------------
+// DirectAddress - get direct address
 func (mod Module) DirectAddress() vputils.Address {
 	codeAddress := mod.pc.AddByte(1)
 
@@ -130,7 +125,7 @@ func (mod Module) DirectAddress() vputils.Address {
 	return dataAddress
 }
 
-// --------------------
+// DirectByte - get byte via direct address
 func (mod Module) DirectByte() (byte, vputils.Address) {
 	dataAddress := mod.DirectAddress()
 
@@ -140,7 +135,7 @@ func (mod Module) DirectByte() (byte, vputils.Address) {
 	return value, dataAddress
 }
 
-// --------------------
+// IndirectAddress - get indirect address
 func (mod Module) IndirectAddress() vputils.Address {
 	dataAddress := mod.DirectAddress()
 	dataAddr, err := mod.Data.GetByte(dataAddress)
@@ -151,7 +146,7 @@ func (mod Module) IndirectAddress() vputils.Address {
 	return dataAddress
 }
 
-// --------------------
+// IndirectByte - get byte via indirect address
 func (mod Module) IndirectByte() (byte, vputils.Address) {
 	dataAddress := mod.IndirectAddress()
 	value, err := mod.Data.GetByte(dataAddress)
@@ -160,12 +155,12 @@ func (mod Module) IndirectByte() (byte, vputils.Address) {
 	return value, dataAddress
 }
 
-// --------------------
+// Push - push a value
 func (mod *Module) Push(address vputils.Address) {
 	mod.RetStack = mod.RetStack.Push(address)
 }
 
-// --------------------
+// TopPop - pop the top value
 func (mod *Module) TopPop() (vputils.Address, error) {
 	address, retStack, err := mod.RetStack.TopPop()
 	mod.RetStack = retStack
@@ -173,7 +168,7 @@ func (mod *Module) TopPop() (vputils.Address, error) {
 	return address, err
 }
 
-// --------------------
+// ExecuteOpcode - execute one opcode
 func (mod *Module) ExecuteOpcode(opcode byte, vStack vputils.ByteStack, dataAddress vputils.Address, instructionSize int, jumpAddress vputils.Address, bytes []byte, execute bool, flags FlagsGroup, trace bool) (vputils.ByteStack, FlagsGroup, bool, error) {
 	err := errors.New("")
 
@@ -533,7 +528,7 @@ func (mod *Module) ExecuteOpcode(opcode byte, vStack vputils.ByteStack, dataAddr
 	return vStack, flags, halt, err
 }
 
-// --------------------
+// Write a module to a file
 func (mod Module) Write(filename string) {
 	f, err := os.Create(filename)
 	vputils.CheckAndPanic(err)
@@ -550,7 +545,7 @@ func (mod Module) Write(filename string) {
 	f.Sync()
 }
 
-// --------------------
+// Read a file into a module
 func Read(moduleFile string) (Module, error) {
 	f, err := os.Open(moduleFile)
 	vputils.CheckAndExit(err)
@@ -616,5 +611,4 @@ func Read(moduleFile string) (Module, error) {
 	return mod, nil
 }
 
-// --------------------
-// --------------------
+// -------------------------------

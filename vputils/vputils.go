@@ -1,5 +1,5 @@
 /*
-package of utilities for virtual-processor
+Package vputils for virtual-processor
 */
 package vputils
 
@@ -12,17 +12,20 @@ import (
 	"strings"
 )
 
+// NameValue - hold a name and value pair
 type NameValue struct {
 	Name  string
 	Value string
 }
 
+// CheckAndPanic - check for error
 func CheckAndPanic(e error) {
 	if e != nil {
 		panic(e)
 	}
 }
 
+// CheckAndExit - check for error
 func CheckAndExit(e error) {
 	if e != nil {
 		fmt.Println(e.Error())
@@ -30,6 +33,7 @@ func CheckAndExit(e error) {
 	}
 }
 
+// CheckPrintAndExit - check for error
 func CheckPrintAndExit(e error, message string) {
 	if e != nil {
 		fmt.Println(e.Error() + " " + message)
@@ -43,42 +47,52 @@ func checkWidth(width int) {
 	}
 }
 
+// IsSpace - is it a space
 func IsSpace(c byte) bool {
 	return c == ' ' || c == '\t'
 }
 
+// IsDoubleQuote - is it a quote
 func IsDoubleQuote(c byte) bool {
 	return c == '"'
 }
 
+// IsDigit - is it a digit
 func IsDigit(c byte) bool {
 	return c >= '0' && c <= '9'
 }
 
+// IsAlpha - is it an alphabetic
 func IsAlpha(c byte) bool {
 	return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')
 }
 
+// IsAlnum - is it alphabetic or digit
 func IsAlnum(c byte) bool {
 	return IsDigit(c) || IsAlpha(c) || c == '_'
 }
 
+// IsUpper - is it an uppercase alphabetic
 func IsUpper(c byte) bool {
 	return (c >= 'A' && c <= 'Z')
 }
 
+// IsLower - is it a lowercase alphabetic
 func IsLower(c byte) bool {
 	return (c >= 'a' && c <= 'z')
 }
 
+// IsText - anything that can be in a label or opcode
 func IsText(c byte) bool {
 	return IsAlnum(c) || c == '.' || c == ':'
 }
 
+// IsDirectAddress - is it a direct address
 func IsDirectAddress(s string) bool {
 	return len(s) >= 2 && s[0] == '@' && IsAlpha(s[1])
 }
 
+// IsIndirectAddress - is it an indirect address
 func IsIndirectAddress(s string) bool {
 	return len(s) >= 3 && s[0] == '@' && s[1] == '@' && IsAlpha(s[2])
 }
@@ -132,6 +146,7 @@ func compatible(token string, c byte) bool {
 	return false
 }
 
+// Tokenize - convert string into tokens
 func Tokenize(s string) []string {
 	parts := []string{}
 	current := ""
@@ -191,15 +206,16 @@ func write2ByteInt(f *os.File, value int) {
 	CheckAndPanic(err)
 }
 
+// ReadString - read a string from a module file
 func ReadString(f *os.File) string {
 	bytes := []byte{}
-	one_byte := make([]byte, 1)
-	one_byte[0] = 1
-	for one_byte[0] != 0 {
-		_, err := f.Read(one_byte)
+	oneByte := make([]byte, 1)
+	oneByte[0] = 1
+	for oneByte[0] != 0 {
+		_, err := f.Read(oneByte)
 		CheckAndPanic(err)
-		if one_byte[0] != 0 {
-			bytes = append(bytes, one_byte...)
+		if oneByte[0] != 0 {
+			bytes = append(bytes, oneByte...)
 		}
 	}
 
@@ -208,16 +224,18 @@ func ReadString(f *os.File) string {
 	return name
 }
 
+// WriteString - write a string to a module file
 func WriteString(f *os.File, text string) {
 	_, err := f.Write([]byte(text))
 	CheckAndPanic(err)
 
-	zero_byte := []byte{0}
+	zeroByte := []byte{0}
 
-	_, err = f.Write(zero_byte)
+	_, err = f.Write(zeroByte)
 	CheckAndPanic(err)
 }
 
+// ReadBinaryBlock - read a binary block from a module file
 func ReadBinaryBlock(f *os.File, width int) []byte {
 	checkWidth(width)
 
@@ -248,6 +266,7 @@ func ReadBinaryBlock(f *os.File, width int) []byte {
 	return code
 }
 
+// WriteBinaryBlock - write a binary block to a module file
 func WriteBinaryBlock(name string, bytes []byte, f *os.File, width int) {
 	checkWidth(width)
 
@@ -270,40 +289,41 @@ func WriteBinaryBlock(name string, bytes []byte, f *os.File, width int) {
 	}
 }
 
+// ReadTextTable - read a text table from a module file
 func ReadTextTable(f *os.File) []NameValue {
-	stx_byte := []byte{0x02}
-	etx_byte := []byte{0x03}
-	fs_byte := []byte{0x1c}
-	rs_byte := []byte{0x1e}
+	stxByte := []byte{0x02}
+	etxByte := []byte{0x03}
+	fsByte := []byte{0x1c}
+	rsByte := []byte{0x1e}
 
-	one_byte := make([]byte, 1)
+	oneByte := make([]byte, 1)
 
 	// read STX
-	_, err := f.Read(one_byte)
+	_, err := f.Read(oneByte)
 	CheckAndPanic(err)
 
-	if one_byte[0] != stx_byte[0] {
+	if oneByte[0] != stxByte[0] {
 		CheckAndExit(errors.New("Did not find STX"))
 	}
 
 	// read until ETX
 	bytes := []byte{}
-	one_byte[0] = 0
-	for one_byte[0] != etx_byte[0] {
-		_, err := f.Read(one_byte)
+	oneByte[0] = 0
+	for oneByte[0] != etxByte[0] {
+		_, err := f.Read(oneByte)
 		CheckAndPanic(err)
-		if one_byte[0] != etx_byte[0] {
-			bytes = append(bytes, one_byte...)
+		if oneByte[0] != etxByte[0] {
+			bytes = append(bytes, oneByte...)
 		}
 	}
 
-	all_text := string(bytes)
-	records := strings.Split(all_text, string(rs_byte))
+	allText := string(bytes)
+	records := strings.Split(allText, string(rsByte))
 
 	nameValues := []NameValue{}
 
 	for _, record := range records {
-		fields := strings.Split(record, string(fs_byte))
+		fields := strings.Split(record, string(fsByte))
 		if len(fields) == 2 {
 			name := fields[0]
 			value := fields[1]
@@ -315,16 +335,17 @@ func ReadTextTable(f *os.File) []NameValue {
 	return nameValues
 }
 
+// WriteTextTable - write a text table to a module file
 func WriteTextTable(name string, table []NameValue, f *os.File) {
 	WriteString(f, name)
 
-	stx_byte := []byte{0x02}
-	etx_byte := []byte{0x03}
-	fs_byte := []byte{0x1c}
-	rs_byte := []byte{0x1e}
+	stxByte := []byte{0x02}
+	etxByte := []byte{0x03}
+	fsByte := []byte{0x1c}
+	rsByte := []byte{0x1e}
 
 	// write STX
-	_, err := f.Write(stx_byte)
+	_, err := f.Write(stxByte)
 	CheckAndPanic(err)
 
 	for _, nameValue := range table {
@@ -335,20 +356,21 @@ func WriteTextTable(name string, table []NameValue, f *os.File) {
 		_, err = f.Write(name)
 		CheckAndPanic(err)
 		// write FS
-		_, err = f.Write(fs_byte)
+		_, err = f.Write(fsByte)
 		CheckAndPanic(err)
 		// write value
 		_, err = f.Write(value)
 		CheckAndPanic(err)
 		// write RS (0x1e)
-		_, err = f.Write(rs_byte)
+		_, err = f.Write(rsByte)
 		CheckAndPanic(err)
 	}
 	// write ETX
-	_, err = f.Write(etx_byte)
+	_, err = f.Write(etxByte)
 	CheckAndPanic(err)
 }
 
+// ReadFile - read a text file
 func ReadFile(sourceFile string) []string {
 	b, err := ioutil.ReadFile(sourceFile)
 	CheckAndPanic(err)
@@ -359,15 +381,13 @@ func ReadFile(sourceFile string) []string {
 	return sourceLines
 }
 
-// --------------------
-// address
-// --------------------
+// Address --------------------------------
 type Address struct {
 	Bytes   []byte
 	Maximum int
 }
 
-// --------------------
+// MakeAddress - create an address
 func MakeAddress(value int, size int, maximum int) (Address, error) {
 	if value < 0 {
 		return Address{[]byte{}, 0}, errors.New("Negative address")
@@ -388,17 +408,17 @@ func MakeAddress(value int, size int, maximum int) (Address, error) {
 	return Address{addressBytes, maximum}, nil
 }
 
-// --------------------
+// Empty - is address empty
 func (address Address) Empty() bool {
 	return len(address.Bytes) == 0
 }
 
-// --------------------
+// NumBytes - number of bytes for address
 func (address Address) NumBytes() int {
 	return len(address.Bytes)
 }
 
-// --------------------
+// ToInt - convert to int
 func (address Address) ToInt() int {
 	value := 0
 	for _, b := range address.Bytes {
@@ -410,7 +430,7 @@ func (address Address) ToInt() int {
 	return value
 }
 
-// --------------------
+// ToString - convert to string
 func (address Address) ToString() string {
 	s := ""
 	for _, b := range address.Bytes {
@@ -420,12 +440,12 @@ func (address Address) ToString() string {
 	return s
 }
 
-// --------------------
+// ByteValue - get byte
 func (address Address) ByteValue() byte {
 	return address.Bytes[0]
 }
 
-// --------------------
+// AddByte - increase
 func (address Address) AddByte(i int) Address {
 	increment := byte(i)
 	a := address.ByteValue() + increment
@@ -433,12 +453,10 @@ func (address Address) AddByte(i int) Address {
 	return Address{as, address.Maximum}
 }
 
-// --------------------
-// vector
-// --------------------
+// Vector --------------------
 type Vector []byte
 
-// --------------------
+// GetByte - get byte
 func (v Vector) GetByte(address Address) (byte, error) {
 	max := len(v) - 1
 	offset := address.ToInt()
@@ -452,7 +470,7 @@ func (v Vector) GetByte(address Address) (byte, error) {
 	return value, nil
 }
 
-// --------------------
+// PutByte - put byte
 func (v Vector) PutByte(address Address, value byte) error {
 	max := len(v) - 1
 	offset := address.ToInt()
@@ -467,20 +485,17 @@ func (v Vector) PutByte(address Address, value byte) error {
 	return nil
 }
 
-// --------------------
-// --------------------
+// ----------------------------------------
 
-// --------------------
-// bool stack
-// --------------------
+// BoolStack ------------------------------
 type BoolStack []bool
 
-// --------------------
+// Push - push bool value
 func (stack BoolStack) Push(v bool) BoolStack {
 	return append(stack, v)
 }
 
-// --------------------
+// Top - get top value
 func (stack BoolStack) Top() (bool, error) {
 	if len(stack) < 1 {
 		return false, errors.New("Stack underflow")
@@ -490,7 +505,7 @@ func (stack BoolStack) Top() (bool, error) {
 	return stack[last], nil
 }
 
-// --------------------
+// Pop - get top value
 func (stack BoolStack) Pop() (bool, BoolStack, error) {
 	if len(stack) < 1 {
 		return false, stack, errors.New("Stack underflow")
@@ -500,20 +515,16 @@ func (stack BoolStack) Pop() (bool, BoolStack, error) {
 	return stack[last], stack[:last], nil
 }
 
-// --------------------
-// --------------------
+// ----------------------------------------
 
-// --------------------
-// byte stack
-// --------------------
+// ByteStack ------------------------------
 type ByteStack []byte
 
-// --------------------
+// PushByte - push byte
 func (stack ByteStack) PushByte(v byte) ByteStack {
 	return append(stack, v)
 }
 
-// --------------------
 func reverseBytes(bs []byte) []byte {
 	last := len(bs) - 1
 
@@ -524,13 +535,13 @@ func reverseBytes(bs []byte) []byte {
 	return bs
 }
 
-// --------------------
+// PushBytes - push bytes
 func (stack ByteStack) PushBytes(vs []byte) ByteStack {
 	bs := reverseBytes(vs)
 	return append(stack, bs...)
 }
 
-// --------------------
+// TopByte - get top byte
 func (stack ByteStack) TopByte() (byte, error) {
 	count := 1
 	if len(stack) < count {
@@ -541,7 +552,7 @@ func (stack ByteStack) TopByte() (byte, error) {
 	return stack[last], nil
 }
 
-// --------------------
+// PopByte - get top byte
 func (stack ByteStack) PopByte(count int) ([]byte, ByteStack, error) {
 	if len(stack) < count {
 		return []byte{}, stack, errors.New("Stack underflow")
@@ -551,7 +562,7 @@ func (stack ByteStack) PopByte(count int) ([]byte, ByteStack, error) {
 	return stack[last:], stack[:last], nil
 }
 
-// --------------------
+// PushString - push a string
 func (stack ByteStack) PushString(s string) ByteStack {
 	bs := []byte(s)
 	stack = stack.PushBytes(bs)
@@ -561,7 +572,7 @@ func (stack ByteStack) PushString(s string) ByteStack {
 	return stack
 }
 
-// --------------------
+// PopString - pop a string
 func (stack ByteStack) PopString() (string, ByteStack) {
 	// pop size of name
 	counts, stack, err := stack.PopByte(1)
@@ -582,20 +593,17 @@ func (stack ByteStack) PopString() (string, ByteStack) {
 	return s, stack
 }
 
-// --------------------
-// --------------------
+// ----------------------------------------
 
-// --------------------
-// address stack
-// --------------------
+// AddressStack ---------------------------
 type AddressStack []Address
 
-// --------------------
+// Push - push address
 func (stack AddressStack) Push(address Address) AddressStack {
 	return append(stack, address)
 }
 
-// --------------------
+// Top - get top address
 func (stack AddressStack) Top() (Address, error) {
 	count := 1
 	if len(stack) < count {
@@ -606,7 +614,7 @@ func (stack AddressStack) Top() (Address, error) {
 	return stack[last], nil
 }
 
-// --------------------
+// Pop - get top address
 func (stack AddressStack) Pop() (AddressStack, error) {
 	count := 1
 	if len(stack) < count {
@@ -617,7 +625,7 @@ func (stack AddressStack) Pop() (AddressStack, error) {
 	return stack[:last], nil
 }
 
-// --------------------
+// TopPop - get top address
 func (stack AddressStack) TopPop() (Address, AddressStack, error) {
 	count := 1
 	if len(stack) < count {
