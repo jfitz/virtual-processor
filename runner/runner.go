@@ -1,5 +1,5 @@
 /*
-package main of vcpu
+Package main of virtual CPU runner
 */
 package main
 

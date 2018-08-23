@@ -16,7 +16,7 @@ echo testbed ready
 ECODE=0
 
 echo Running program...
-go run processor/processor.go --trace "$TESTBED/$TESTNAME/program.module" >"$TESTBED/$TESTNAME/stdout.txt" 2>&1
+go run runner/runner.go --trace "$TESTBED/$TESTNAME/program.module" >"$TESTBED/$TESTNAME/stdout.txt" 2>&1
 echo run finished
 
 # compare results

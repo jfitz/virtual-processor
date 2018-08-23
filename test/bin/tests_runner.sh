@@ -1,6 +1,6 @@
 TESTROOT=test
 TESTBED=tests
-TESTGROUP=processor
+TESTGROUP=runner
 
 echo Removing old directory
 if [ -d "$TESTBED" ] ; then rm -r "$TESTBED" ; fi
@@ -12,7 +12,7 @@ echo Running all tests...
 ECODE=0
 
 for F in "$TESTROOT/$TESTGROUP"/*; do
-    bash "$TESTROOT/bin/test_processor.sh" "$TESTROOT" "$TESTBED" "$TESTGROUP" ${F##*/}
+    bash "$TESTROOT/bin/test_runner.sh" "$TESTROOT" "$TESTBED" "$TESTGROUP" ${F##*/}
     ((ECODE+=$?))
 done
 
