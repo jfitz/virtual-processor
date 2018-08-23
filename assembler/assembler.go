@@ -225,7 +225,7 @@ func dequoteString(s string) []byte {
 	return bytes
 }
 
-func decodeConditional(s string) ([]byte, error) {
+func encodeConditional(s string) ([]byte, error) {
 	prefix := []byte{}
 
 	if len(s) > 0 {
@@ -323,7 +323,7 @@ func generateData(source []string, opcodeDefs map[string]opcodeDefinition) (vput
 					word = parts1[0]
 				}
 
-				prefix, err := decodeConditional(conditional)
+				prefix, err := encodeConditional(conditional)
 				vputils.CheckAndExit(err)
 
 				parts2 := strings.Split(word, ".")
@@ -405,7 +405,7 @@ func generateCode(source []string, opcodeDefs map[string]opcodeDefinition, dataL
 					mnemonic = parts1[0]
 				}
 
-				prefix, err := decodeConditional(conditional)
+				prefix, err := encodeConditional(conditional)
 				vputils.CheckAndExit(err)
 
 				parts2 := strings.Split(mnemonic, ".")
