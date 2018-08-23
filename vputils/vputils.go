@@ -593,6 +593,17 @@ func (stack ByteStack) PopString() (string, ByteStack) {
 	return s, stack
 }
 
+// ToByteString - convert to string of byte representation
+func (stack ByteStack) ToByteString() string {
+	s := ""
+
+	if len(stack) > 0 {
+		s = fmt.Sprintf("% 02X", stack)
+	}
+
+	return s
+}
+
 // ----------------------------------------
 
 // AddressStack ---------------------------

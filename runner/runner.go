@@ -282,11 +282,13 @@ func executeCode(mod module.Module, startAddress vputils.Address, trace bool, in
 
 		// trace stack
 		if trace {
-			stack := ""
-			for _, v := range vStack {
-				stack += fmt.Sprintf(" %02X", v)
+			s := vStack.ToByteString()
+
+			if len(s) > 0 {
+				fmt.Println("Value stack: " + s)
+			} else {
+				fmt.Println("Value stack:")
 			}
-			fmt.Println("Value stack:" + stack)
 		}
 	}
 
