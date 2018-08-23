@@ -18,6 +18,31 @@ type FlagsGroup struct {
 	Positive bool
 }
 
+// ToString converts to string
+func (flags FlagsGroup) ToString() string {
+	s := ""
+
+	if flags.Positive {
+		s += " P"
+	} else {
+		s += " p"
+	}
+
+	if flags.Zero {
+		s += " Z"
+	} else {
+		s += " z"
+	}
+
+	if flags.Negative {
+		s += " N"
+	} else {
+		s += " n"
+	}
+
+	return s
+}
+
 // -------------------------------
 
 func kernelCall(vStack vputils.ByteStack) vputils.ByteStack {

@@ -1,205 +1,205 @@
 Execution started at  00
-00: 60 PUSH.B =00 z
+00: 60 PUSH.B =00 p z n
 Value stack: 00
-02: 13 FLAGS.B z
+02: 13 FLAGS.B p z n
 Value stack: 00
-03: 83  Z
+03: 83  p Z n
 Value stack:
-04: E0 E8 D0 Z.NOT:JUMP >10 Z
+04: E0 E8 D0 Z.NOT:JUMP >10 p Z n
 Value stack:
-08: 60 PUSH.B =00 Z
+08: 60 PUSH.B =00 p Z n
 Value stack: 00
-0A: D1 CALL >17 Z
+0A: D1 CALL >17 p Z n
 Value stack: 00
-17: 81 POP.B @20 =00 Z
+17: 81 POP.B @20 =00 p Z n
 Value stack:
-19: 62 PUSH.B @@20 @00 =56 Z
+19: 62 PUSH.B @@20 @00 =56 p Z n
 Value stack: 56
-1B: 13 FLAGS.B Z
+1B: 13 FLAGS.B p Z n
 Value stack: 56
-1C: E0 D2 Z:RET z
+1C: E0 D2 Z:RET p z n
 Value stack: 56
-1E: 08 OUT z
+1E: 08 OUT p z n
 V
 Value stack:
-1F: 21 INC.B @20 =00 z
+1F: 21 INC.B @20 =00 p z n
 Value stack:
-21: D0 JUMP >19 z
+21: D0 JUMP >19 p z n
 Value stack:
-19: 62 PUSH.B @@20 @01 =61 z
+19: 62 PUSH.B @@20 @01 =61 p z n
 Value stack: 61
-1B: 13 FLAGS.B z
+1B: 13 FLAGS.B p z n
 Value stack: 61
-1C: E0 D2 Z:RET z
+1C: E0 D2 Z:RET p z n
 Value stack: 61
-1E: 08 OUT z
+1E: 08 OUT p z n
 a
 Value stack:
-1F: 21 INC.B @20 =01 z
+1F: 21 INC.B @20 =01 p z n
 Value stack:
-21: D0 JUMP >19 z
+21: D0 JUMP >19 p z n
 Value stack:
-19: 62 PUSH.B @@20 @02 =6C z
+19: 62 PUSH.B @@20 @02 =6C p z n
 Value stack: 6C
-1B: 13 FLAGS.B z
+1B: 13 FLAGS.B p z n
 Value stack: 6C
-1C: E0 D2 Z:RET z
+1C: E0 D2 Z:RET p z n
 Value stack: 6C
-1E: 08 OUT z
+1E: 08 OUT p z n
 l
 Value stack:
-1F: 21 INC.B @20 =02 z
+1F: 21 INC.B @20 =02 p z n
 Value stack:
-21: D0 JUMP >19 z
+21: D0 JUMP >19 p z n
 Value stack:
-19: 62 PUSH.B @@20 @03 =75 z
+19: 62 PUSH.B @@20 @03 =75 p z n
 Value stack: 75
-1B: 13 FLAGS.B z
+1B: 13 FLAGS.B p z n
 Value stack: 75
-1C: E0 D2 Z:RET z
+1C: E0 D2 Z:RET p z n
 Value stack: 75
-1E: 08 OUT z
+1E: 08 OUT p z n
 u
 Value stack:
-1F: 21 INC.B @20 =03 z
+1F: 21 INC.B @20 =03 p z n
 Value stack:
-21: D0 JUMP >19 z
+21: D0 JUMP >19 p z n
 Value stack:
-19: 62 PUSH.B @@20 @04 =65 z
+19: 62 PUSH.B @@20 @04 =65 p z n
 Value stack: 65
-1B: 13 FLAGS.B z
+1B: 13 FLAGS.B p z n
 Value stack: 65
-1C: E0 D2 Z:RET z
+1C: E0 D2 Z:RET p z n
 Value stack: 65
-1E: 08 OUT z
+1E: 08 OUT p z n
 e
 Value stack:
-1F: 21 INC.B @20 =04 z
+1F: 21 INC.B @20 =04 p z n
 Value stack:
-21: D0 JUMP >19 z
+21: D0 JUMP >19 p z n
 Value stack:
-19: 62 PUSH.B @@20 @05 =20 z
+19: 62 PUSH.B @@20 @05 =20 p z n
 Value stack: 20
-1B: 13 FLAGS.B z
+1B: 13 FLAGS.B p z n
 Value stack: 20
-1C: E0 D2 Z:RET z
+1C: E0 D2 Z:RET p z n
 Value stack: 20
-1E: 08 OUT z
+1E: 08 OUT p z n
  
 Value stack:
-1F: 21 INC.B @20 =05 z
+1F: 21 INC.B @20 =05 p z n
 Value stack:
-21: D0 JUMP >19 z
+21: D0 JUMP >19 p z n
 Value stack:
-19: 62 PUSH.B @@20 @06 =69 z
+19: 62 PUSH.B @@20 @06 =69 p z n
 Value stack: 69
-1B: 13 FLAGS.B z
+1B: 13 FLAGS.B p z n
 Value stack: 69
-1C: E0 D2 Z:RET z
+1C: E0 D2 Z:RET p z n
 Value stack: 69
-1E: 08 OUT z
+1E: 08 OUT p z n
 i
 Value stack:
-1F: 21 INC.B @20 =06 z
+1F: 21 INC.B @20 =06 p z n
 Value stack:
-21: D0 JUMP >19 z
+21: D0 JUMP >19 p z n
 Value stack:
-19: 62 PUSH.B @@20 @07 =73 z
+19: 62 PUSH.B @@20 @07 =73 p z n
 Value stack: 73
-1B: 13 FLAGS.B z
+1B: 13 FLAGS.B p z n
 Value stack: 73
-1C: E0 D2 Z:RET z
+1C: E0 D2 Z:RET p z n
 Value stack: 73
-1E: 08 OUT z
+1E: 08 OUT p z n
 s
 Value stack:
-1F: 21 INC.B @20 =07 z
+1F: 21 INC.B @20 =07 p z n
 Value stack:
-21: D0 JUMP >19 z
+21: D0 JUMP >19 p z n
 Value stack:
-19: 62 PUSH.B @@20 @08 =20 z
+19: 62 PUSH.B @@20 @08 =20 p z n
 Value stack: 20
-1B: 13 FLAGS.B z
+1B: 13 FLAGS.B p z n
 Value stack: 20
-1C: E0 D2 Z:RET z
+1C: E0 D2 Z:RET p z n
 Value stack: 20
-1E: 08 OUT z
+1E: 08 OUT p z n
  
 Value stack:
-1F: 21 INC.B @20 =08 z
+1F: 21 INC.B @20 =08 p z n
 Value stack:
-21: D0 JUMP >19 z
+21: D0 JUMP >19 p z n
 Value stack:
-19: 62 PUSH.B @@20 @09 =7A z
+19: 62 PUSH.B @@20 @09 =7A p z n
 Value stack: 7A
-1B: 13 FLAGS.B z
+1B: 13 FLAGS.B p z n
 Value stack: 7A
-1C: E0 D2 Z:RET z
+1C: E0 D2 Z:RET p z n
 Value stack: 7A
-1E: 08 OUT z
+1E: 08 OUT p z n
 z
 Value stack:
-1F: 21 INC.B @20 =09 z
+1F: 21 INC.B @20 =09 p z n
 Value stack:
-21: D0 JUMP >19 z
+21: D0 JUMP >19 p z n
 Value stack:
-19: 62 PUSH.B @@20 @0A =65 z
+19: 62 PUSH.B @@20 @0A =65 p z n
 Value stack: 65
-1B: 13 FLAGS.B z
+1B: 13 FLAGS.B p z n
 Value stack: 65
-1C: E0 D2 Z:RET z
+1C: E0 D2 Z:RET p z n
 Value stack: 65
-1E: 08 OUT z
+1E: 08 OUT p z n
 e
 Value stack:
-1F: 21 INC.B @20 =0A z
+1F: 21 INC.B @20 =0A p z n
 Value stack:
-21: D0 JUMP >19 z
+21: D0 JUMP >19 p z n
 Value stack:
-19: 62 PUSH.B @@20 @0B =72 z
+19: 62 PUSH.B @@20 @0B =72 p z n
 Value stack: 72
-1B: 13 FLAGS.B z
+1B: 13 FLAGS.B p z n
 Value stack: 72
-1C: E0 D2 Z:RET z
+1C: E0 D2 Z:RET p z n
 Value stack: 72
-1E: 08 OUT z
+1E: 08 OUT p z n
 r
 Value stack:
-1F: 21 INC.B @20 =0B z
+1F: 21 INC.B @20 =0B p z n
 Value stack:
-21: D0 JUMP >19 z
+21: D0 JUMP >19 p z n
 Value stack:
-19: 62 PUSH.B @@20 @0C =6F z
+19: 62 PUSH.B @@20 @0C =6F p z n
 Value stack: 6F
-1B: 13 FLAGS.B z
+1B: 13 FLAGS.B p z n
 Value stack: 6F
-1C: E0 D2 Z:RET z
+1C: E0 D2 Z:RET p z n
 Value stack: 6F
-1E: 08 OUT z
+1E: 08 OUT p z n
 o
 Value stack:
-1F: 21 INC.B @20 =0C z
+1F: 21 INC.B @20 =0C p z n
 Value stack:
-21: D0 JUMP >19 z
+21: D0 JUMP >19 p z n
 Value stack:
-19: 62 PUSH.B @@20 @0D =00 z
+19: 62 PUSH.B @@20 @0D =00 p z n
 Value stack: 00
-1B: 13 FLAGS.B z
+1B: 13 FLAGS.B p z n
 Value stack: 00
-1C: E0 D2 Z:RET Z
+1C: E0 D2 Z:RET p Z n
 Value stack: 00
-0C: D1 CALL >23 Z
+0C: D1 CALL >23 p Z n
 Value stack: 00
-23: 61 PUSH.B @21 =0A Z
+23: 61 PUSH.B @21 =0A p Z n
 Value stack: 00 0A
-25: 08 OUT Z
+25: 08 OUT p Z n
 
 
 Value stack: 00
-26: D2 RET Z
+26: D2 RET p Z n
 Value stack: 00
-0E: D0 JUMP >16 Z
+0E: D0 JUMP >16 p Z n
 Value stack: 00
-16: 04 EXIT Z
+16: 04 EXIT p Z n
 Value stack: 00
 Execution halted at 16

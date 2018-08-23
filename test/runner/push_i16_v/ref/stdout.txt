@@ -1,12 +1,12 @@
 Execution started at  00
-00: 64 PUSH.I16 =3A48 z
+00: 64 PUSH.I16 =3A48 p z n
 Value stack: 3A 48
-03: 08 OUT z
+03: 08 OUT p z n
 H
 Value stack: 3A
-04: 08 OUT z
+04: 08 OUT p z n
 :
 Value stack:
-05: 04 EXIT z
+05: 04 EXIT p z n
 Value stack:
 Execution halted at 05

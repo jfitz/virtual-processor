@@ -1,13 +1,13 @@
 Execution started at  00
-00: 60 PUSH.B =48 z
+00: 60 PUSH.B =48 p z n
 Value stack: 48
-02: 60 PUSH.B =0A z
+02: 60 PUSH.B =0A p z n
 Value stack: 48 0A
-04: A0 ADD.B z
+04: A0 ADD.B p z n
 Value stack: 52
-05: 08 OUT z
+05: 08 OUT p z n
 R
 Value stack:
-06: 04 EXIT z
+06: 04 EXIT p z n
 Value stack:
 Execution halted at 06

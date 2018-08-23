@@ -346,11 +346,7 @@ func executeCode(mod module.Module, startAddress vputils.Address, trace bool, in
 				line += " >" + jumpAddress.ToString()
 			}
 
-			if flags.Zero {
-				line += " Z"
-			} else {
-				line += " z"
-			}
+			line += flags.ToString()
 
 			fmt.Println(line)
 		}

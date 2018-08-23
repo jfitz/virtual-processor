@@ -1,9 +1,9 @@
 Execution started at  02
-02: 60 PUSH.B =40 z
+02: 60 PUSH.B =40 p z n
 Value stack: 40
-04: 08 OUT z
+04: 08 OUT p z n
 @
 Value stack:
-05: 04 EXIT z
+05: 04 EXIT p z n
 Value stack:
 Execution halted at 05
