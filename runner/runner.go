@@ -11,7 +11,6 @@ import (
 	"github.com/jfitz/virtual-processor/vputils"
 	"os"
 	"strconv"
-	"strings"
 )
 
 // --------------------
@@ -148,80 +147,6 @@ func getConditionAndOpcode(code vputils.Vector, pc vputils.Address) ([]byte, byt
 	return condiBytes, opcode, err
 }
 
-func decodeConditional(condiByte byte) (string, error) {
-	condiString := ""
-
-	switch condiByte {
-	case 0xE0:
-		condiString = "Z"
-	case 0xE8:
-		condiString = "NOT"
-	default:
-		return "", errors.New("Invalid conditional code")
-	}
-
-	return condiString, nil
-}
-
-// Conditionals for modifiers on opcodes
-type Conditionals struct {
-	codes []byte
-}
-
-// ToString - convert to string
-func (conditionals Conditionals) ToString() (string, error) {
-	ss := []string{}
-
-	codes := conditionals.codes
-	for _, code := range codes {
-		s, err := decodeConditional(code)
-		if err != nil {
-			return "", err
-		}
-		ss = append(ss, s)
-	}
-
-	result := strings.Join(ss, ".")
-
-	return result, nil
-}
-
-// Evaluate - evaluate as true or false
-func (conditionals Conditionals) Evaluate(flags module.FlagsGroup) (bool, error) {
-	execute := true
-	stack := make(vputils.BoolStack, 0)
-
-	condiBytes := conditionals.codes
-	for _, condiByte := range condiBytes {
-		switch condiByte {
-		case 0xE0:
-			stack = stack.Push(flags.Zero)
-		case 0xE8:
-			top, stack, err := stack.Pop()
-			if err != nil {
-				return false, err
-			}
-			stack = stack.Push(!top)
-		default:
-			return false, errors.New("Invalid conditional")
-		}
-	}
-
-	if len(stack) > 1 {
-		return false, errors.New("Invalid conditionals")
-	}
-
-	if len(stack) == 1 {
-		exe, err := stack.Top()
-		if err != nil {
-			return false, err
-		}
-		execute = exe
-	}
-
-	return execute, nil
-}
-
 func executeCode(mod module.Module, startAddress vputils.Address, trace bool, instructionDefinitions instructionTable) error {
 	// initialize virtual processor
 	flags := module.FlagsGroup{false, false, false}
@@ -244,7 +169,7 @@ func executeCode(mod module.Module, startAddress vputils.Address, trace bool, in
 	for !halt {
 		pc := mod.PC()
 		condiBytes, opcode, err := getConditionAndOpcode(mod.Code, pc)
-		conditionals := Conditionals{condiBytes}
+		conditionals := module.Conditionals{condiBytes}
 		vputils.CheckPrintAndExit(err, "at PC "+pc.ToString())
 
 		execute := true
@@ -327,7 +252,8 @@ func executeCode(mod module.Module, startAddress vputils.Address, trace bool, in
 
 			text := def.toString()
 			if len(condiStr) > 0 {
-				line = fmt.Sprintf("%s: % 02X %02X %s:%s", pc.ToString(), condiBytes, opcode, condiStr, text)
+				condiByteStr := conditionals.ToByteString()
+				line = fmt.Sprintf("%s: %s %02X %s:%s", pc.ToString(), condiByteStr, opcode, condiStr, text)
 			} else {
 				line = fmt.Sprintf("%s: %02X %s", pc.ToString(), opcode, text)
 			}

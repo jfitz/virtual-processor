@@ -45,6 +45,87 @@ func (flags FlagsGroup) ToString() string {
 
 // -------------------------------
 
+func decodeConditional(condiByte byte) (string, error) {
+	condiString := ""
+
+	switch condiByte {
+	case 0xE0:
+		condiString = "Z"
+	case 0xE8:
+		condiString = "NOT"
+	default:
+		return "", errors.New("Invalid conditional code")
+	}
+
+	return condiString, nil
+}
+
+// Conditionals for modifiers on opcodes
+type Conditionals struct {
+	Codes []byte
+}
+
+// ToString - convert to string
+func (conditionals Conditionals) ToString() (string, error) {
+	ss := []string{}
+
+	codes := conditionals.Codes
+	for _, code := range codes {
+		s, err := decodeConditional(code)
+		if err != nil {
+			return "", err
+		}
+		ss = append(ss, s)
+	}
+
+	result := strings.Join(ss, ".")
+
+	return result, nil
+}
+
+// ToByteString - convert to string of byte representations
+func (conditionals Conditionals) ToByteString() string {
+	return fmt.Sprintf("% 02X", conditionals.Codes)
+}
+
+// Evaluate - evaluate as true or false
+func (conditionals Conditionals) Evaluate(flags FlagsGroup) (bool, error) {
+	execute := true
+	stack := make(vputils.BoolStack, 0)
+
+	condiBytes := conditionals.Codes
+	for _, condiByte := range condiBytes {
+		switch condiByte {
+		case 0xE0:
+			stack = stack.Push(flags.Zero)
+		case 0xE8:
+			top, stack, err := stack.Pop()
+			if err != nil {
+				return false, err
+			}
+			stack = stack.Push(!top)
+		default:
+			return false, errors.New("Invalid conditional")
+		}
+	}
+
+	if len(stack) > 1 {
+		return false, errors.New("Invalid conditionals")
+	}
+
+	if len(stack) == 1 {
+		exe, err := stack.Top()
+		if err != nil {
+			return false, err
+		}
+		execute = exe
+	}
+
+	return execute, nil
+}
+
+// -------------------------------
+
 func kernelCall(vStack vputils.ByteStack) vputils.ByteStack {
 	fname, vStack := vStack.PopString()
 
