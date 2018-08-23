@@ -174,10 +174,11 @@ func (mod *Module) TopPop() (vputils.Address, error) {
 }
 
 // --------------------
-func (mod *Module) ExecuteOpcode(opcode byte, vStack vputils.ByteStack, pc vputils.Address, newpc vputils.Address, dataAddress vputils.Address, instructionSize int, jumpAddress vputils.Address, bytes []byte, execute bool, flags FlagsGroup, trace bool) (vputils.ByteStack, vputils.Address, FlagsGroup, bool, error) {
+func (mod *Module) ExecuteOpcode(opcode byte, vStack vputils.ByteStack, pc vputils.Address, dataAddress vputils.Address, instructionSize int, jumpAddress vputils.Address, bytes []byte, execute bool, flags FlagsGroup, trace bool) (vputils.ByteStack, vputils.Address, FlagsGroup, bool, error) {
 	err := errors.New("")
 
 	halt := false
+	newpc := pc
 
 	bytes1 := []byte{}
 	bytes2 := []byte{}
