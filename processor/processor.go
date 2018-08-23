@@ -239,12 +239,11 @@ func executeCode(mod module.Module, startAddress vputils.Address, trace bool, in
 		fmt.Println("Execution started at ", startAddress.ToString())
 	}
 
-	code := mod.Code
 	halt := false
 
 	for !halt {
 		pc := mod.PC()
-		condiBytes, opcode, err := getConditionAndOpcode(code, pc)
+		condiBytes, opcode, err := getConditionAndOpcode(mod.Code, pc)
 		vputils.CheckPrintAndExit(err, "at PC "+pc.ToString())
 
 		newpc := pc.AddByte(len(condiBytes))
@@ -408,7 +407,6 @@ func main() {
 	mod, err := module.Read(moduleFile)
 	vputils.CheckAndExit(err)
 
-	code := mod.Code
 	exports := mod.Exports
 	codeAddressWidth := mod.CodeAddressWidth
 
@@ -427,13 +425,8 @@ func main() {
 		os.Exit(2)
 	}
 
-	startAddress, err := vputils.MakeAddress(startAddressInt, codeAddressWidth, len(code))
+	startAddress, err := vputils.MakeAddress(startAddressInt, codeAddressWidth, len(mod.Code))
 	vputils.CheckAndExit(err)
-
-	if int(startAddress.ByteValue()) >= len(code) {
-		fmt.Println("Starting address " + startAddress.ToString() + " is not valid")
-		os.Exit(2)
-	}
 
 	instructionDefinitions := defineInstructions()
 

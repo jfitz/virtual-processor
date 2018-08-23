@@ -178,7 +178,6 @@ func (mod *Module) ExecuteOpcode(opcode byte, vStack vputils.ByteStack, pc vputi
 	err := errors.New("")
 
 	halt := false
-	data := mod.Data
 
 	bytes1 := []byte{}
 	bytes2 := []byte{}
@@ -253,7 +252,7 @@ func (mod *Module) ExecuteOpcode(opcode byte, vStack vputils.ByteStack, pc vputi
 		if execute {
 			bytes[0]++
 
-			err = data.PutByte(dataAddress, bytes[0])
+			err = mod.Data.PutByte(dataAddress, bytes[0])
 			vputils.CheckAndPanic(err)
 		}
 
@@ -264,7 +263,7 @@ func (mod *Module) ExecuteOpcode(opcode byte, vStack vputils.ByteStack, pc vputi
 		if execute {
 			bytes[0]++
 
-			err = data.PutByte(dataAddress, bytes[0])
+			err = mod.Data.PutByte(dataAddress, bytes[0])
 			vputils.CheckAndPanic(err)
 		}
 
@@ -275,7 +274,7 @@ func (mod *Module) ExecuteOpcode(opcode byte, vStack vputils.ByteStack, pc vputi
 		if execute {
 			bytes[0]--
 
-			err = data.PutByte(dataAddress, bytes[0])
+			err = mod.Data.PutByte(dataAddress, bytes[0])
 			vputils.CheckAndPanic(err)
 		}
 
@@ -286,7 +285,7 @@ func (mod *Module) ExecuteOpcode(opcode byte, vStack vputils.ByteStack, pc vputi
 		if execute {
 			bytes[0]--
 
-			err = data.PutByte(dataAddress, bytes[0])
+			err = mod.Data.PutByte(dataAddress, bytes[0])
 			vputils.CheckAndPanic(err)
 		}
 
@@ -348,7 +347,7 @@ func (mod *Module) ExecuteOpcode(opcode byte, vStack vputils.ByteStack, pc vputi
 			b := byte(1)
 
 			for b != 0 {
-				b, err = data.GetByte(address)
+				b, err = mod.Data.GetByte(address)
 				vputils.CheckAndExit(err)
 				c := string(b)
 				s += c
@@ -366,7 +365,7 @@ func (mod *Module) ExecuteOpcode(opcode byte, vStack vputils.ByteStack, pc vputi
 			bytes, vStack, err = vStack.PopByte(1)
 			vputils.CheckAndExit(err)
 
-			err = data.PutByte(dataAddress, bytes[0])
+			err = mod.Data.PutByte(dataAddress, bytes[0])
 			vputils.CheckAndPanic(err)
 		}
 
