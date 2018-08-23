@@ -355,7 +355,7 @@ func executeCode(mod module.Module, startAddress vputils.Address, trace bool, in
 			fmt.Println(line)
 		}
 
-		vStack, flags, halt, err = mod.ExecuteOpcode(opcode, vStack, dataAddress, instructionSize, jumpAddress, bytes, execute, flags, trace)
+		vStack, flags, halt, err = module.ExecuteOpcode(&mod, opcode, vStack, dataAddress, instructionSize, jumpAddress, bytes, execute, flags, trace)
 
 		// trace stack
 		if trace {

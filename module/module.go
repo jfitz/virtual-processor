@@ -169,7 +169,7 @@ func (mod *Module) TopPop() (vputils.Address, error) {
 }
 
 // ExecuteOpcode - execute one opcode
-func (mod *Module) ExecuteOpcode(opcode byte, vStack vputils.ByteStack, dataAddress vputils.Address, instructionSize int, jumpAddress vputils.Address, bytes []byte, execute bool, flags FlagsGroup, trace bool) (vputils.ByteStack, FlagsGroup, bool, error) {
+func ExecuteOpcode(mod *Module, opcode byte, vStack vputils.ByteStack, dataAddress vputils.Address, instructionSize int, jumpAddress vputils.Address, bytes []byte, execute bool, flags FlagsGroup, trace bool) (vputils.ByteStack, FlagsGroup, bool, error) {
 	err := errors.New("")
 
 	halt := false
