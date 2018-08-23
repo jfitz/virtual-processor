@@ -1,0 +1,5 @@
+	NOP
+	NOP
+START	PUSH.B	64
+	OUT
+	EXIT

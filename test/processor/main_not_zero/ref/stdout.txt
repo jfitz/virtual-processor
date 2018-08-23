@@ -1,10 +1,9 @@
 Execution started at  02
-02: 60 PUSH.B =48 z
-Value stack: 48
+02: 60 PUSH.B =40 z
+Value stack: 40
 04: 08 OUT z
-H
+@
 Value stack:
-05: 00 NOP z
+05: 04 EXIT z
 Value stack:
-Invalid address 06 for PC in main: Address out of range
-exit status 1
+Execution halted at 05

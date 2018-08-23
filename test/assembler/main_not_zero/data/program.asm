@@ -1,0 +1,5 @@
+	NOP
+	NOP
+MAIN	PUSH.B	64
+	OUT
+	EXIT
