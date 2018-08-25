@@ -313,22 +313,22 @@ func executeCode(mod module.Module, startAddress vputils.Address, trace bool, op
 
 	for !halt {
 		pc := mod.PC()
+
+		// get conditionals (if any)
 		conditionals, err := getConditionals(mod.Code, pc)
 		vputils.CheckPrintAndExit(err, "at PC "+pc.ToString())
 
+		// evaluate conditionals
+		execute, err := conditionals.Evaluate(flags)
+		if err != nil {
+			return err
+		}
+
+		// get the opcode
 		opcodePC := pc.AddByte(len(conditionals))
-		execute := true
-
-		if len(conditionals) > 0 {
-			err = mod.SetPC(opcodePC)
-			if err != nil {
-				return err
-			}
-
-			execute, err = conditionals.Evaluate(flags)
-			if err != nil {
-				return err
-			}
+		err = mod.SetPC(opcodePC)
+		if err != nil {
+			return err
 		}
 
 		opcode, err := mod.Code.GetByte(opcodePC)
@@ -337,17 +337,21 @@ func executeCode(mod module.Module, startAddress vputils.Address, trace bool, op
 		// get opcode definition
 		def := opcodeDefinitions[opcode]
 
+		// get instruction definition (opcode and arguments)
 		instruction := decodeInstruction(opcode, def, mod)
 
-		// trace opcode and arguments
+		// display instruction
 		if trace {
 			line := traceOpcode(pc, opcode, def, flags, conditionals, instruction)
 			fmt.Println(line)
 		}
 
+		// execute instruction
 		syscall := byte(0)
 		vStack, flags, syscall, err = mod.ExecuteOpcode(opcode, vStack, instruction, execute, flags, trace)
 
+		// process the requested runner call
+		// these are handled here, not in the opcode processor
 		switch syscall {
 
 		case 0x04:
@@ -358,14 +362,14 @@ func executeCode(mod module.Module, startAddress vputils.Address, trace bool, op
 
 		}
 
-		// trace value stack
+		// display value stack
 		if trace {
 			line := traceValueStack(vStack)
 			fmt.Println(line)
 		}
 	}
 
-	// trace
+	// display halt information
 	if trace {
 		line := traceHalt(mod.PC())
 		fmt.Println(line)
