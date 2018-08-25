@@ -119,7 +119,17 @@ func (conditionals Conditionals) Evaluate(flags FlagsGroup) (bool, error) {
 
 // -------------------------------
 
-// Module --------------------
+// InstructionDefinition ---------
+type InstructionDefinition struct {
+	Address1    vputils.Address
+	Address     vputils.Address
+	Size        int
+	JumpAddress vputils.Address
+	Bytes       []byte
+	ValueStr    string
+}
+
+// Module ------------------------
 type Module struct {
 	Properties       []vputils.NameValue
 	Code             vputils.Vector
@@ -240,7 +250,12 @@ func (mod *Module) TopPop() (vputils.Address, error) {
 }
 
 // ExecuteOpcode - execute one opcode
-func (mod *Module) ExecuteOpcode(opcode byte, vStack vputils.ByteStack, dataAddress vputils.Address, instructionSize int, jumpAddress vputils.Address, bytes []byte, execute bool, flags FlagsGroup, trace bool) (vputils.ByteStack, FlagsGroup, byte, error) {
+func (mod *Module) ExecuteOpcode(opcode byte, vStack vputils.ByteStack, instruction InstructionDefinition, execute bool, flags FlagsGroup, trace bool) (vputils.ByteStack, FlagsGroup, byte, error) {
+	dataAddress := instruction.Address
+	instructionSize := instruction.Size
+	jumpAddress := instruction.JumpAddress
+	bytes := instruction.Bytes
+
 	err := errors.New("")
 
 	syscall := byte(0)

@@ -178,7 +178,7 @@ func kernelCall(vStack vputils.ByteStack) vputils.ByteStack {
 	return vStack
 }
 
-func decodeInstruction(opcode byte, def opcodeDefinition, mod module.Module) (vputils.Address, vputils.Address, int, vputils.Address, []byte, string) {
+func decodeInstruction(opcode byte, def opcodeDefinition, mod module.Module) module.InstructionDefinition {
 	// bytes for opcode
 	bytes := []byte{0}
 
@@ -234,10 +234,17 @@ func decodeInstruction(opcode byte, def opcodeDefinition, mod module.Module) (vp
 		instructionSize += jumpAddress.NumBytes()
 	}
 
-	return dataAddress1, dataAddress, instructionSize, jumpAddress, bytes, valueStr
+	instruction := module.InstructionDefinition{dataAddress1, dataAddress, instructionSize, jumpAddress, bytes, valueStr}
+
+	return instruction
 }
 
-func traceOpcode(pc vputils.Address, opcode byte, def opcodeDefinition, flags module.FlagsGroup, conditionals module.Conditionals, dataAddress1 vputils.Address, dataAddress vputils.Address, jumpAddress vputils.Address, valueStr string) string {
+func traceOpcode(pc vputils.Address, opcode byte, def opcodeDefinition, flags module.FlagsGroup, conditionals module.Conditionals, instruction module.InstructionDefinition) string {
+	dataAddress1 := instruction.Address1
+	dataAddress := instruction.Address
+	jumpAddress := instruction.JumpAddress
+	valueStr := instruction.ValueStr
+
 	line := fmt.Sprintf("%s: ", pc.ToString())
 
 	text := def.toString()
@@ -330,16 +337,16 @@ func executeCode(mod module.Module, startAddress vputils.Address, trace bool, op
 		// get opcode definition
 		def := opcodeDefinitions[opcode]
 
-		dataAddress1, dataAddress, instructionSize, jumpAddress, bytes, valueStr := decodeInstruction(opcode, def, mod)
+		instruction := decodeInstruction(opcode, def, mod)
 
 		// trace opcode and arguments
 		if trace {
-			line := traceOpcode(pc, opcode, def, flags, conditionals, dataAddress1, dataAddress, jumpAddress, valueStr)
+			line := traceOpcode(pc, opcode, def, flags, conditionals, instruction)
 			fmt.Println(line)
 		}
 
 		syscall := byte(0)
-		vStack, flags, syscall, err = mod.ExecuteOpcode(opcode, vStack, dataAddress, instructionSize, jumpAddress, bytes, execute, flags, trace)
+		vStack, flags, syscall, err = mod.ExecuteOpcode(opcode, vStack, instruction, execute, flags, trace)
 
 		switch syscall {
 
