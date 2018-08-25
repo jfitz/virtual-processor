@@ -45,10 +45,10 @@ func (flags FlagsGroup) ToString() string {
 
 // -------------------------------
 
-func decodeConditional(condiByte byte) string {
+func decodeConditional(conditional byte) string {
 	condiString := ""
 
-	switch condiByte {
+	switch conditional {
 	case 0xE0:
 		condiString = "Z"
 	case 0xE8:
@@ -61,17 +61,14 @@ func decodeConditional(condiByte byte) string {
 }
 
 // Conditionals for modifiers on opcodes
-type Conditionals struct {
-	Codes []byte
-}
+type Conditionals []byte
 
 // ToString - convert to string
 func (conditionals Conditionals) ToString() string {
 	ss := []string{}
 
-	codes := conditionals.Codes
-	for _, code := range codes {
-		s := decodeConditional(code)
+	for _, conditional := range conditionals {
+		s := decodeConditional(conditional)
 		ss = append(ss, s)
 	}
 
@@ -82,7 +79,7 @@ func (conditionals Conditionals) ToString() string {
 
 // ToByteString - convert to string of byte representations
 func (conditionals Conditionals) ToByteString() string {
-	return fmt.Sprintf("% 02X", conditionals.Codes)
+	return fmt.Sprintf("% 02X", conditionals)
 }
 
 // Evaluate - evaluate as true or false
@@ -90,9 +87,8 @@ func (conditionals Conditionals) Evaluate(flags FlagsGroup) (bool, error) {
 	execute := true
 	stack := make(vputils.BoolStack, 0)
 
-	condiBytes := conditionals.Codes
-	for _, condiByte := range condiBytes {
-		switch condiByte {
+	for _, conditional := range conditionals {
+		switch conditional {
 		case 0xE0:
 			stack = stack.Push(flags.Zero)
 		case 0xE8:

@@ -123,8 +123,8 @@ func defineInstructions() instructionTable {
 // --------------------
 // --------------------
 
-func getConditionAndOpcode(code vputils.Vector, pc vputils.Address) ([]byte, byte, error) {
-	condiBytes := []byte{}
+func getConditionAndOpcode(code vputils.Vector, pc vputils.Address) (module.Conditionals, byte, error) {
+	conditionals := module.Conditionals{}
 	opcode := byte(0)
 	err := errors.New("")
 
@@ -135,7 +135,7 @@ func getConditionAndOpcode(code vputils.Vector, pc vputils.Address) ([]byte, byt
 
 	for hasConditional {
 		if myByte >= 0xE0 && myByte <= 0xEF {
-			condiBytes = append(condiBytes, myByte)
+			conditionals = append(conditionals, myByte)
 			newpc = newpc.AddByte(1)
 			myByte, err = code.GetByte(newpc)
 		} else {
@@ -144,7 +144,7 @@ func getConditionAndOpcode(code vputils.Vector, pc vputils.Address) ([]byte, byt
 		}
 	}
 
-	return condiBytes, opcode, err
+	return conditionals, opcode, err
 }
 
 func kernelCall(vStack vputils.ByteStack) vputils.ByteStack {
@@ -199,14 +199,14 @@ func executeCode(mod module.Module, startAddress vputils.Address, trace bool, in
 
 	for !halt {
 		pc := mod.PC()
-		condiBytes, opcode, err := getConditionAndOpcode(mod.Code, pc)
-		conditionals := module.Conditionals{condiBytes}
+		conditionals, opcode, err := getConditionAndOpcode(mod.Code, pc)
 		vputils.CheckPrintAndExit(err, "at PC "+pc.ToString())
 
 		execute := true
 
-		if len(condiBytes) > 0 {
-			opcodePC := pc.AddByte(len(condiBytes))
+		if len(conditionals) > 0 {
+			opcodePC := pc.AddByte(len(conditionals))
+
 			err = mod.SetPC(opcodePC)
 			if err != nil {
 				return err
@@ -281,7 +281,7 @@ func executeCode(mod module.Module, startAddress vputils.Address, trace bool, in
 			line := fmt.Sprintf("%s: ", pc.ToString())
 
 			text := def.toString()
-			if len(conditionals.Codes) > 0 {
+			if len(conditionals) > 0 {
 				condiStr := conditionals.ToString()
 				condiByteStr := conditionals.ToByteString()
 				line += fmt.Sprintf("%s %02X %s:%s", condiByteStr, opcode, condiStr, text)
