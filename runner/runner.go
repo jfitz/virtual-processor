@@ -176,6 +176,19 @@ func kernelCall(vStack vputils.ByteStack) vputils.ByteStack {
 	return vStack
 }
 
+func outCall(vStack vputils.ByteStack, trace bool) vputils.ByteStack {
+	bytes, vStack, err := vStack.PopByte(1)
+	vputils.CheckAndPanic(err)
+
+	fmt.Print(string(bytes[0]))
+
+	if trace {
+		fmt.Println()
+	}
+
+	return vStack
+}
+
 func decodeInstruction(opcode byte, def opcodeDefinition, mod module.Module) module.InstructionDefinition {
 	// bytes for opcode
 	bytes := []byte{0}
@@ -348,7 +361,7 @@ func executeCode(mod module.Module, startAddress vputils.Address, trace bool, op
 
 		// execute instruction
 		syscall := byte(0)
-		vStack, flags, syscall, err = mod.ExecuteOpcode(opcode, vStack, instruction, execute, flags, trace)
+		vStack, flags, syscall, err = mod.ExecuteOpcode(opcode, vStack, instruction, execute, flags)
 
 		// process the requested runner call
 		// these are handled here, not in the opcode processor
@@ -359,6 +372,9 @@ func executeCode(mod module.Module, startAddress vputils.Address, trace bool, op
 
 		case 0x05:
 			vStack = kernelCall(vStack)
+
+		case 0x08:
+			vStack = outCall(vStack, trace)
 
 		}
 

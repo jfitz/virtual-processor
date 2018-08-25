@@ -250,7 +250,7 @@ func (mod *Module) TopPop() (vputils.Address, error) {
 }
 
 // ExecuteOpcode - execute one opcode
-func (mod *Module) ExecuteOpcode(opcode byte, vStack vputils.ByteStack, instruction InstructionDefinition, execute bool, flags FlagsGroup, trace bool) (vputils.ByteStack, FlagsGroup, byte, error) {
+func (mod *Module) ExecuteOpcode(opcode byte, vStack vputils.ByteStack, instruction InstructionDefinition, execute bool, flags FlagsGroup) (vputils.ByteStack, FlagsGroup, byte, error) {
 	dataAddress := instruction.Address
 	instructionSize := instruction.Size
 	jumpAddress := instruction.JumpAddress
@@ -290,14 +290,7 @@ func (mod *Module) ExecuteOpcode(opcode byte, vStack vputils.ByteStack, instruct
 	case 0x08:
 		// OUT (implied stack)
 		if execute {
-			bytes, vStack, err = vStack.PopByte(1)
-			vputils.CheckAndPanic(err)
-
-			fmt.Print(string(bytes[0]))
-
-			if trace {
-				fmt.Println()
-			}
+			syscall = opcode
 		}
 
 		newpc = pc.AddByte(instructionSize)
