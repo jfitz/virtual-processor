@@ -45,7 +45,7 @@ func (flags FlagsGroup) ToString() string {
 
 // -------------------------------
 
-func decodeConditional(condiByte byte) (string, error) {
+func decodeConditional(condiByte byte) string {
 	condiString := ""
 
 	switch condiByte {
@@ -54,10 +54,10 @@ func decodeConditional(condiByte byte) (string, error) {
 	case 0xE8:
 		condiString = "NOT"
 	default:
-		return "", errors.New("Invalid conditional code")
+		condiString = "ERROR"
 	}
 
-	return condiString, nil
+	return condiString
 }
 
 // Conditionals for modifiers on opcodes
@@ -66,21 +66,18 @@ type Conditionals struct {
 }
 
 // ToString - convert to string
-func (conditionals Conditionals) ToString() (string, error) {
+func (conditionals Conditionals) ToString() string {
 	ss := []string{}
 
 	codes := conditionals.Codes
 	for _, code := range codes {
-		s, err := decodeConditional(code)
-		if err != nil {
-			return "", err
-		}
+		s := decodeConditional(code)
 		ss = append(ss, s)
 	}
 
 	result := strings.Join(ss, ".")
 
-	return result, nil
+	return result
 }
 
 // ToByteString - convert to string of byte representations

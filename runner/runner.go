@@ -278,20 +278,15 @@ func executeCode(mod module.Module, startAddress vputils.Address, trace bool, in
 
 		// trace opcode and arguments
 		if trace {
-			condiStr, err := conditionals.ToString()
-
-			if err != nil {
-				fmt.Println(err.Error())
-			}
-
-			line := ""
+			line := fmt.Sprintf("%s: ", pc.ToString())
 
 			text := def.toString()
-			if len(condiStr) > 0 {
+			if len(conditionals.Codes) > 0 {
+				condiStr := conditionals.ToString()
 				condiByteStr := conditionals.ToByteString()
-				line = fmt.Sprintf("%s: %s %02X %s:%s", pc.ToString(), condiByteStr, opcode, condiStr, text)
+				line += fmt.Sprintf("%s %02X %s:%s", condiByteStr, opcode, condiStr, text)
 			} else {
-				line = fmt.Sprintf("%s: %02X %s", pc.ToString(), opcode, text)
+				line += fmt.Sprintf("%02X %s", opcode, text)
 			}
 
 			if !dataAddress1.Empty() {
