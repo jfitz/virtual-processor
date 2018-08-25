@@ -14,16 +14,16 @@ import (
 )
 
 // --------------------
-// instruction definition
+// opcode definition
 // --------------------
-type instructionDefinition struct {
+type opcodeDefinition struct {
 	Name        string
 	TargetType  string
 	AddressMode string
 }
 
 // --------------------
-func (def instructionDefinition) toString() string {
+func (def opcodeDefinition) toString() string {
 	s := def.Name
 
 	if len(def.TargetType) > 0 {
@@ -35,12 +35,12 @@ func (def instructionDefinition) toString() string {
 }
 
 // --------------------
-func (def instructionDefinition) calcInstructionSize() int {
+func (def opcodeDefinition) opcodeSize() int {
 	return 1
 }
 
 // --------------------
-func (def instructionDefinition) calcTargetSize() int {
+func (def opcodeDefinition) targetSize() int {
 	targetSize := 0
 
 	if def.TargetType == "B" {
@@ -69,55 +69,55 @@ func (def instructionDefinition) calcTargetSize() int {
 // --------------------
 
 // --------------------
-// instructionTable
+// opcodeTable
 // --------------------
-type instructionTable map[byte]instructionDefinition
+type opcodeTable map[byte]opcodeDefinition
 
 // --------------------
-func defineInstructions() instructionTable {
-	instructionDefinitions := make(instructionTable)
+func defineOpcodes() opcodeTable {
+	opcodeDefinitions := make(opcodeTable)
 
-	instructionDefinitions[0x00] = instructionDefinition{"NOP", "", ""}
-	instructionDefinitions[0x04] = instructionDefinition{"EXIT", "", ""}
-	instructionDefinitions[0x05] = instructionDefinition{"KCALL", "", ""}
+	opcodeDefinitions[0x00] = opcodeDefinition{"NOP", "", ""}
+	opcodeDefinitions[0x04] = opcodeDefinition{"EXIT", "", ""}
+	opcodeDefinitions[0x05] = opcodeDefinition{"KCALL", "", ""}
 
-	instructionDefinitions[0x60] = instructionDefinition{"PUSH", "B", "V"}
-	instructionDefinitions[0x61] = instructionDefinition{"PUSH", "B", "D"}
-	instructionDefinitions[0x62] = instructionDefinition{"PUSH", "B", "I"}
+	opcodeDefinitions[0x60] = opcodeDefinition{"PUSH", "B", "V"}
+	opcodeDefinitions[0x61] = opcodeDefinition{"PUSH", "B", "D"}
+	opcodeDefinitions[0x62] = opcodeDefinition{"PUSH", "B", "I"}
 
-	instructionDefinitions[0x64] = instructionDefinition{"PUSH", "I16", "V"}
-	instructionDefinitions[0x65] = instructionDefinition{"PUSH", "I16", "D"}
-	instructionDefinitions[0x66] = instructionDefinition{"PUSH", "I16", "I"}
+	opcodeDefinitions[0x64] = opcodeDefinition{"PUSH", "I16", "V"}
+	opcodeDefinitions[0x65] = opcodeDefinition{"PUSH", "I16", "D"}
+	opcodeDefinitions[0x66] = opcodeDefinition{"PUSH", "I16", "I"}
 
-	instructionDefinitions[0x79] = instructionDefinition{"PUSH", "STR", "D"}
+	opcodeDefinitions[0x79] = opcodeDefinition{"PUSH", "STR", "D"}
 
-	instructionDefinitions[0x80] = instructionDefinition{"POP", "B", "V"}
-	instructionDefinitions[0x81] = instructionDefinition{"POP", "B", "D"}
-	instructionDefinitions[0x08] = instructionDefinition{"OUT", "", "S"}
+	opcodeDefinitions[0x80] = opcodeDefinition{"POP", "B", "V"}
+	opcodeDefinitions[0x81] = opcodeDefinition{"POP", "B", "D"}
+	opcodeDefinitions[0x08] = opcodeDefinition{"OUT", "", "S"}
 
-	instructionDefinitions[0x11] = instructionDefinition{"FLAGS", "B", "D"}
-	instructionDefinitions[0x12] = instructionDefinition{"FLAGS", "B", "I"}
-	instructionDefinitions[0x13] = instructionDefinition{"FLAGS", "B", "S"}
+	opcodeDefinitions[0x11] = opcodeDefinition{"FLAGS", "B", "D"}
+	opcodeDefinitions[0x12] = opcodeDefinition{"FLAGS", "B", "I"}
+	opcodeDefinitions[0x13] = opcodeDefinition{"FLAGS", "B", "S"}
 
-	instructionDefinitions[0x21] = instructionDefinition{"INC", "B", "D"}
-	instructionDefinitions[0x22] = instructionDefinition{"INC", "B", "I"}
-	instructionDefinitions[0x31] = instructionDefinition{"DEC", "B", "D"}
-	instructionDefinitions[0x32] = instructionDefinition{"DEC", "B", "I"}
+	opcodeDefinitions[0x21] = opcodeDefinition{"INC", "B", "D"}
+	opcodeDefinitions[0x22] = opcodeDefinition{"INC", "B", "I"}
+	opcodeDefinitions[0x31] = opcodeDefinition{"DEC", "B", "D"}
+	opcodeDefinitions[0x32] = opcodeDefinition{"DEC", "B", "I"}
 
-	instructionDefinitions[0xD0] = instructionDefinition{"JUMP", "", ""}
-	instructionDefinitions[0xD1] = instructionDefinition{"CALL", "", ""}
-	instructionDefinitions[0xD2] = instructionDefinition{"RET", "", ""}
+	opcodeDefinitions[0xD0] = opcodeDefinition{"JUMP", "", ""}
+	opcodeDefinitions[0xD1] = opcodeDefinition{"CALL", "", ""}
+	opcodeDefinitions[0xD2] = opcodeDefinition{"RET", "", ""}
 
-	instructionDefinitions[0xA0] = instructionDefinition{"ADD", "B", ""}
-	instructionDefinitions[0xA1] = instructionDefinition{"SUB", "B", ""}
-	instructionDefinitions[0xA2] = instructionDefinition{"MUL", "B", ""}
-	instructionDefinitions[0xA3] = instructionDefinition{"DIV", "B", ""}
+	opcodeDefinitions[0xA0] = opcodeDefinition{"ADD", "B", ""}
+	opcodeDefinitions[0xA1] = opcodeDefinition{"SUB", "B", ""}
+	opcodeDefinitions[0xA2] = opcodeDefinition{"MUL", "B", ""}
+	opcodeDefinitions[0xA3] = opcodeDefinition{"DIV", "B", ""}
 
-	instructionDefinitions[0xC0] = instructionDefinition{"AND", "B", ""}
-	instructionDefinitions[0xC1] = instructionDefinition{"OR", "B", ""}
-	instructionDefinitions[0xC3] = instructionDefinition{"CMP", "B", ""}
+	opcodeDefinitions[0xC0] = opcodeDefinition{"AND", "B", ""}
+	opcodeDefinitions[0xC1] = opcodeDefinition{"OR", "B", ""}
+	opcodeDefinitions[0xC3] = opcodeDefinition{"CMP", "B", ""}
 
-	return instructionDefinitions
+	return opcodeDefinitions
 }
 
 // --------------------
@@ -178,7 +178,7 @@ func kernelCall(vStack vputils.ByteStack) vputils.ByteStack {
 	return vStack
 }
 
-func decodeInstruction(opcode byte, def instructionDefinition, mod module.Module) (vputils.Address, vputils.Address, int, vputils.Address, []byte, string) {
+func decodeInstruction(opcode byte, def opcodeDefinition, mod module.Module) (vputils.Address, vputils.Address, int, vputils.Address, []byte, string) {
 	// bytes for opcode
 	bytes := []byte{0}
 
@@ -188,8 +188,8 @@ func decodeInstruction(opcode byte, def instructionDefinition, mod module.Module
 	jumpAddress := vputils.Address{[]byte{}, 0}
 	valueStr := ""
 
-	instructionSize := def.calcInstructionSize()
-	targetSize := def.calcTargetSize()
+	instructionSize := def.opcodeSize()
+	targetSize := def.targetSize()
 
 	// decode immediate value
 	if def.AddressMode == "V" {
@@ -237,7 +237,7 @@ func decodeInstruction(opcode byte, def instructionDefinition, mod module.Module
 	return dataAddress1, dataAddress, instructionSize, jumpAddress, bytes, valueStr
 }
 
-func traceOpcode(pc vputils.Address, opcode byte, def instructionDefinition, flags module.FlagsGroup, conditionals module.Conditionals, dataAddress1 vputils.Address, dataAddress vputils.Address, jumpAddress vputils.Address, valueStr string) string {
+func traceOpcode(pc vputils.Address, opcode byte, def opcodeDefinition, flags module.FlagsGroup, conditionals module.Conditionals, dataAddress1 vputils.Address, dataAddress vputils.Address, jumpAddress vputils.Address, valueStr string) string {
 	line := fmt.Sprintf("%s: ", pc.ToString())
 
 	text := def.toString()
@@ -287,7 +287,7 @@ func traceHalt(pc vputils.Address) string {
 	return line
 }
 
-func executeCode(mod module.Module, startAddress vputils.Address, trace bool, instructionDefinitions instructionTable) error {
+func executeCode(mod module.Module, startAddress vputils.Address, trace bool, opcodeDefinitions opcodeTable) error {
 	// initialize virtual processor
 	flags := module.FlagsGroup{false, false, false}
 	vStack := make(vputils.ByteStack, 0) // value stack
@@ -328,7 +328,7 @@ func executeCode(mod module.Module, startAddress vputils.Address, trace bool, in
 		}
 
 		// get opcode definition
-		def := instructionDefinitions[opcode]
+		def := opcodeDefinitions[opcode]
 
 		dataAddress1, dataAddress, instructionSize, jumpAddress, bytes, valueStr := decodeInstruction(opcode, def, mod)
 
@@ -409,8 +409,8 @@ func main() {
 	startAddress, err := vputils.MakeAddress(startAddressInt, codeAddressWidth, len(mod.Code))
 	vputils.CheckAndExit(err)
 
-	instructionDefinitions := defineInstructions()
+	opcodeDefinitions := defineOpcodes()
 
-	err = executeCode(mod, startAddress, trace, instructionDefinitions)
+	err = executeCode(mod, startAddress, trace, opcodeDefinitions)
 	vputils.CheckAndExit(err)
 }
