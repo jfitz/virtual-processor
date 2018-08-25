@@ -147,6 +147,37 @@ func getConditionAndOpcode(code vputils.Vector, pc vputils.Address) ([]byte, byt
 	return condiBytes, opcode, err
 }
 
+func kernelCall(vStack vputils.ByteStack) vputils.ByteStack {
+	fname, vStack := vStack.PopString()
+
+	// dispatch to function
+	bytes := []byte{}
+	s := ""
+	err := errors.New("")
+
+	switch fname {
+
+	case "out_b":
+		bytes, vStack, err = vStack.PopByte(1)
+		vputils.CheckAndPanic(err)
+
+		fmt.Print(string(bytes[0]))
+
+	case "out_s":
+		s, vStack = vStack.PopString()
+
+		fmt.Print(s)
+
+	default:
+		err = errors.New("Unknown kernel call to function '" + fname + "'")
+		vputils.CheckAndExit(err)
+
+	}
+
+	// return to module
+	return vStack
+}
+
 func executeCode(mod module.Module, startAddress vputils.Address, trace bool, instructionDefinitions instructionTable) error {
 	// initialize virtual processor
 	flags := module.FlagsGroup{false, false, false}
@@ -204,14 +235,19 @@ func executeCode(mod module.Module, startAddress vputils.Address, trace bool, in
 
 		// decode immediate value
 		if def.AddressMode == "V" {
+
 			switch def.TargetType {
+
 			case "B":
 				bytes = mod.ImmediateByte()
 				valueStr = fmt.Sprintf("%02X", bytes[0])
+
 			case "I16":
 				bytes = mod.ImmediateInt()
 				valueStr = fmt.Sprintf("%02X%02X", bytes[1], bytes[0])
+
 			}
+
 			instructionSize += targetSize
 		}
 
@@ -278,7 +314,18 @@ func executeCode(mod module.Module, startAddress vputils.Address, trace bool, in
 			fmt.Println(line)
 		}
 
-		vStack, flags, halt, err = module.ExecuteOpcode(&mod, opcode, vStack, dataAddress, instructionSize, jumpAddress, bytes, execute, flags, trace)
+		syscall := byte(0)
+		vStack, flags, syscall, err = mod.ExecuteOpcode(opcode, vStack, dataAddress, instructionSize, jumpAddress, bytes, execute, flags, trace)
+
+		switch syscall {
+
+		case 0x04:
+			halt = true
+
+		case 0x05:
+			vStack = kernelCall(vStack)
+
+		}
 
 		// trace stack
 		if trace {

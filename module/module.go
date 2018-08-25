@@ -126,34 +126,6 @@ func (conditionals Conditionals) Evaluate(flags FlagsGroup) (bool, error) {
 
 // -------------------------------
 
-func kernelCall(vStack vputils.ByteStack) vputils.ByteStack {
-	fname, vStack := vStack.PopString()
-
-	// dispatch to function
-	bytes := []byte{}
-	s := ""
-	err := errors.New("")
-	switch fname {
-	case "out_b":
-		bytes, vStack, err = vStack.PopByte(1)
-		vputils.CheckAndPanic(err)
-
-		fmt.Print(string(bytes[0]))
-
-	case "out_s":
-		s, vStack = vStack.PopString()
-
-		fmt.Print(s)
-
-	default:
-		err = errors.New("Unknown kernel call to function '" + fname + "'")
-		vputils.CheckAndExit(err)
-	}
-
-	// return to module
-	return vStack
-}
-
 // Module --------------------
 type Module struct {
 	Properties       []vputils.NameValue
@@ -275,10 +247,10 @@ func (mod *Module) TopPop() (vputils.Address, error) {
 }
 
 // ExecuteOpcode - execute one opcode
-func ExecuteOpcode(mod *Module, opcode byte, vStack vputils.ByteStack, dataAddress vputils.Address, instructionSize int, jumpAddress vputils.Address, bytes []byte, execute bool, flags FlagsGroup, trace bool) (vputils.ByteStack, FlagsGroup, bool, error) {
+func (mod *Module) ExecuteOpcode(opcode byte, vStack vputils.ByteStack, dataAddress vputils.Address, instructionSize int, jumpAddress vputils.Address, bytes []byte, execute bool, flags FlagsGroup, trace bool) (vputils.ByteStack, FlagsGroup, byte, error) {
 	err := errors.New("")
 
-	halt := false
+	syscall := byte(0)
 	pc := mod.PC()
 	newpc := pc
 
@@ -294,19 +266,18 @@ func ExecuteOpcode(mod *Module, opcode byte, vStack vputils.ByteStack, dataAddre
 	case 0x04:
 		// EXIT
 		if execute {
-			halt = true
+			syscall = opcode
 		}
 
 		// newpc = pc.AddByte(instructionSize)
 
 	case 0x05:
 		// KCALL - kernel call
-		// update newpc before the call
-		newpc = pc.AddByte(instructionSize)
-
 		if execute {
-			vStack = kernelCall(vStack)
+			syscall = opcode
 		}
+
+		newpc = pc.AddByte(instructionSize)
 
 	case 0x08:
 		// OUT (implied stack)
@@ -621,7 +592,7 @@ func ExecuteOpcode(mod *Module, opcode byte, vStack vputils.ByteStack, dataAddre
 	default:
 		// invalid opcode
 		s := fmt.Sprintf("Invalid opcode %02x at %s\n", opcode, pc.ToString())
-		return vStack, flags, halt, errors.New(s)
+		return vStack, flags, 0, errors.New(s)
 	}
 
 	// advance to next instruction
@@ -631,7 +602,7 @@ func ExecuteOpcode(mod *Module, opcode byte, vStack vputils.ByteStack, dataAddre
 		err = errors.New(s)
 	}
 
-	return vStack, flags, halt, err
+	return vStack, flags, syscall, err
 }
 
 // Write a module to a file
