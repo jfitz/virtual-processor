@@ -123,9 +123,8 @@ func defineOpcodes() opcodeTable {
 // --------------------
 // --------------------
 
-func getConditionAndOpcode(code vputils.Vector, pc vputils.Address) (module.Conditionals, byte, error) {
+func getConditionals(code vputils.Vector, pc vputils.Address) (module.Conditionals, error) {
 	conditionals := module.Conditionals{}
-	opcode := byte(0)
 	err := errors.New("")
 
 	newpc := pc
@@ -139,12 +138,11 @@ func getConditionAndOpcode(code vputils.Vector, pc vputils.Address) (module.Cond
 			newpc = newpc.AddByte(1)
 			myByte, err = code.GetByte(newpc)
 		} else {
-			opcode = myByte
 			hasConditional = false
 		}
 	}
 
-	return conditionals, opcode, err
+	return conditionals, err
 }
 
 func kernelCall(vStack vputils.ByteStack) vputils.ByteStack {
@@ -315,14 +313,13 @@ func executeCode(mod module.Module, startAddress vputils.Address, trace bool, op
 
 	for !halt {
 		pc := mod.PC()
-		conditionals, opcode, err := getConditionAndOpcode(mod.Code, pc)
+		conditionals, err := getConditionals(mod.Code, pc)
 		vputils.CheckPrintAndExit(err, "at PC "+pc.ToString())
 
+		opcodePC := pc.AddByte(len(conditionals))
 		execute := true
 
 		if len(conditionals) > 0 {
-			opcodePC := pc.AddByte(len(conditionals))
-
 			err = mod.SetPC(opcodePC)
 			if err != nil {
 				return err
@@ -333,6 +330,9 @@ func executeCode(mod module.Module, startAddress vputils.Address, trace bool, op
 				return err
 			}
 		}
+
+		opcode, err := mod.Code.GetByte(opcodePC)
+		vputils.CheckPrintAndExit(err, "at PC "+pc.ToString())
 
 		// get opcode definition
 		def := opcodeDefinitions[opcode]
