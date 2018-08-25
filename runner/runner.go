@@ -178,7 +178,66 @@ func kernelCall(vStack vputils.ByteStack) vputils.ByteStack {
 	return vStack
 }
 
-func traceOpcode(pc vputils.Address, opcode byte, def instructionDefinition, conditionals module.Conditionals, dataAddress1 vputils.Address, dataAddress vputils.Address, jumpAddress vputils.Address, flags module.FlagsGroup, valueStr string) string {
+func decodeInstruction(opcode byte, def instructionDefinition, mod module.Module) (vputils.Address, vputils.Address, int, vputils.Address, []byte, string) {
+	// bytes for opcode
+	bytes := []byte{0}
+
+	// addresses for opcode
+	dataAddress := vputils.Address{[]byte{}, 0}
+	dataAddress1 := vputils.Address{[]byte{}, 0}
+	jumpAddress := vputils.Address{[]byte{}, 0}
+	valueStr := ""
+
+	instructionSize := def.calcInstructionSize()
+	targetSize := def.calcTargetSize()
+
+	// decode immediate value
+	if def.AddressMode == "V" {
+
+		switch def.TargetType {
+
+		case "B":
+			bytes = mod.ImmediateByte()
+			valueStr = fmt.Sprintf("%02X", bytes[0])
+
+		case "I16":
+			bytes = mod.ImmediateInt()
+			valueStr = fmt.Sprintf("%02X%02X", bytes[1], bytes[0])
+
+		}
+
+		instructionSize += targetSize
+	}
+
+	// decode memory target
+	if def.AddressMode == "D" {
+		dataAddress = mod.DirectAddress()
+		bytes[0], _ = mod.DirectByte()
+		valueStr = fmt.Sprintf("%02X", bytes[0])
+
+		instructionSize += dataAddress.NumBytes()
+	}
+
+	if def.AddressMode == "I" {
+		dataAddress1 = mod.DirectAddress()
+		dataAddress = mod.IndirectAddress()
+		bytes[0], _ = mod.IndirectByte()
+		valueStr = fmt.Sprintf("%02X", bytes[0])
+
+		instructionSize += dataAddress1.NumBytes()
+	}
+
+	// decode jump/call target
+	if opcode == 0xD0 || opcode == 0xD1 {
+		jumpAddress = mod.DirectAddress()
+
+		instructionSize += jumpAddress.NumBytes()
+	}
+
+	return dataAddress1, dataAddress, instructionSize, jumpAddress, bytes, valueStr
+}
+
+func traceOpcode(pc vputils.Address, opcode byte, def instructionDefinition, flags module.FlagsGroup, conditionals module.Conditionals, dataAddress1 vputils.Address, dataAddress vputils.Address, jumpAddress vputils.Address, valueStr string) string {
 	line := fmt.Sprintf("%s: ", pc.ToString())
 
 	text := def.toString()
@@ -271,64 +330,11 @@ func executeCode(mod module.Module, startAddress vputils.Address, trace bool, in
 		// get opcode definition
 		def := instructionDefinitions[opcode]
 
-		// bytes for opcode
-		bytes := []byte{0}
-
-		// addresses for opcode
-		dataAddress := vputils.Address{[]byte{}, 0}
-		dataAddress1 := vputils.Address{[]byte{}, 0}
-		jumpAddress := vputils.Address{[]byte{}, 0}
-		valueStr := ""
-
-		instructionSize := def.calcInstructionSize()
-		targetSize := def.calcTargetSize()
-
-		// decode immediate value
-		if def.AddressMode == "V" {
-
-			switch def.TargetType {
-
-			case "B":
-				bytes = mod.ImmediateByte()
-				valueStr = fmt.Sprintf("%02X", bytes[0])
-
-			case "I16":
-				bytes = mod.ImmediateInt()
-				valueStr = fmt.Sprintf("%02X%02X", bytes[1], bytes[0])
-
-			}
-
-			instructionSize += targetSize
-		}
-
-		// decode memory target
-		if def.AddressMode == "D" {
-			dataAddress = mod.DirectAddress()
-			bytes[0], _ = mod.DirectByte()
-			valueStr = fmt.Sprintf("%02X", bytes[0])
-
-			instructionSize += dataAddress.NumBytes()
-		}
-
-		if def.AddressMode == "I" {
-			dataAddress1 = mod.DirectAddress()
-			dataAddress = mod.IndirectAddress()
-			bytes[0], _ = mod.IndirectByte()
-			valueStr = fmt.Sprintf("%02X", bytes[0])
-
-			instructionSize += dataAddress1.NumBytes()
-		}
-
-		// decode jump/call target
-		if opcode == 0xD0 || opcode == 0xD1 {
-			jumpAddress = mod.DirectAddress()
-
-			instructionSize += jumpAddress.NumBytes()
-		}
+		dataAddress1, dataAddress, instructionSize, jumpAddress, bytes, valueStr := decodeInstruction(opcode, def, mod)
 
 		// trace opcode and arguments
 		if trace {
-			line := traceOpcode(pc, opcode, def, conditionals, dataAddress1, dataAddress, jumpAddress, flags, valueStr)
+			line := traceOpcode(pc, opcode, def, flags, conditionals, dataAddress1, dataAddress, jumpAddress, valueStr)
 			fmt.Println(line)
 		}
 
