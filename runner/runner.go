@@ -178,6 +178,38 @@ func kernelCall(vStack vputils.ByteStack) vputils.ByteStack {
 	return vStack
 }
 
+func traceOpcode(pc vputils.Address, opcode byte, def instructionDefinition, conditionals module.Conditionals, dataAddress1 vputils.Address, dataAddress vputils.Address, jumpAddress vputils.Address, flags module.FlagsGroup, valueStr string) string {
+	line := fmt.Sprintf("%s: ", pc.ToString())
+
+	text := def.toString()
+	if len(conditionals) > 0 {
+		condiStr := conditionals.ToString()
+		condiByteStr := conditionals.ToByteString()
+		line += fmt.Sprintf("%s %02X %s:%s", condiByteStr, opcode, condiStr, text)
+	} else {
+		line += fmt.Sprintf("%02X %s", opcode, text)
+	}
+
+	if !dataAddress1.Empty() {
+		line += " @@" + dataAddress1.ToString()
+	}
+	if !dataAddress.Empty() {
+		line += " @" + dataAddress.ToString()
+	}
+
+	if len(valueStr) > 0 {
+		line += " =" + valueStr
+	}
+
+	if !jumpAddress.Empty() {
+		line += " >" + jumpAddress.ToString()
+	}
+
+	line += flags.ToString()
+
+	return line
+}
+
 func executeCode(mod module.Module, startAddress vputils.Address, trace bool, instructionDefinitions instructionTable) error {
 	// initialize virtual processor
 	flags := module.FlagsGroup{false, false, false}
@@ -278,34 +310,7 @@ func executeCode(mod module.Module, startAddress vputils.Address, trace bool, in
 
 		// trace opcode and arguments
 		if trace {
-			line := fmt.Sprintf("%s: ", pc.ToString())
-
-			text := def.toString()
-			if len(conditionals) > 0 {
-				condiStr := conditionals.ToString()
-				condiByteStr := conditionals.ToByteString()
-				line += fmt.Sprintf("%s %02X %s:%s", condiByteStr, opcode, condiStr, text)
-			} else {
-				line += fmt.Sprintf("%02X %s", opcode, text)
-			}
-
-			if !dataAddress1.Empty() {
-				line += " @@" + dataAddress1.ToString()
-			}
-			if !dataAddress.Empty() {
-				line += " @" + dataAddress.ToString()
-			}
-
-			if len(valueStr) > 0 {
-				line += " =" + valueStr
-			}
-
-			if !jumpAddress.Empty() {
-				line += " >" + jumpAddress.ToString()
-			}
-
-			line += flags.ToString()
-
+			line := traceOpcode(pc, opcode, def, conditionals, dataAddress1, dataAddress, jumpAddress, flags, valueStr)
 			fmt.Println(line)
 		}
 
