@@ -210,6 +210,24 @@ func traceOpcode(pc vputils.Address, opcode byte, def instructionDefinition, con
 	return line
 }
 
+func traceValueStack(stack vputils.ByteStack) string {
+	line := "Value stack:"
+
+	s := stack.ToByteString()
+
+	if len(s) > 0 {
+		line += " " + s
+	}
+
+	return line
+}
+
+func traceHalt(pc vputils.Address) string {
+	line := "Execution halted at " + pc.ToString()
+
+	return line
+}
+
 func executeCode(mod module.Module, startAddress vputils.Address, trace bool, instructionDefinitions instructionTable) error {
 	// initialize virtual processor
 	flags := module.FlagsGroup{false, false, false}
@@ -327,22 +345,17 @@ func executeCode(mod module.Module, startAddress vputils.Address, trace bool, in
 
 		}
 
-		// trace stack
+		// trace value stack
 		if trace {
-			s := vStack.ToByteString()
-
-			if len(s) > 0 {
-				fmt.Println("Value stack: " + s)
-			} else {
-				fmt.Println("Value stack:")
-			}
+			line := traceValueStack(vStack)
+			fmt.Println(line)
 		}
 	}
 
 	// trace
 	if trace {
-		pc := mod.PC()
-		fmt.Println("Execution halted at " + pc.ToString())
+		line := traceHalt(mod.PC())
+		fmt.Println(line)
 	}
 
 	return nil
