@@ -328,7 +328,7 @@ func executeCode(mod module.Module, startAddress vputils.Address, trace bool, op
 		pc := mod.PC()
 
 		// get conditionals (if any)
-		conditionals, err := getConditionals(mod.Code, pc)
+		conditionals, err := getConditionals(mod.CodePage.Contents, pc)
 		vputils.CheckPrintAndExit(err, "at PC "+pc.ToString())
 
 		// evaluate conditionals
@@ -344,7 +344,7 @@ func executeCode(mod module.Module, startAddress vputils.Address, trace bool, op
 			return err
 		}
 
-		opcode, err := mod.Code.GetByte(opcodePC)
+		opcode, err := mod.CodePage.Contents.GetByte(opcodePC)
 		vputils.CheckPrintAndExit(err, "at PC "+pc.ToString())
 
 		// get opcode definition
@@ -433,7 +433,7 @@ func main() {
 		os.Exit(2)
 	}
 
-	startAddress, err := vputils.MakeAddress(startAddressInt, codeAddressWidth, len(mod.Code))
+	startAddress, err := vputils.MakeAddress(startAddressInt, codeAddressWidth, len(mod.CodePage.Contents))
 	vputils.CheckAndExit(err)
 
 	opcodeDefinitions := defineOpcodes()

@@ -463,7 +463,15 @@ func generateCode(source []string, opcodeDefs map[string]opcodeDefinition, dataL
 	return code
 }
 
-func makeProperties(instructionSetVersion string, codeAddressWidth int, dataAddressWidth int) []vputils.NameValue {
+func makeModuleProperties() []vputils.NameValue {
+	properties := []vputils.NameValue{}
+
+	properties = append(properties, vputils.NameValue{"CALL STACK SIZE", "1"})
+
+	return properties
+}
+
+func makeCodeProperties(instructionSetVersion string, codeAddressWidth int, dataAddressWidth int) []vputils.NameValue {
 	caws := strconv.Itoa(codeAddressWidth)
 	daws := strconv.Itoa(dataAddressWidth)
 
@@ -472,10 +480,19 @@ func makeProperties(instructionSetVersion string, codeAddressWidth int, dataAddr
 	properties = append(properties, vputils.NameValue{"INSTRUCTION SET VERSION", instructionSetVersion})
 	properties = append(properties, vputils.NameValue{"STACK WIDTH", "1"})
 	properties = append(properties, vputils.NameValue{"DATA WIDTH", "1"})
-	properties = append(properties, vputils.NameValue{"ADDRESS WIDTH", "1"})
 	properties = append(properties, vputils.NameValue{"CODE ADDRESS WIDTH", caws})
 	properties = append(properties, vputils.NameValue{"DATA ADDRESS WIDTH", daws})
-	properties = append(properties, vputils.NameValue{"CALL STACK SIZE", "1"})
+
+	return properties
+}
+
+func makeDataProperties(dataAddressWidth int) []vputils.NameValue {
+	daws := strconv.Itoa(dataAddressWidth)
+
+	properties := []vputils.NameValue{}
+
+	properties = append(properties, vputils.NameValue{"DATA WIDTH", "1"})
+	properties = append(properties, vputils.NameValue{"DATA ADDRESS WIDTH", daws})
 
 	return properties
 }
@@ -589,19 +606,23 @@ func main() {
 	codeAddressWidth := 1
 	dataAddressWidth := 1
 
-	properties := makeProperties(instructionSetVersion, codeAddressWidth, dataAddressWidth)
+	moduleProperties := makeModuleProperties()
 
 	data, dataLabels, codeLabels := generateData(source, opcodeDefs)
+	dataProperties := makeDataProperties(dataAddressWidth)
+	dataPage := module.Page{dataProperties, data}
 
 	exports := makeExports(codeLabels)
 
 	code := generateCode(source, opcodeDefs, dataLabels, codeLabels)
+	codeProperties := makeCodeProperties(instructionSetVersion, codeAddressWidth, dataAddressWidth)
+	codePage := module.Page{codeProperties, code}
 
 	mod := module.Module{
-		Properties:       properties,
-		Code:             code,
+		Properties:       moduleProperties,
+		CodePage:         codePage,
 		Exports:          exports,
-		Data:             data,
+		DataPage:         dataPage,
 		CodeAddressWidth: codeAddressWidth,
 		DataAddressWidth: dataAddressWidth,
 	}

@@ -42,7 +42,8 @@ then
 
     if [ $? -ne 0 ]
     then
-	cp "$TESTBED/$TESTNAME/module.dump" "$TESTROOT/$TESTGROUP/$TESTNAME/ref/module.dump"
+	cp "$TESTBED/$TESTNAME/module.dump" "$TESTROOT/$TESTGROUP/$TESTNAME/ref"
+	cp "$TESTBED/$TESTNAME/program.module" "$TESTROOT/$TESTGROUP/$TESTNAME/ref"
     fi
     
     echo compare done

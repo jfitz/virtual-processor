@@ -129,12 +129,18 @@ type InstructionDefinition struct {
 	ValueStr    string
 }
 
+// Page --------------------------
+type Page struct {
+	Properties []vputils.NameValue
+	Contents   vputils.Vector
+}
+
 // Module ------------------------
 type Module struct {
 	Properties       []vputils.NameValue
-	Code             vputils.Vector
+	CodePage         Page
 	Exports          []vputils.NameValue
-	Data             vputils.Vector
+	DataPage         Page
 	CodeAddressWidth int
 	DataAddressWidth int
 	pc               vputils.Address
@@ -147,7 +153,7 @@ func (mod *Module) Init() {
 
 // SetPC - set the PC
 func (mod *Module) SetPC(address vputils.Address) error {
-	if int(address.ByteValue()) >= len(mod.Code) {
+	if int(address.ByteValue()) >= len(mod.CodePage.Contents) {
 		return errors.New("Address out of range")
 	}
 
@@ -169,7 +175,7 @@ func (mod Module) PC() vputils.Address {
 func (mod Module) ImmediateByte() []byte {
 	codeAddress := mod.pc.AddByte(1)
 
-	value, err := mod.Code.GetByte(codeAddress)
+	value, err := mod.CodePage.Contents.GetByte(codeAddress)
 	vputils.CheckAndExit(err)
 
 	return []byte{value}
@@ -181,13 +187,13 @@ func (mod Module) ImmediateInt() []byte {
 
 	values := []byte{}
 
-	value, err := mod.Code.GetByte(codeAddress)
+	value, err := mod.CodePage.Contents.GetByte(codeAddress)
 	vputils.CheckAndExit(err)
 	values = append(values, value)
 
 	codeAddress = codeAddress.AddByte(1)
 
-	value, err = mod.Code.GetByte(codeAddress)
+	value, err = mod.CodePage.Contents.GetByte(codeAddress)
 	vputils.CheckAndExit(err)
 	values = append(values, value)
 
@@ -198,10 +204,10 @@ func (mod Module) ImmediateInt() []byte {
 func (mod Module) DirectAddress() vputils.Address {
 	codeAddress := mod.pc.AddByte(1)
 
-	dataAddr, err := mod.Code.GetByte(codeAddress)
+	dataAddr, err := mod.CodePage.Contents.GetByte(codeAddress)
 	vputils.CheckAndExit(err)
 	da := []byte{dataAddr}
-	dataAddress := vputils.Address{da, len(mod.Data)}
+	dataAddress := vputils.Address{da, len(mod.DataPage.Contents)}
 
 	return dataAddress
 }
@@ -210,7 +216,7 @@ func (mod Module) DirectAddress() vputils.Address {
 func (mod Module) DirectByte() (byte, vputils.Address) {
 	dataAddress := mod.DirectAddress()
 
-	value, err := mod.Data.GetByte(dataAddress)
+	value, err := mod.DataPage.Contents.GetByte(dataAddress)
 	vputils.CheckAndExit(err)
 
 	return value, dataAddress
@@ -219,10 +225,10 @@ func (mod Module) DirectByte() (byte, vputils.Address) {
 // IndirectAddress - get indirect address
 func (mod Module) IndirectAddress() vputils.Address {
 	dataAddress := mod.DirectAddress()
-	dataAddr, err := mod.Data.GetByte(dataAddress)
+	dataAddr, err := mod.DataPage.Contents.GetByte(dataAddress)
 	vputils.CheckAndExit(err)
 	da := []byte{dataAddr}
-	dataAddress = vputils.Address{da, len(mod.Data)}
+	dataAddress = vputils.Address{da, len(mod.DataPage.Contents)}
 
 	return dataAddress
 }
@@ -230,7 +236,7 @@ func (mod Module) IndirectAddress() vputils.Address {
 // IndirectByte - get byte via indirect address
 func (mod Module) IndirectByte() (byte, vputils.Address) {
 	dataAddress := mod.IndirectAddress()
-	value, err := mod.Data.GetByte(dataAddress)
+	value, err := mod.DataPage.Contents.GetByte(dataAddress)
 	vputils.CheckAndExit(err)
 
 	return value, dataAddress
@@ -327,7 +333,7 @@ func (mod *Module) ExecuteOpcode(opcode byte, vStack vputils.ByteStack, instruct
 		if execute {
 			bytes[0]++
 
-			err = mod.Data.PutByte(dataAddress, bytes[0])
+			err = mod.DataPage.Contents.PutByte(dataAddress, bytes[0])
 			vputils.CheckAndPanic(err)
 		}
 
@@ -338,7 +344,7 @@ func (mod *Module) ExecuteOpcode(opcode byte, vStack vputils.ByteStack, instruct
 		if execute {
 			bytes[0]++
 
-			err = mod.Data.PutByte(dataAddress, bytes[0])
+			err = mod.DataPage.Contents.PutByte(dataAddress, bytes[0])
 			vputils.CheckAndPanic(err)
 		}
 
@@ -349,7 +355,7 @@ func (mod *Module) ExecuteOpcode(opcode byte, vStack vputils.ByteStack, instruct
 		if execute {
 			bytes[0]--
 
-			err = mod.Data.PutByte(dataAddress, bytes[0])
+			err = mod.DataPage.Contents.PutByte(dataAddress, bytes[0])
 			vputils.CheckAndPanic(err)
 		}
 
@@ -360,7 +366,7 @@ func (mod *Module) ExecuteOpcode(opcode byte, vStack vputils.ByteStack, instruct
 		if execute {
 			bytes[0]--
 
-			err = mod.Data.PutByte(dataAddress, bytes[0])
+			err = mod.DataPage.Contents.PutByte(dataAddress, bytes[0])
 			vputils.CheckAndPanic(err)
 		}
 
@@ -422,7 +428,7 @@ func (mod *Module) ExecuteOpcode(opcode byte, vStack vputils.ByteStack, instruct
 			b := byte(1)
 
 			for b != 0 {
-				b, err = mod.Data.GetByte(address)
+				b, err = mod.DataPage.Contents.GetByte(address)
 				vputils.CheckAndExit(err)
 				c := string(b)
 				s += c
@@ -440,7 +446,7 @@ func (mod *Module) ExecuteOpcode(opcode byte, vStack vputils.ByteStack, instruct
 			bytes, vStack, err = vStack.PopByte(1)
 			vputils.CheckAndExit(err)
 
-			err = mod.Data.PutByte(dataAddress, bytes[0])
+			err = mod.DataPage.Contents.PutByte(dataAddress, bytes[0])
 			vputils.CheckAndPanic(err)
 		}
 
@@ -617,8 +623,10 @@ func (mod Module) Write(filename string) {
 
 	vputils.WriteTextTable("properties", mod.Properties, f)
 	vputils.WriteTextTable("exports", mod.Exports, f)
-	vputils.WriteBinaryBlock("code", mod.Code, f, mod.CodeAddressWidth)
-	vputils.WriteBinaryBlock("data", mod.Data, f, mod.DataAddressWidth)
+	vputils.WriteTextTable("code_properties", mod.CodePage.Properties, f)
+	vputils.WriteBinaryBlock("code", mod.CodePage.Contents, f, mod.CodeAddressWidth)
+	vputils.WriteTextTable("data_properties", mod.DataPage.Properties, f)
+	vputils.WriteBinaryBlock("data", mod.DataPage.Contents, f, mod.DataAddressWidth)
 
 	f.Sync()
 }
@@ -642,17 +650,8 @@ func Read(moduleFile string) (Module, error) {
 
 	properties := vputils.ReadTextTable(f)
 
-	codeAddressWidth := 0
-	dataAddressWidth := 0
-	for _, nameValue := range properties {
-		shortName := strings.Replace(nameValue.Name, " ", "", -1)
-		if shortName == "CODEADDRESSWIDTH" {
-			codeAddressWidth = 1
-		}
-		if shortName == "DATAADDRESSWIDTH" {
-			dataAddressWidth = 1
-		}
-	}
+	codeAddressWidth := 1
+	dataAddressWidth := 1
 
 	header = vputils.ReadString(f)
 	if header != "exports" {
@@ -662,11 +661,27 @@ func Read(moduleFile string) (Module, error) {
 	exports := vputils.ReadTextTable(f)
 
 	header = vputils.ReadString(f)
+	if header != "code_properties" {
+		return Module{}, errors.New("Did not find code_properties header")
+	}
+
+	codeProperties := vputils.ReadTextTable(f)
+
+	header = vputils.ReadString(f)
 	if header != "code" {
 		return Module{}, errors.New("Did not find code header")
 	}
 
 	code := vputils.ReadBinaryBlock(f, codeAddressWidth)
+
+	codePage := Page{codeProperties, code}
+
+	header = vputils.ReadString(f)
+	if header != "data_properties" {
+		return Module{}, errors.New("Did not find data_properties header")
+	}
+
+	dataProperties := vputils.ReadTextTable(f)
 
 	header = vputils.ReadString(f)
 	if header != "data" {
@@ -675,11 +690,15 @@ func Read(moduleFile string) (Module, error) {
 
 	data := vputils.ReadBinaryBlock(f, dataAddressWidth)
 
+	dataPage := Page{dataProperties, data}
+
+	// TODO: check data page datawidth is the same as code page datawidth
+
 	mod := Module{
 		Properties:       properties,
-		Code:             code,
+		CodePage:         codePage,
 		Exports:          exports,
-		Data:             data,
+		DataPage:         dataPage,
 		CodeAddressWidth: codeAddressWidth,
 		DataAddressWidth: dataAddressWidth,
 	}
