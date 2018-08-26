@@ -123,28 +123,6 @@ func defineOpcodes() opcodeTable {
 // --------------------
 // --------------------
 
-func getConditionals(code vputils.Vector, pc vputils.Address) (module.Conditionals, error) {
-	conditionals := module.Conditionals{}
-	err := errors.New("")
-
-	newpc := pc
-	myByte, err := code.GetByte(newpc)
-
-	hasConditional := true
-
-	for hasConditional {
-		if myByte >= 0xE0 && myByte <= 0xEF {
-			conditionals = append(conditionals, myByte)
-			newpc = newpc.AddByte(1)
-			myByte, err = code.GetByte(newpc)
-		} else {
-			hasConditional = false
-		}
-	}
-
-	return conditionals, err
-}
-
 func kernelCall(vStack vputils.ByteStack) vputils.ByteStack {
 	fname, vStack := vStack.PopString()
 
@@ -328,7 +306,7 @@ func executeCode(mod module.Module, startAddress vputils.Address, trace bool, op
 		pc := mod.PC()
 
 		// get conditionals (if any)
-		conditionals, err := getConditionals(mod.CodePage.Contents, pc)
+		conditionals, err := mod.GetConditionals()
 		vputils.CheckPrintAndExit(err, "at PC "+pc.ToString())
 
 		// evaluate conditionals
@@ -344,7 +322,7 @@ func executeCode(mod module.Module, startAddress vputils.Address, trace bool, op
 			return err
 		}
 
-		opcode, err := mod.CodePage.Contents.GetByte(opcodePC)
+		opcode, err := mod.GetOpcode()
 		vputils.CheckPrintAndExit(err, "at PC "+pc.ToString())
 
 		// get opcode definition

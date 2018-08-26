@@ -255,6 +255,34 @@ func (mod *Module) TopPop() (vputils.Address, error) {
 	return address, err
 }
 
+// GetConditionals
+func (mod Module) GetConditionals() (Conditionals, error) {
+	conditionals := Conditionals{}
+	err := errors.New("")
+
+	newpc := mod.pc
+	myByte, err := mod.CodePage.Contents.GetByte(newpc)
+
+	hasConditional := true
+
+	for hasConditional {
+		if myByte >= 0xE0 && myByte <= 0xEF {
+			conditionals = append(conditionals, myByte)
+			newpc = newpc.AddByte(1)
+			myByte, err = mod.CodePage.Contents.GetByte(newpc)
+		} else {
+			hasConditional = false
+		}
+	}
+
+	return conditionals, err
+}
+
+// GetOpcode
+func (mod Module) GetOpcode() (byte, error) {
+	return mod.CodePage.Contents.GetByte(mod.pc)
+}
+
 // ExecuteOpcode - execute one opcode
 func (mod *Module) ExecuteOpcode(opcode byte, vStack vputils.ByteStack, instruction InstructionDefinition, execute bool, flags FlagsGroup) (vputils.ByteStack, FlagsGroup, byte, error) {
 	dataAddress := instruction.Address
