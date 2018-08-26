@@ -303,11 +303,11 @@ func executeCode(mod module.Module, startAddress vputils.Address, trace bool, op
 	halt := false
 
 	for !halt {
-		pc := mod.PC()
+		pc1 := mod.PC()
 
 		// get conditionals (if any)
 		conditionals, err := mod.GetConditionals()
-		vputils.CheckPrintAndExit(err, "at PC "+pc.ToString())
+		vputils.CheckPrintAndExit(err, "at PC "+pc1.ToString())
 
 		// evaluate conditionals
 		execute, err := conditionals.Evaluate(flags)
@@ -316,14 +316,9 @@ func executeCode(mod module.Module, startAddress vputils.Address, trace bool, op
 		}
 
 		// get the opcode
-		opcodePC := pc.AddByte(len(conditionals))
-		err = mod.SetPC(opcodePC)
-		if err != nil {
-			return err
-		}
-
+		pc2 := mod.PC()
 		opcode, err := mod.GetOpcode()
-		vputils.CheckPrintAndExit(err, "at PC "+pc.ToString())
+		vputils.CheckPrintAndExit(err, "at PC "+pc2.ToString())
 
 		// get opcode definition
 		def := opcodeDefinitions[opcode]
@@ -333,7 +328,7 @@ func executeCode(mod module.Module, startAddress vputils.Address, trace bool, op
 
 		// display instruction
 		if trace {
-			line := traceOpcode(pc, opcode, def, flags, conditionals, instruction)
+			line := traceOpcode(pc1, opcode, def, flags, conditionals, instruction)
 			fmt.Println(line)
 		}
 

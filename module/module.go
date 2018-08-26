@@ -171,6 +171,11 @@ func (mod Module) PC() vputils.Address {
 	return mod.pc
 }
 
+// IncPC - increment the PC
+func (mod *Module) IncPC() {
+	mod.pc = mod.pc.AddByte(1)
+}
+
 // ImmediateByte - get a byte
 func (mod Module) ImmediateByte() []byte {
 	codeAddress := mod.pc.AddByte(1)
@@ -256,20 +261,19 @@ func (mod *Module) TopPop() (vputils.Address, error) {
 }
 
 // GetConditionals
-func (mod Module) GetConditionals() (Conditionals, error) {
+func (mod *Module) GetConditionals() (Conditionals, error) {
 	conditionals := Conditionals{}
 	err := errors.New("")
 
-	newpc := mod.pc
-	myByte, err := mod.CodePage.Contents.GetByte(newpc)
+	myByte, err := mod.CodePage.Contents.GetByte(mod.pc)
 
 	hasConditional := true
 
 	for hasConditional {
 		if myByte >= 0xE0 && myByte <= 0xEF {
 			conditionals = append(conditionals, myByte)
-			newpc = newpc.AddByte(1)
-			myByte, err = mod.CodePage.Contents.GetByte(newpc)
+			mod.IncPC()
+			myByte, err = mod.CodePage.Contents.GetByte(mod.pc)
 		} else {
 			hasConditional = false
 		}
