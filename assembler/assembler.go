@@ -581,6 +581,84 @@ func makeExports(codeLabels labelTable) []vputils.NameValue {
 	return exports
 }
 
+func isSpace(s string) bool {
+	if len(s) == 0 {
+		return false
+	}
+
+	return s[0] == ' ' || s[0] == '\t'
+}
+
+func isString(s string) bool {
+	if len(s) == 0 {
+		return false
+	}
+
+	return s[0] == '"'
+}
+
+type tokenList []string
+
+func (tokens tokenList) toString() string {
+	s := ""
+
+	for _, token := range tokens {
+		s += token
+		s += "_"
+	}
+
+	return s
+}
+
+func tokenizeLine(line string) tokenList {
+	tokens := make([]string, 0)
+
+	token := ""
+	for _, c := range line {
+		s := string(c)
+		if len(token) == 0 {
+			// an empty token can accept any character
+			token += s
+		} else {
+			if s == "\"" {
+				if isString(token) {
+					token += s
+					tokens = append(tokens, token)
+					token = ""
+				} else {
+					tokens = append(tokens, token)
+					token = s
+				}
+			} else {
+				if (isSpace(token) == isSpace(s)) || isString(token) {
+					token += s
+				} else {
+					tokens = append(tokens, token)
+					token = s
+				}
+			}
+		}
+	}
+
+	if len(token) > 0 {
+		tokens = append(tokens, token)
+	}
+
+	return tokens
+}
+
+func tokenizeSource(source []string) []tokenList {
+	list := make([]tokenList, 0)
+
+	for _, line := range source {
+		lineTokens := tokenizeLine(line)
+		fmt.Println(lineTokens.toString())
+		list = append(list, lineTokens)
+	}
+
+	return list
+}
+
 func main() {
 	args := os.Args[1:]
 
@@ -608,6 +686,10 @@ func main() {
 
 	moduleProperties := makeModuleProperties()
 
+	tokenizeSource(source)
+	// classify tokens
+	// summary count (labels, opcodes, widths, targets, values, conditionals, NOTs)
+	// validate counted tokens in lines
 	data, dataLabels, codeLabels := generateData(source, opcodeDefs)
 	dataProperties := makeDataProperties(dataAddressWidth)
 	dataPage := module.Page{dataProperties, data}
