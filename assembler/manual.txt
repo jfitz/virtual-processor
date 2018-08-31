@@ -1,0 +1,27 @@
+Assembler for virtual processor
+
+Source format is free-format.
+Each line contains either an instruction or a directive.
+Tokens on the line are recognized by content, not position.
+Tokens are either opcodes, conditionals, NOT, width specifier, label, target, or value.
+
+A label is a name followed by a colon.
+The name must begin with a letter and contain only letters, digits, and underscores.
+Lead letter is uppercase or lowercase.
+Uppercase labels are exported.
+
+An opcode is one of the following: ADD, SUB, MUL, DIV, etc
+
+A conditional is one of ZERO POSITIVE NEGATIVE
+
+A NOT may be used with a conditional to reverse the test.
+
+A target is a code label or a data label.
+Code targets are the name.
+Data targets are preceded by one or two '@' signs to indicate direct or indirect mode.
+
+A value is a numeric or string value.
+String values may be used in storage declarations but not in instructions.
+Numeric values may be decimal, octal, or hexadecimal.
+Octal values begin with zero.
+Hexadecimal values begin with '0x'.

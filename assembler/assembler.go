@@ -581,6 +581,16 @@ func makeExports(codeLabels labelTable) []vputils.NameValue {
 	return exports
 }
 
+func contains(list []string, s string) bool {
+	for _, t := range list {
+		if t == s {
+			return true
+		}
+	}
+
+	return false
+}
+
 func isSpace(s string) bool {
 	if len(s) == 0 {
 		return false
@@ -595,6 +605,14 @@ func isString(s string) bool {
 	}
 
 	return s[0] == '"'
+}
+
+func isComment(s string) bool {
+	if len(s) == 0 {
+		return false
+	}
+
+	return s[0] == '#'
 }
 
 type tokenList []string
@@ -616,8 +634,9 @@ func tokenizeLine(line string) tokenList {
 	token := ""
 	for _, c := range line {
 		s := string(c)
-		if len(token) == 0 {
+		if len(token) == 0 || token[0] == '#' {
 			// an empty token can accept any character
+			// a comment can accept any character
 			token += s
 		} else {
 			if s == "\"" {
@@ -659,6 +678,218 @@ func tokenizeSource(source []string) []tokenList {
 	return list
 }
 
+type tokenGroup struct {
+	Labels       []string
+	Nots         []string
+	Conditionals []string
+	Opcodes      []string
+	Widths       []string
+	CodeTargets  []string
+	DataTargets  []string
+	Values       []string
+	Others       []string
+}
+
+func isLabel(token string) bool {
+	count := len(token)
+
+	// must have some length
+	if count == 0 {
+		return false
+	}
+
+	// first must be alphabetic
+	if !vputils.IsAlpha(token[0]) {
+		return false
+	}
+
+	// last must be colon
+	lastIndex := count - 1
+	if token[lastIndex] != ':' {
+		return false
+	}
+
+	// everything but last must be alpha-num or underscore
+	text := token[0:lastIndex]
+
+	for _, c := range text {
+		b := byte(c)
+		if !vputils.IsAlnum(b) {
+			return false
+		}
+	}
+
+	return true
+}
+
+func isValue(token string) bool {
+	count := len(token)
+
+	// must have some length
+	if count == 0 {
+		return false
+	}
+
+	// everything must be digit
+	for _, c := range token {
+		b := byte(c)
+		if !vputils.IsDigit(b) {
+			return false
+		}
+	}
+
+	return true
+}
+
+func isCodeTarget(token string) bool {
+	count := len(token)
+
+	// must have some length
+	if count == 0 {
+		return false
+	}
+
+	// first must be alphabetic
+	if !vputils.IsAlpha(token[0]) {
+		return false
+	}
+
+	// everything must be alpha-num or underscore
+	for _, c := range token {
+		b := byte(c)
+		if !vputils.IsAlnum(b) {
+			return false
+		}
+	}
+
+	return true
+}
+
+func isDataTarget(token string) bool {
+	count := len(token)
+
+	// must have some length
+	if count == 0 {
+		return false
+	}
+
+	// must have one or two '@' signs in front
+	atCount := 0
+	if token[0] == '@' {
+		atCount++
+	}
+
+	if len(token) > 1 && token[1] == '@' {
+		atCount++
+	}
+
+	if atCount == 0 {
+		return false
+	}
+
+	text := token[atCount:len(token)]
+
+	// must have some length after '@' signs
+	if len(text) == 0 {
+		return false
+	}
+
+	// first must be alphabetic
+	if !vputils.IsAlpha(text[0]) {
+		return false
+	}
+
+	// everything must be alpha-num or underscore
+	for _, c := range text {
+		b := byte(c)
+		if !vputils.IsAlnum(b) {
+			return false
+		}
+	}
+
+	return true
+}
+
+func groupTokens(tokens tokenList) tokenGroup {
+	groups := tokenGroup{}
+
+	notList := []string{"NOT"}
+	conditionalList := []string{"ZERO", "POSITIVE", "NEGATIVE"}
+	widthList := []string{"BYTE", "I16", "I32", "I64", "F32", "F64", "STRING"}
+	opcodeList := []string{"ADD", "SUB", "MUL", "DIV", "CMP", "PUSH", "POP", "EXIT", "KCALL", "OUT", "NOP", "JUMP", "CALL", "RET", "AND", "OR", "FLAGS", "INC", "DEC"}
+
+	for _, token := range tokens {
+		handled := false
+
+		if isSpace(token) || isComment(token) {
+			// do nothing, discard it
+			handled = true
+		}
+
+		if isString(token) {
+			groups.Values = append(groups.Values, token)
+			handled = true
+		}
+
+		if contains(notList, token) {
+			groups.Nots = append(groups.Nots, token)
+			handled = true
+		}
+
+		if contains(widthList, token) {
+			groups.Widths = append(groups.Widths, token)
+			handled = true
+		}
+
+		if contains(conditionalList, token) {
+			groups.Conditionals = append(groups.Conditionals, token)
+			handled = true
+		}
+
+		if contains(opcodeList, token) {
+			groups.Opcodes = append(groups.Opcodes, token)
+			handled = true
+		}
+
+		if isLabel(token) {
+			groups.Labels = append(groups.Labels, token)
+			handled = true
+		}
+
+		if isValue(token) {
+			groups.Values = append(groups.Values, token)
+			handled = true
+		}
+
+		if !handled && isCodeTarget(token) {
+			groups.CodeTargets = append(groups.CodeTargets, token)
+			handled = true
+		}
+
+		if isDataTarget(token) {
+			groups.DataTargets = append(groups.DataTargets, token)
+			handled = true
+		}
+
+		if !handled {
+			groups.Others = append(groups.Others, token)
+		}
+	}
+
+	return groups
+}
+
+func groupSourceTokens(tokenlist []tokenList) []tokenGroup {
+	groupList := make([]tokenGroup, 0)
+
+	for _, tokens := range tokenlist {
+		groups := groupTokens(tokens)
+		groupList = append(groupList, groups)
+	}
+
+	return groupList
+}
+
 func main() {
 	args := os.Args[1:]
 
@@ -686,8 +917,11 @@ func main() {
 
 	moduleProperties := makeModuleProperties()
 
-	tokenizeSource(source)
-	// classify tokens
+	tokens := tokenizeSource(source)
+	groupList := groupSourceTokens(tokens)
+	for _, list := range groupList {
+		fmt.Println(list)
+	}
 	// summary count (labels, opcodes, widths, targets, values, conditionals, NOTs)
 	// validate counted tokens in lines
 	data, dataLabels, codeLabels := generateData(source, opcodeDefs)

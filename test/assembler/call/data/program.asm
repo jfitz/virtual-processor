@@ -1,20 +1,23 @@
-message	STRING	"Hello, world!"
+message:	STRING	"Hello, world!"
 
-MAIN	PUSH.B	message
+# main program
+MAIN:	PUSH BYTE	message
 	CALL	print_s
 	CALL	print_nl
 	EXIT
 
-address	BYTE	0
-print_s	POP.B	@address
-loop	PUSH.B	@@address
-	FLAGS.B
-	Z:RET
+# print a string
+address:	BYTE	0
+print_s:	POP BYTE	@address
+loop:	PUSH BYTE	@@address
+	FLAGS BYTE
+	ZERO RET
 	OUT
-	INC.B	@address
+	INC BYTE	@address
 	JUMP	loop
 
-newline	BYTE	10
-print_nl PUSH.B	@newline
+# print a newline
+newline:	BYTE	10
+print_nl:	PUSH BYTE	@newline
 	OUT
 	RET
