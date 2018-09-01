@@ -666,13 +666,18 @@ func tokenizeLine(line string) tokenList {
 	return tokens
 }
 
-func tokenizeSource(source []string) []tokenList {
-	list := make([]tokenList, 0)
+type lineAndTokens struct {
+	Line   string
+	Tokens tokenList
+}
+
+func tokenizeSource(source []string) []lineAndTokens {
+	list := make([]lineAndTokens, 0)
 
 	for _, line := range source {
-		lineTokens := tokenizeLine(line)
-		fmt.Println(lineTokens.toString())
-		list = append(list, lineTokens)
+		tokens := tokenizeLine(line)
+		l := lineAndTokens{line, tokens}
+		list = append(list, l)
 	}
 
 	return list
@@ -688,6 +693,11 @@ type tokenGroup struct {
 	DataTargets  []string
 	Values       []string
 	Others       []string
+}
+
+type lineAndTokenGroup struct {
+	Line   string
+	Tokens tokenGroup
 }
 
 func isLabel(token string) bool {
@@ -879,12 +889,13 @@ func groupTokens(tokens tokenList) tokenGroup {
 	return groups
 }
 
-func groupSourceTokens(tokenlist []tokenList) []tokenGroup {
-	groupList := make([]tokenGroup, 0)
+func groupSourceTokens(list []lineAndTokens) []lineAndTokenGroup {
+	groupList := make([]lineAndTokenGroup, 0)
 
-	for _, tokens := range tokenlist {
-		groups := groupTokens(tokens)
-		groupList = append(groupList, groups)
+	for _, tokens := range list {
+		group := groupTokens(tokens.Tokens)
+		l := lineAndTokenGroup{tokens.Line, group}
+		groupList = append(groupList, l)
 	}
 
 	return groupList
@@ -917,8 +928,8 @@ func main() {
 
 	moduleProperties := makeModuleProperties()
 
-	tokens := tokenizeSource(source)
-	groupList := groupSourceTokens(tokens)
+	linesAndTokens := tokenizeSource(source)
+	groupList := groupSourceTokens(linesAndTokens)
 	for _, list := range groupList {
 		fmt.Println(list)
 	}
