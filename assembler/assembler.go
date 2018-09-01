@@ -889,7 +889,7 @@ func groupTokens(tokens tokenList) tokenGroup {
 	return groups
 }
 
-func groupSourceTokens(list []lineAndTokens) []lineAndTokenGroup {
+func group(list []lineAndTokens) []lineAndTokenGroup {
 	groupList := make([]lineAndTokenGroup, 0)
 
 	for _, tokens := range list {
@@ -899,6 +899,64 @@ func groupSourceTokens(list []lineAndTokens) []lineAndTokenGroup {
 	}
 
 	return groupList
+}
+
+func validateLine(lineAndTokens lineAndTokenGroup) bool {
+	tokens := lineAndTokens.Tokens
+	countLabels := len(tokens.Labels)
+	countNots := len(tokens.Nots)
+	countConditionals := len(tokens.Conditionals)
+	countOpcodes := len(tokens.Opcodes)
+	countWidths := len(tokens.Widths)
+	countCodeTargets := len(tokens.CodeTargets)
+	countDataTargets := len(tokens.DataTargets)
+	countValues := len(tokens.Values)
+	countOthers := len(tokens.Others)
+
+	// any unrecognized token is invalid
+	if countOthers > 0 {
+		return false
+	}
+
+	// a blank line is valid
+	if countLabels == 0 && countNots == 0 && countConditionals == 0 &&
+		countOpcodes == 0 && countWidths == 0 && countCodeTargets == 0 &&
+		countDataTargets == 0 && countValues == 0 {
+		return true
+	}
+
+	// a data declaration has a label, width, and value
+	if countLabels == 1 && countNots == 0 && countConditionals == 0 &&
+		countOpcodes == 0 && countWidths == 1 && countCodeTargets == 0 &&
+		countDataTargets == 0 && countValues == 1 {
+		return true
+	}
+
+	countTargets := countCodeTargets + countDataTargets + countValues
+
+	// opcodes may have a label, may have a width, may have a value or target
+	// may have a conditional and may have a NOT
+	if countLabels < 2 && countNots < 2 && countConditionals < 2 &&
+		countOpcodes == 1 && countWidths < 2 && countTargets < 2 {
+		return true
+	}
+
+	return false
+}
+
+func validate(groupList []lineAndTokenGroup) bool {
+	allValid := true
+
+	for _, lineAndTokens := range groupList {
+		if !validateLine(lineAndTokens) {
+			allValid = false
+
+			fmt.Println(lineAndTokens.Line)
+			fmt.Println("Invalid line")
+		}
+	}
+
+	return allValid
 }
 
 func main() {
@@ -929,12 +987,13 @@ func main() {
 	moduleProperties := makeModuleProperties()
 
 	linesAndTokens := tokenizeSource(source)
-	groupList := groupSourceTokens(linesAndTokens)
-	for _, list := range groupList {
-		fmt.Println(list)
+	groupsList := group(linesAndTokens)
+	valid := validate(groupsList)
+
+	if !valid {
+		vputils.CheckAndExit(errors.New("Errors found"))
 	}
-	// summary count (labels, opcodes, widths, targets, values, conditionals, NOTs)
-	// validate counted tokens in lines
+
 	data, dataLabels, codeLabels := generateData(source, opcodeDefs)
 	dataProperties := makeDataProperties(dataAddressWidth)
 	dataPage := module.Page{dataProperties, data}
