@@ -10,6 +10,7 @@ import (
 	"github.com/jfitz/virtual-processor/vputils"
 	"os"
 	"strconv"
+	"strings"
 )
 
 func first(tokens []string) (string, []string) {
@@ -927,7 +928,7 @@ func group(list []lineAndTokens) []lineAndTokenGroup {
 	return groupList
 }
 
-func validateLine(lineAndTokens lineAndTokenGroup) bool {
+func validateLine(lineAndTokens lineAndTokenGroup) string {
 	tokens := lineAndTokens.Tokens
 	countLabels := len(tokens.Labels)
 	countNots := len(tokens.Nots)
@@ -941,21 +942,22 @@ func validateLine(lineAndTokens lineAndTokenGroup) bool {
 
 	// any unrecognized token is invalid
 	if countOthers > 0 {
-		return false
+		message := "Unknown symbols :" + strings.Join(tokens.Others, ", ")
+		return message
 	}
 
 	// a blank line is valid
 	if countLabels == 0 && countNots == 0 && countConditionals == 0 &&
 		countOpcodes == 0 && countWidths == 0 && countTargets == 0 &&
 		countDataTargets == 0 && countValues == 0 {
-		return true
+		return ""
 	}
 
 	// a data declaration has a label, width, and value
 	if countLabels == 1 && countNots == 0 && countConditionals == 0 &&
 		countOpcodes == 0 && countWidths == 1 && countTargets == 0 &&
 		countDataTargets == 0 && countValues == 1 {
-		return true
+		return ""
 	}
 
 	countAllTargets := countTargets + countDataTargets + countValues
@@ -964,29 +966,32 @@ func validateLine(lineAndTokens lineAndTokenGroup) bool {
 	// may have a conditional and may have a NOT
 	if countLabels < 2 && countNots < 2 && countConditionals < 2 &&
 		countOpcodes == 1 && countWidths < 2 && countAllTargets < 2 {
-		return true
+		return ""
 	}
 
-	return false
+	return "Wrong combination of symbols"
 }
 
-func validate(groupList []lineAndTokenGroup) ([]tokenGroup, []tokenGroup, []lineAndTokenGroup) {
+func validate(groupList []lineAndTokenGroup) ([]tokenGroup, []tokenGroup, []string) {
 	dataTokens := make([]tokenGroup, 0)
 	codeTokens := make([]tokenGroup, 0)
-	invalids := make([]lineAndTokenGroup, 0)
+	invalids := make([]string, 0)
 
 	for _, lineAndTokens := range groupList {
-		if validateLine(lineAndTokens) {
+		message := validateLine(lineAndTokens)
+		if len(message) == 0 {
 			tokens := lineAndTokens.Tokens
 			if len(tokens.Opcodes) == 1 {
+				// instruction line
 				codeTokens = append(codeTokens, tokens)
 			} else {
 				if len(tokens.Values) == 1 {
+					// data line
 					dataTokens = append(dataTokens, tokens)
 				}
 			}
 		} else {
-			invalids = append(invalids, lineAndTokens)
+			invalids = append(invalids, message)
 		}
 	}
 
@@ -1026,8 +1031,7 @@ func main() {
 
 	if len(invalids) > 0 {
 		fmt.Println("Errors found:")
-		for _, group := range invalids {
-			line := group.Line
+		for _, line := range invalids {
 			fmt.Println(line)
 		}
 		os.Exit(1)
