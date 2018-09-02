@@ -1025,7 +1025,12 @@ func main() {
 	dataTokens, codeTokens, invalids := validate(groupsList)
 
 	if len(invalids) > 0 {
-		vputils.CheckAndExit(errors.New("Errors found"))
+		fmt.Println("Errors found:")
+		for _, group := range invalids {
+			line := group.Line
+			fmt.Println(line)
+		}
+		os.Exit(1)
 	}
 
 	data, dataLabels := generateData(dataTokens)
