@@ -10,7 +10,6 @@ import (
 	"github.com/jfitz/virtual-processor/vputils"
 	"os"
 	"strconv"
-	"strings"
 )
 
 func first(tokens []string) (string, []string) {
@@ -65,68 +64,112 @@ type labelTable map[string]vputils.Address
 
 type opcodeList map[string][]byte
 
-func buildInstruction(opcodemap opcodeList, targetType string, target string, dataLabels labelTable) ([]byte, error) {
-	opcodes, ok := opcodemap[targetType]
+func buildInstruction(opcodemap opcodeList, width string, value string, dataTarget string, dataLabels labelTable, target string, codeLabels labelTable, resolveAddress bool) ([]byte, error) {
+	opcodes, ok := opcodemap[width]
 
 	if !ok {
-		return nil, errors.New("Set '" + targetType + "' not found")
+		return nil, errors.New("Set '" + width + "' not found")
 	}
 
-	if len(target) == 0 {
+	if len(value) == 0 && len(dataTarget) == 0 && len(target) == 0 {
 		// stack
 		opcode := opcodes[3]
 		instruction := []byte{opcode}
 		return instruction, nil
 	}
 
-	if vputils.IsDigit(target[0]) {
+	if len(value) > 0 && vputils.IsDigit(value[0]) {
 		// immediate value
 		opcode := []byte{opcodes[0]}
 		bytes := []byte{}
-		switch targetType {
-		case "B":
-			bytes = evaluateByte(target)
+		switch width {
+		case "BYTE":
+			bytes = evaluateByte(value)
 		case "I16":
-			bytes = evaluateI16(target)
+			bytes = evaluateI16(value)
 		}
 		instruction := append(opcode, bytes...)
 		return instruction, nil
 	}
 
-	if vputils.IsAlpha(target[0]) {
+	if len(dataTarget) > 0 && vputils.IsAlpha(dataTarget[0]) {
 		// immediate value
 		opcode := []byte{opcodes[0]}
-		address, ok := dataLabels[target]
+		address, ok := dataLabels[dataTarget]
 		if !ok {
-			err := errors.New("Undefined label '" + target + "'")
+			err := errors.New("Undefined label '" + dataTarget + "'")
 			vputils.CheckAndExit(err)
 		}
 		instruction := append(opcode, address.Bytes...)
 		return instruction, nil
 	}
 
-	if vputils.IsDirectAddress(target) {
+	if vputils.IsDirectAddress(dataTarget) {
 		// direct address
 		opcode := []byte{opcodes[1]}
-		address, ok := dataLabels[target[1:]]
+		address, ok := dataLabels[dataTarget[1:]]
 		if !ok {
-			err := errors.New("Undefined label '" + target + "'")
+			err := errors.New("Undefined label '" + dataTarget + "'")
 			vputils.CheckAndExit(err)
 		}
 		instruction := append(opcode, address.Bytes...)
 		return instruction, nil
 	}
 
-	if vputils.IsIndirectAddress(target) {
+	if vputils.IsIndirectAddress(dataTarget) {
 		// indirect address
 		opcode := []byte{opcodes[2]}
-		address, ok := dataLabels[target[2:]]
+		address, ok := dataLabels[dataTarget[2:]]
 		if !ok {
-			err := errors.New("Undefined label '" + target + "'")
+			err := errors.New("Undefined label '" + dataTarget + "'")
 			vputils.CheckAndExit(err)
 		}
 		instruction := append(opcode, address.Bytes...)
 		return instruction, nil
+	}
+
+	if len(target) > 0 {
+		// TODO avoid hard-coded values
+		opcode := []byte{opcodes[0]}
+		isJump := opcode[0] == 0xD0 || opcode[0] == 0xD1
+
+		if isJump {
+			// for jump instructions, append the target address from code labels
+			address, ok := codeLabels[target]
+			err := errors.New("")
+
+			if !ok {
+				if resolveAddress {
+					err = errors.New("Undefined code label '" + target + "'")
+				} else {
+					address, err = vputils.MakeAddress(0, 1, 0)
+				}
+
+				vputils.CheckAndExit(err)
+			}
+
+			// TODO: check address is within code address width
+			instruction := append(opcode, address.Bytes...)
+			return instruction, nil
+		} else {
+			// for other instructions, append the target address from data labels
+			address, ok := dataLabels[target]
+			err := errors.New("")
+
+			if !ok {
+				if resolveAddress {
+					err = errors.New("Undefined data label '" + target + "'")
+				} else {
+					address, err = vputils.MakeAddress(0, 1, 0)
+				}
+
+				vputils.CheckAndExit(err)
+			}
+
+			// TODO: check address is within data address width
+			instruction := append(opcode, address.Bytes...)
+			return instruction, nil
+		}
 	}
 
 	return nil, errors.New("Invalid opcode")
@@ -137,7 +180,7 @@ type opcodeDefinition struct {
 	AddressOpcodes opcodeList
 }
 
-func decodeOpcode(text string, instructionAddress vputils.Address, targetType string, target string, opcodeDefs map[string]opcodeDefinition, resolveAddress bool, codeLabels labelTable, dataLabels labelTable) ([]byte, error) {
+func decodeOpcode(text string, instructionAddress vputils.Address, width string, value string, dataTarget string, target string, opcodeDefs map[string]opcodeDefinition, resolveAddress bool, codeLabels labelTable, dataLabels labelTable) ([]byte, error) {
 	opcodeDef, ok := opcodeDefs[text]
 
 	if !ok {
@@ -151,36 +194,15 @@ func decodeOpcode(text string, instructionAddress vputils.Address, targetType st
 	var err error
 	if len(addressOpcodes) > 0 {
 		// select instruction depends on target
-		instruction, err = buildInstruction(addressOpcodes, targetType, target, dataLabels)
+		instruction, err = buildInstruction(addressOpcodes, width, value, dataTarget, dataLabels, target, codeLabels, resolveAddress)
 		vputils.CheckAndExit(err)
-	}
-
-	// for jump instructions, append the target address
-	// TODO avoid hard-coded values
-	firstByte := instruction[0]
-	isJump := firstByte == 0xD0 || firstByte == 0xD1
-
-	if isJump {
-		address, ok := codeLabels[target]
-		if !ok {
-			if resolveAddress {
-				err = errors.New("Undefined label '" + target + "'")
-			} else {
-				address, err = vputils.MakeAddress(0, 1, 0)
-			}
-
-			vputils.CheckAndExit(err)
-		}
-
-		// TODO: check address is within code address width
-		instruction = append(instruction, address.Bytes...)
 	}
 
 	return instruction, nil
 }
 
-func getInstruction(text string, instructionAddress vputils.Address, targetType string, target string, opcodeDefs map[string]opcodeDefinition, resolveAddress bool, dataLabels labelTable, codeLabels labelTable) []byte {
-	instruction, err := decodeOpcode(text, instructionAddress, targetType, target, opcodeDefs, resolveAddress, codeLabels, dataLabels)
+func getInstruction(text string, instructionAddress vputils.Address, width string, value string, dataTarget string, target string, opcodeDefs map[string]opcodeDefinition, resolveAddress bool, dataLabels labelTable, codeLabels labelTable) []byte {
+	instruction, err := decodeOpcode(text, instructionAddress, width, value, dataTarget, target, opcodeDefs, resolveAddress, codeLabels, dataLabels)
 	vputils.CheckAndExit(err)
 
 	if len(instruction) == 0 {
@@ -225,238 +247,241 @@ func dequoteString(s string) []byte {
 	return bytes
 }
 
-func encodeConditional(s string) ([]byte, error) {
+func encodeConditional(conditional string, not string) []byte {
 	prefix := []byte{}
 
-	if len(s) > 0 {
-		parts := strings.Split(s, ".")
-
-		for _, part := range parts {
-			switch part {
-			case "Z":
-				prefix = append(prefix, 0xE0)
-			case "NOT":
-				prefix = append(prefix, 0xE8)
-			default:
-				return prefix, errors.New("Invalid conditional ")
-			}
-		}
+	if not == "NOT" {
+		prefix = append(prefix, 0xE8)
 	}
 
-	return prefix, nil
+	if conditional == "ZERO" {
+		prefix = append(prefix, 0xE0)
+	}
+
+	return prefix
 }
 
-func generateData(source []string, opcodeDefs map[string]opcodeDefinition) (vputils.Vector, labelTable, labelTable) {
+func generateData(tokenGroups []tokenGroup) (vputils.Vector, labelTable) {
 	tabs := "\t\t\t"
 	fmt.Println(tabs + "DATA")
 
-	code := vputils.Vector{}
-	codeLabels := make(labelTable)
 	data := vputils.Vector{}
 	dataLabels := make(labelTable)
 
-	for _, line := range source {
-		// remove comment from line
-		// remove trailing whitespace
-		line = strings.TrimRight(line, " \t")
-		// only lines with content
-		if len(line) > 0 {
-			tokens := vputils.Tokenize(line)
-			label, tokens := first(tokens)
-			word, tokens := first(tokens)
+	for _, tokens := range tokenGroups {
+		label := tokens.Labels[0]
+		checkDataLabel(label, dataLabels)
 
-			// write the directive or instruction
-			if isDirective(word) {
-				checkDataLabel(label, dataLabels)
+		// add the label to our table
+		addressValue := len(data)
+		if addressValue > 255 {
+			vputils.CheckAndExit(errors.New("Exceeded data label table size"))
+		}
+		address, err := vputils.MakeAddress(addressValue, 1, len(data))
+		vputils.CheckAndExit(err)
+		dataLabels[label] = address
 
-				// add the label to our table
-				addressValue := len(data)
-				if addressValue > 255 {
-					vputils.CheckAndExit(errors.New("Exceeded data label table size"))
-				}
-				address, err := vputils.MakeAddress(addressValue, 1, len(data))
-				vputils.CheckAndExit(err)
-				dataLabels[label] = address
+		// write the label on a line by itself
+		if len(label) > 0 {
+			fmt.Printf("%s:\n", label)
+		}
 
-				// write the label on a line by itself
-				if len(label) > 0 {
-					fmt.Printf("%s:\n", label)
-				}
+		width := tokens.Widths[0]
+		value := tokens.Values[0]
 
-				values := []byte{}
-				switch word {
-				case "BYTE":
-					target, _ := first(tokens)
-					// evaluate numeric or text (data label) but nothing else
-					value := evaluateByte(target)
-					values = append(values, value...)
-				case "STRING":
-					target, _ := first(tokens)
-					// target must be a string
-					chars := dequoteString(target)
-					values = append(values, chars...)
-				default:
-					vputils.CheckAndExit(errors.New("Invalid directive " + word))
-				}
+		values := []byte{}
+		switch width {
+		case "BYTE":
+			// evaluate numeric or text (data label) but nothing else
+			value1 := evaluateByte(value)
+			values = append(values, value1...)
+		case "STRING":
+			// target must be a string
+			chars := dequoteString(value)
+			values = append(values, chars...)
+		default:
+			vputils.CheckAndExit(errors.New("Invalid data specification"))
+		}
 
-				// print offset, directive, and contents
-				location := len(data)
+		// print offset, directive, and contents
+		location := len(data)
 
-				if len(values) == 0 {
-					fmt.Printf("%02X%s%s\n", location, tabs, word)
-				} else {
-					fmt.Printf("%02X%s%s\t\t% X\n", location, tabs, word, values)
-					data = append(data, values...)
-				}
-			} else {
-				// process instruction
-				opcode := word
-				targetType := ""
-				conditional := ""
-
-				parts1 := strings.Split(word, ":")
-
-				if len(parts1) > 1 {
-					conditional = parts1[0]
-					word = parts1[1]
-				} else {
-					word = parts1[0]
-				}
-
-				prefix, err := encodeConditional(conditional)
-				vputils.CheckAndExit(err)
-
-				parts2 := strings.Split(word, ".")
-
-				if len(parts2) > 1 {
-					opcode = parts2[0]
-					targetType = parts2[1]
-				} else {
-					opcode = parts2[0]
-				}
-
-				address := len(code)
-				// TODO: limit is based on address width
-				if address > 255 {
-					vputils.CheckAndExit(errors.New("Exceeded code label table size"))
-				}
-
-				instructionAddress, err := vputils.MakeAddress(address, 1, len(code))
-				vputils.CheckAndExit(err)
-
-				if len(label) > 0 {
-					// add the label to our table
-					checkCodeLabel(label, codeLabels)
-					codeLabels[label] = instructionAddress
-				}
-
-				target, tokens := first(tokens)
-
-				// check there are no more tokens
-				if len(tokens) > 0 {
-					fmt.Println(line)
-					vputils.CheckAndExit(errors.New("Extra tokens on line"))
-				}
-
-				// decode the instruction
-				instruction := getInstruction(opcode, instructionAddress, targetType, target, opcodeDefs, false, dataLabels, codeLabels)
-
-				code = append(code, prefix...)
-				code = append(code, instruction...)
-			}
+		if len(values) == 0 {
+			fmt.Printf("%02X%s%s\n", location, tabs, width)
+		} else {
+			fmt.Printf("%02X%s%s\t\t% X\n", location, tabs, width, values)
+			data = append(data, values...)
 		}
 	}
 
 	fmt.Println(tabs + "ENDSEGMENT")
 	fmt.Println()
 
-	return data, dataLabels, codeLabels
+	return data, dataLabels
 }
 
-func generateCode(source []string, opcodeDefs map[string]opcodeDefinition, dataLabels labelTable, codeLabels labelTable) vputils.Vector {
+func generateCode1(tokenGroups []tokenGroup, opcodeDefs map[string]opcodeDefinition, dataLabels labelTable) labelTable {
+	codeLabels := make(labelTable)
+	code := vputils.Vector{}
+
+	for _, tokens := range tokenGroups {
+		// process instruction
+		label := ""
+		if len(tokens.Labels) == 1 {
+			label = tokens.Labels[0]
+		}
+
+		not := ""
+		if len(tokens.Nots) > 0 {
+			not = tokens.Nots[0]
+		}
+
+		conditional := ""
+		if len(tokens.Conditionals) > 0 {
+			conditional = tokens.Conditionals[0]
+		}
+
+		prefix := encodeConditional(conditional, not)
+
+		opcode := tokens.Opcodes[0]
+
+		width := ""
+		if len(tokens.Widths) > 0 {
+			width = tokens.Widths[0]
+		}
+
+		value := ""
+		if len(tokens.Values) > 0 {
+			value = tokens.Values[0]
+		}
+
+		dataTarget := ""
+		if len(tokens.DataTargets) > 0 {
+			dataTarget = tokens.DataTargets[0]
+		}
+
+		target := ""
+		if len(tokens.Targets) > 0 {
+			target = tokens.Targets[0]
+		}
+
+		address := len(code)
+		// TODO: limit is based on address width
+		if address > 255 {
+			vputils.CheckAndExit(errors.New("Exceeded code label table size"))
+		}
+
+		instructionAddress, err := vputils.MakeAddress(address, 1, len(code))
+		vputils.CheckAndExit(err)
+
+		if len(label) > 0 {
+			// add the label to our table
+			checkCodeLabel(label, codeLabels)
+			codeLabels[label] = instructionAddress
+		}
+
+		// decode the instruction
+		instruction := getInstruction(opcode, instructionAddress, width, value, dataTarget, target, opcodeDefs, false, dataLabels, codeLabels)
+
+		// inject code here, to keep length of code as the address of the start of the conditional
+		code = append(code, prefix...)
+		code = append(code, instruction...)
+	}
+
+	return codeLabels
+}
+
+func generateCode2(tokenGroups []tokenGroup, opcodeDefs map[string]opcodeDefinition, dataLabels labelTable, codeLabels labelTable) vputils.Vector {
 	tabs := "\t\t\t"
 	fmt.Println(tabs + "CODE")
 
 	code := vputils.Vector{}
 
-	for _, line := range source {
-		// remove comment from line
-		// remove trailing whitespace
-		line = strings.TrimRight(line, " \t")
-		// only lines with content
-		if len(line) > 0 {
-			tokens := vputils.Tokenize(line)
-			label, tokens := first(tokens)
-			word, tokens := first(tokens)
-
-			// write the directive or instruction
-			if !isDirective(word) {
-				opcode := word
-				mnemonic := ""
-				targetType := ""
-				conditional := ""
-
-				parts1 := strings.Split(word, ":")
-
-				if len(parts1) > 1 {
-					conditional = parts1[0]
-					mnemonic = parts1[1]
-				} else {
-					mnemonic = parts1[0]
-				}
-
-				prefix, err := encodeConditional(conditional)
-				vputils.CheckAndExit(err)
-
-				parts2 := strings.Split(mnemonic, ".")
-
-				if len(parts2) > 1 {
-					opcode = parts2[0]
-					targetType = parts2[1]
-				} else {
-					opcode = parts2[0]
-				}
-
-				address := len(code)
-				// TODO: limit is based on address width
-				if address > 255 {
-					vputils.CheckAndExit(errors.New("Exceeded code label table size"))
-				}
-				instructionAddress, err := vputils.MakeAddress(address, 1, len(code))
-				vputils.CheckAndExit(err)
-
-				if len(label) > 0 {
-					// write the label on a line by itself
-					fmt.Printf("%s:\n", label)
-				}
-
-				target, tokens := first(tokens)
-
-				// check that there are no more tokens
-				if len(tokens) > 0 {
-					vputils.CheckAndExit(errors.New("Extra tokens on line"))
-				}
-
-				// decode the instruction
-				instruction := getInstruction(opcode, instructionAddress, targetType, target, opcodeDefs, true, dataLabels, codeLabels)
-
-				hexBytes := append(prefix, instruction...)
-				location := len(code)
-				instructionString := fmt.Sprintf("% X", hexBytes)
-				// TODO: avoid hard-coded values for spacing
-				wordTabCount := 2 - len(instructionString)/8
-				wordTabs := ""
-				for i := 0; i < wordTabCount; i++ {
-					wordTabs += "\t"
-				}
-
-				fmt.Printf("%02X\t%s%s%s\t%s\n", location, instructionString, wordTabs, word, target)
-
-				code = append(code, prefix...)
-				code = append(code, instruction...)
-			}
+	for _, tokens := range tokenGroups {
+		// write the directive or instruction
+		label := ""
+		if len(tokens.Labels) > 0 {
+			label = tokens.Labels[0]
 		}
+
+		not := ""
+		if len(tokens.Nots) > 0 {
+			not = tokens.Nots[0]
+		}
+
+		conditional := ""
+		if len(tokens.Conditionals) > 0 {
+			conditional = tokens.Conditionals[0]
+		}
+
+		prefix := encodeConditional(conditional, not)
+
+		opcode := tokens.Opcodes[0]
+
+		width := ""
+		if len(tokens.Widths) > 0 {
+			width = tokens.Widths[0]
+		}
+
+		value := ""
+		if len(tokens.Values) > 0 {
+			value = tokens.Values[0]
+		}
+
+		dataTarget := ""
+		if len(tokens.DataTargets) > 0 {
+			dataTarget = tokens.DataTargets[0]
+		}
+
+		target := ""
+		if len(tokens.Targets) > 0 {
+			target = tokens.Targets[0]
+		}
+
+		address := len(code)
+		// TODO: limit is based on address width
+		if address > 255 {
+			vputils.CheckAndExit(errors.New("Exceeded code label table size"))
+		}
+
+		instructionAddress, err := vputils.MakeAddress(address, 1, len(code))
+		vputils.CheckAndExit(err)
+
+		if len(label) > 0 {
+			// write the label on a line by itself
+			fmt.Printf("%s:\n", label)
+		}
+
+		// decode the instruction
+		instruction := getInstruction(opcode, instructionAddress, width, value, dataTarget, target, opcodeDefs, true, dataLabels, codeLabels)
+
+		hexBytes := append(prefix, instruction...)
+		location := len(code)
+		instructionString := fmt.Sprintf("% X", hexBytes)
+		// TODO: avoid hard-coded values for spacing
+		wordTabCount := 2 - len(instructionString)/8
+		wordTabs := ""
+		for i := 0; i < wordTabCount; i++ {
+			wordTabs += "\t"
+		}
+
+		fullOpcode := ""
+		if len(not) > 0 {
+			fullOpcode += not + " "
+		}
+		if len(conditional) > 0 {
+			fullOpcode += conditional + " "
+		}
+		fullOpcode += opcode
+		if len(width) > 0 {
+			fullOpcode += " " + width
+		}
+		fmt.Printf("%02X\t%s%s%s\t%s%s%s\n", location, instructionString, wordTabs, fullOpcode, target, dataTarget, value)
+
+		code = append(code, prefix...)
+		code = append(code, instruction...)
 	}
+
 	fmt.Println(tabs + "ENDSEGMENT")
 	fmt.Println()
 
@@ -514,53 +539,53 @@ func makeOpcodeDefinitions() map[string]opcodeDefinition {
 	opcodeDefs["RET"] = opcodeDefinition{0xD2, emptyOpcodes}
 
 	pushOpcodes := make(opcodeList)
-	pushOpcodes["B"] = []byte{0x60, 0x61, 0x62, 0x0F}
+	pushOpcodes["BYTE"] = []byte{0x60, 0x61, 0x62, 0x0F}
 	pushOpcodes["I16"] = []byte{0x64, 0x65, 0x66, 0x0F}
 	pushOpcodes["STR"] = []byte{0x0F, 0x79, 0x7A, 0x0F}
 	opcodeDefs["PUSH"] = opcodeDefinition{0x0F, pushOpcodes}
 
 	popOpcodes := make(opcodeList)
-	popOpcodes["B"] = []byte{0x0F, 0x81, 0x82, 0x83}
+	popOpcodes["BYTE"] = []byte{0x0F, 0x81, 0x82, 0x83}
 	opcodeDefs["POP"] = opcodeDefinition{0x0F, popOpcodes}
 
 	flagsOpcodes := make(opcodeList)
-	flagsOpcodes["B"] = []byte{0x10, 0x11, 0x12, 0x13}
+	flagsOpcodes["BYTE"] = []byte{0x10, 0x11, 0x12, 0x13}
 	opcodeDefs["FLAGS"] = opcodeDefinition{0x0F, flagsOpcodes}
 
 	incOpcodes := make(opcodeList)
-	incOpcodes["B"] = []byte{0x0F, 0x21, 0x22, 0x23}
+	incOpcodes["BYTE"] = []byte{0x0F, 0x21, 0x22, 0x23}
 	opcodeDefs["INC"] = opcodeDefinition{0x0F, incOpcodes}
 
 	decOpcodes := make(opcodeList)
-	decOpcodes["B"] = []byte{0x0F, 0x31, 0x32, 0x33}
+	decOpcodes["BYTE"] = []byte{0x0F, 0x31, 0x32, 0x33}
 	opcodeDefs["DEC"] = opcodeDefinition{0x0F, decOpcodes}
 
 	addOpcodes := make(opcodeList)
-	addOpcodes["B"] = []byte{0x0F, 0x0F, 0x0F, 0xA0}
+	addOpcodes["BYTE"] = []byte{0x0F, 0x0F, 0x0F, 0xA0}
 	opcodeDefs["ADD"] = opcodeDefinition{0x0F, addOpcodes}
 
 	subOpcodes := make(opcodeList)
-	subOpcodes["B"] = []byte{0x0F, 0x0F, 0x0F, 0xA1}
+	subOpcodes["BYTE"] = []byte{0x0F, 0x0F, 0x0F, 0xA1}
 	opcodeDefs["SUB"] = opcodeDefinition{0x0F, subOpcodes}
 
 	mulOpcodes := make(opcodeList)
-	mulOpcodes["B"] = []byte{0x0F, 0x0F, 0x0F, 0xA2}
+	mulOpcodes["BYTE"] = []byte{0x0F, 0x0F, 0x0F, 0xA2}
 	opcodeDefs["MUL"] = opcodeDefinition{0x0F, mulOpcodes}
 
 	divOpcodes := make(opcodeList)
-	divOpcodes["B"] = []byte{0x0F, 0x0F, 0x0F, 0xA3}
+	divOpcodes["BYTE"] = []byte{0x0F, 0x0F, 0x0F, 0xA3}
 	opcodeDefs["DIV"] = opcodeDefinition{0x0F, divOpcodes}
 
 	andOpcodes := make(opcodeList)
-	andOpcodes["B"] = []byte{0x0F, 0x0F, 0x0F, 0xC0}
+	andOpcodes["BYTE"] = []byte{0x0F, 0x0F, 0x0F, 0xC0}
 	opcodeDefs["AND"] = opcodeDefinition{0x0F, andOpcodes}
 
 	orOpcodes := make(opcodeList)
-	orOpcodes["B"] = []byte{0x0F, 0x0F, 0x0F, 0xC1}
+	orOpcodes["BYTE"] = []byte{0x0F, 0x0F, 0x0F, 0xC1}
 	opcodeDefs["OR"] = opcodeDefinition{0x0F, orOpcodes}
 
 	cmpOpcodes := make(opcodeList)
-	cmpOpcodes["B"] = []byte{0x0F, 0x0F, 0x0F, 0xC3}
+	cmpOpcodes["BYTE"] = []byte{0x0F, 0x0F, 0x0F, 0xC3}
 	opcodeDefs["CMP"] = opcodeDefinition{0x0F, cmpOpcodes}
 
 	return opcodeDefs
@@ -689,7 +714,7 @@ type tokenGroup struct {
 	Conditionals []string
 	Opcodes      []string
 	Widths       []string
-	CodeTargets  []string
+	Targets      []string
 	DataTargets  []string
 	Values       []string
 	Others       []string
@@ -751,7 +776,7 @@ func isValue(token string) bool {
 	return true
 }
 
-func isCodeTarget(token string) bool {
+func isTarget(token string) bool {
 	count := len(token)
 
 	// must have some length
@@ -862,7 +887,8 @@ func groupTokens(tokens tokenList) tokenGroup {
 		}
 
 		if isLabel(token) {
-			groups.Labels = append(groups.Labels, token)
+			label := token[0 : len(token)-1]
+			groups.Labels = append(groups.Labels, label)
 			handled = true
 		}
 
@@ -871,13 +897,13 @@ func groupTokens(tokens tokenList) tokenGroup {
 			handled = true
 		}
 
-		if !handled && isCodeTarget(token) {
-			groups.CodeTargets = append(groups.CodeTargets, token)
+		if isDataTarget(token) {
+			groups.DataTargets = append(groups.DataTargets, token)
 			handled = true
 		}
 
-		if isDataTarget(token) {
-			groups.DataTargets = append(groups.DataTargets, token)
+		if !handled && isTarget(token) {
+			groups.Targets = append(groups.Targets, token)
 			handled = true
 		}
 
@@ -908,7 +934,7 @@ func validateLine(lineAndTokens lineAndTokenGroup) bool {
 	countConditionals := len(tokens.Conditionals)
 	countOpcodes := len(tokens.Opcodes)
 	countWidths := len(tokens.Widths)
-	countCodeTargets := len(tokens.CodeTargets)
+	countTargets := len(tokens.Targets)
 	countDataTargets := len(tokens.DataTargets)
 	countValues := len(tokens.Values)
 	countOthers := len(tokens.Others)
@@ -920,43 +946,51 @@ func validateLine(lineAndTokens lineAndTokenGroup) bool {
 
 	// a blank line is valid
 	if countLabels == 0 && countNots == 0 && countConditionals == 0 &&
-		countOpcodes == 0 && countWidths == 0 && countCodeTargets == 0 &&
+		countOpcodes == 0 && countWidths == 0 && countTargets == 0 &&
 		countDataTargets == 0 && countValues == 0 {
 		return true
 	}
 
 	// a data declaration has a label, width, and value
 	if countLabels == 1 && countNots == 0 && countConditionals == 0 &&
-		countOpcodes == 0 && countWidths == 1 && countCodeTargets == 0 &&
+		countOpcodes == 0 && countWidths == 1 && countTargets == 0 &&
 		countDataTargets == 0 && countValues == 1 {
 		return true
 	}
 
-	countTargets := countCodeTargets + countDataTargets + countValues
+	countAllTargets := countTargets + countDataTargets + countValues
 
 	// opcodes may have a label, may have a width, may have a value or target
 	// may have a conditional and may have a NOT
 	if countLabels < 2 && countNots < 2 && countConditionals < 2 &&
-		countOpcodes == 1 && countWidths < 2 && countTargets < 2 {
+		countOpcodes == 1 && countWidths < 2 && countAllTargets < 2 {
 		return true
 	}
 
 	return false
 }
 
-func validate(groupList []lineAndTokenGroup) bool {
-	allValid := true
+func validate(groupList []lineAndTokenGroup) ([]tokenGroup, []tokenGroup, []lineAndTokenGroup) {
+	dataTokens := make([]tokenGroup, 0)
+	codeTokens := make([]tokenGroup, 0)
+	invalids := make([]lineAndTokenGroup, 0)
 
 	for _, lineAndTokens := range groupList {
-		if !validateLine(lineAndTokens) {
-			allValid = false
-
-			fmt.Println(lineAndTokens.Line)
-			fmt.Println("Invalid line")
+		if validateLine(lineAndTokens) {
+			tokens := lineAndTokens.Tokens
+			if len(tokens.Opcodes) == 1 {
+				codeTokens = append(codeTokens, tokens)
+			} else {
+				if len(tokens.Values) == 1 {
+					dataTokens = append(dataTokens, tokens)
+				}
+			}
+		} else {
+			invalids = append(invalids, lineAndTokens)
 		}
 	}
 
-	return allValid
+	return dataTokens, codeTokens, invalids
 }
 
 func main() {
@@ -988,19 +1022,21 @@ func main() {
 
 	linesAndTokens := tokenizeSource(source)
 	groupsList := group(linesAndTokens)
-	valid := validate(groupsList)
+	dataTokens, codeTokens, invalids := validate(groupsList)
 
-	if !valid {
+	if len(invalids) > 0 {
 		vputils.CheckAndExit(errors.New("Errors found"))
 	}
 
-	data, dataLabels, codeLabels := generateData(source, opcodeDefs)
+	data, dataLabels := generateData(dataTokens)
 	dataProperties := makeDataProperties(dataAddressWidth)
 	dataPage := module.Page{dataProperties, data}
 
+	codeLabels := generateCode1(codeTokens, opcodeDefs, dataLabels)
+
 	exports := makeExports(codeLabels)
 
-	code := generateCode(source, opcodeDefs, dataLabels, codeLabels)
+	code := generateCode2(codeTokens, opcodeDefs, dataLabels, codeLabels)
 	codeProperties := makeCodeProperties(instructionSetVersion, codeAddressWidth, dataAddressWidth)
 	codePage := module.Page{codeProperties, code}
 
