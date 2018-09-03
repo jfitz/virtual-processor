@@ -1,17 +1,17 @@
-message	STRING	"Hello, world!"
-address	BYTE	0
-newline	BYTE	10
+message:	STRING	"Hello, world!"
+address:	BYTE	0
+newline:	BYTE	10
 
-MAIN	PUSH.B	message
-	POP.B	@address
+MAIN:	PUSH BYTE	message
+	POP BYTE	@address
 
-loop	PUSH.B	@@address
-	FLAGS.B
-	Z:JUMP	printnl
+loop:	PUSH BYTE	@@address
+	FLAGS BYTE
+	ZERO JUMP	printnl
 	OUT
-	INC.B	@address
-	JUMP.A	loop_wrong
+	INC BYTE	@address
+	JUMP	loop_wrong
 
-printnl	PUSH.B	@newline
+printnl:	PUSH BYTE	@newline
 	OUT
 	EXIT

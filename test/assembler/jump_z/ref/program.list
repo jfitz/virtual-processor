@@ -11,31 +11,31 @@ newline:
 
 			CODE
 MAIN:
-00	60 00		PUSH.B	0
-02	13		FLAGS.B	
-03	83		POP.B	
-04	E0 D0 0F	Z:JUMP	zero
-07	60 0E		PUSH.B	msg_nz
+00	60 00		PUSH BYTE	0
+02	13		FLAGS BYTE	
+03	83		POP BYTE	
+04	E0 D0 0F	ZERO JUMP	zero
+07	60 0E		PUSH BYTE	msg_nz
 09	D1 16		CALL	print_s
 0B	D1 22		CALL	print_nl
 0D	D0 15		JUMP	exit
 zero:
-0F	60 00		PUSH.B	msg_z
+0F	60 00		PUSH BYTE	msg_z
 11	D1 16		CALL	print_s
 13	D1 22		CALL	print_nl
 exit:
 15	04		EXIT	
 print_s:
-16	81 20		POP.B	@address
+16	81 20		POP BYTE	@address
 loop:
-18	62 20		PUSH.B	@@address
-1A	13		FLAGS.B	
-1B	E0 D2		Z:RET	
+18	62 20		PUSH BYTE	@@address
+1A	13		FLAGS BYTE	
+1B	E0 D2		ZERO RET	
 1D	08		OUT	
-1E	21 20		INC.B	@address
+1E	21 20		INC BYTE	@address
 20	D0 18		JUMP	loop
 print_nl:
-22	61 21		PUSH.B	@newline
+22	61 21		PUSH BYTE	@newline
 24	08		OUT	
 25	D2		RET	
 			ENDSEGMENT

@@ -3,7 +3,7 @@ Execution started at  00
 Value stack: 00
 02: 13 FLAGS.B p z n
 Value stack: 00
-03: 83  p Z n
+03: 83 POP.B p Z n
 Value stack:
 04: E0 D0 Z:JUMP >0F p Z n
 Value stack:

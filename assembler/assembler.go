@@ -65,7 +65,7 @@ type labelTable map[string]vputils.Address
 
 type opcodeList map[string][]byte
 
-func buildInstruction(opcodemap opcodeList, width string, value string, dataTarget string, dataLabels labelTable, target string, codeLabels labelTable, resolveAddress bool) ([]byte, error) {
+func buildInstructionByAddressMode(opcodemap opcodeList, width string, value string, dataTarget string, target string, dataLabels labelTable, codeLabels labelTable, resolveAddress bool) ([]byte, error) {
 	opcodes, ok := opcodemap[width]
 
 	if !ok {
@@ -98,7 +98,19 @@ func buildInstruction(opcodemap opcodeList, width string, value string, dataTarg
 		opcode := []byte{opcodes[0]}
 		address, ok := dataLabels[dataTarget]
 		if !ok {
-			err := errors.New("Undefined label '" + dataTarget + "'")
+			err := errors.New("Undefined data label '" + dataTarget + "'")
+			vputils.CheckAndExit(err)
+		}
+		instruction := append(opcode, address.Bytes...)
+		return instruction, nil
+	}
+
+	if len(target) > 0 {
+		// immediate value
+		opcode := []byte{opcodes[0]}
+		address, ok := dataLabels[target]
+		if !ok {
+			err := errors.New("Undefined data label '" + target + "'")
 			vputils.CheckAndExit(err)
 		}
 		instruction := append(opcode, address.Bytes...)
@@ -129,51 +141,51 @@ func buildInstruction(opcodemap opcodeList, width string, value string, dataTarg
 		return instruction, nil
 	}
 
-	if len(target) > 0 {
-		// TODO avoid hard-coded values
-		opcode := []byte{opcodes[0]}
-		isJump := opcode[0] == 0xD0 || opcode[0] == 0xD1
+	return nil, errors.New("Invalid opcode")
+}
 
-		if isJump {
-			// for jump instructions, append the target address from code labels
-			address, ok := codeLabels[target]
-			err := errors.New("")
+func buildJumpCallInstruction(opcode byte, target string, dataLabels labelTable, codeLabels labelTable, resolveAddress bool) ([]byte, error) {
+	// TODO avoid hard-coded values
+	instruction := []byte{opcode}
+	isJump := opcode == 0xD0 || opcode == 0xD1
 
-			if !ok {
-				if resolveAddress {
-					err = errors.New("Undefined code label '" + target + "'")
-				} else {
-					address, err = vputils.MakeAddress(0, 1, 0)
-				}
+	if isJump {
+		// for jump and call instructions, append the target address from code labels
+		address, ok := codeLabels[target]
+		err := errors.New("")
 
-				vputils.CheckAndExit(err)
+		if !ok {
+			if resolveAddress {
+				err = errors.New("Undefined code label '" + target + "'")
+			} else {
+				address, err = vputils.MakeAddress(0, 1, 0)
 			}
 
-			// TODO: check address is within code address width
-			instruction := append(opcode, address.Bytes...)
-			return instruction, nil
-		} else {
-			// for other instructions, append the target address from data labels
-			address, ok := dataLabels[target]
-			err := errors.New("")
-
-			if !ok {
-				if resolveAddress {
-					err = errors.New("Undefined data label '" + target + "'")
-				} else {
-					address, err = vputils.MakeAddress(0, 1, 0)
-				}
-
-				vputils.CheckAndExit(err)
-			}
-
-			// TODO: check address is within data address width
-			instruction := append(opcode, address.Bytes...)
-			return instruction, nil
+			vputils.CheckAndExit(err)
 		}
+
+		// TODO: check address is within code address width
+		instruction := append(instruction, address.Bytes...)
+		return instruction, nil
 	}
 
-	return nil, errors.New("Invalid opcode")
+	// for other instructions, append the target address from data labels
+	address, ok := dataLabels[target]
+	err := errors.New("")
+
+	if !ok {
+		if resolveAddress {
+			err = errors.New("Undefined data label '" + target + "'")
+		} else {
+			address, err = vputils.MakeAddress(0, 1, 0)
+		}
+
+		vputils.CheckAndExit(err)
+	}
+
+	// TODO: check address is within data address width
+	instruction = append(instruction, address.Bytes...)
+	return instruction, nil
 }
 
 type opcodeDefinition struct {
@@ -195,7 +207,13 @@ func decodeOpcode(text string, instructionAddress vputils.Address, width string,
 	var err error
 	if len(addressOpcodes) > 0 {
 		// select instruction depends on target
-		instruction, err = buildInstruction(addressOpcodes, width, value, dataTarget, dataLabels, target, codeLabels, resolveAddress)
+		instruction, err = buildInstructionByAddressMode(addressOpcodes, width, value, dataTarget, target, dataLabels, codeLabels, resolveAddress)
+		vputils.CheckAndExit(err)
+	}
+
+	if len(addressOpcodes) == 0 && len(target) > 0 {
+		opcode := instruction[0]
+		instruction, err = buildJumpCallInstruction(opcode, target, dataLabels, codeLabels, resolveAddress)
 		vputils.CheckAndExit(err)
 	}
 
@@ -251,12 +269,12 @@ func dequoteString(s string) []byte {
 func encodeConditional(conditional string, not string) []byte {
 	prefix := []byte{}
 
-	if not == "NOT" {
-		prefix = append(prefix, 0xE8)
-	}
-
 	if conditional == "ZERO" {
 		prefix = append(prefix, 0xE0)
+	}
+
+	if not == "NOT" {
+		prefix = append(prefix, 0xE8)
 	}
 
 	return prefix
@@ -542,7 +560,7 @@ func makeOpcodeDefinitions() map[string]opcodeDefinition {
 	pushOpcodes := make(opcodeList)
 	pushOpcodes["BYTE"] = []byte{0x60, 0x61, 0x62, 0x0F}
 	pushOpcodes["I16"] = []byte{0x64, 0x65, 0x66, 0x0F}
-	pushOpcodes["STR"] = []byte{0x0F, 0x79, 0x7A, 0x0F}
+	pushOpcodes["STRING"] = []byte{0x0F, 0x79, 0x7A, 0x0F}
 	opcodeDefs["PUSH"] = opcodeDefinition{0x0F, pushOpcodes}
 
 	popOpcodes := make(opcodeList)

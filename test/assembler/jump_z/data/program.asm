@@ -1,29 +1,29 @@
-msg_z	STRING	"Value is zero"
-msg_nz	STRING	"Value is not zero"
+msg_z:	STRING	"Value is zero"
+msg_nz:	STRING	"Value is not zero"
 
-MAIN	PUSH.B	0
-	FLAGS.B
-	POP.B
-	Z:JUMP	zero
-	PUSH.B	msg_nz
+MAIN:	PUSH BYTE	0
+	FLAGS BYTE
+	POP BYTE
+	ZERO JUMP	zero
+	PUSH BYTE	msg_nz
 	CALL	print_s
 	CALL	print_nl
 	JUMP	exit
-zero	PUSH.B	msg_z
+zero:	PUSH BYTE	msg_z
 	CALL	print_s
 	CALL	print_nl
-exit	EXIT
+exit:	EXIT
 
-address	BYTE	0
-print_s	POP.B	@address
-loop	PUSH.B	@@address
-	FLAGS.B
-	Z:RET
+address:	BYTE	0
+print_s:	POP BYTE	@address
+loop:	PUSH BYTE	@@address
+	FLAGS BYTE
+	ZERO RET
 	OUT
-	INC.B	@address
+	INC BYTE	@address
 	JUMP	loop
 
-newline	BYTE	10
-print_nl PUSH.B	@newline
+newline:	BYTE	10
+print_nl:	PUSH BYTE	@newline
 	OUT
 	RET

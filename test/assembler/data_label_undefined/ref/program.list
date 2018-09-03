@@ -1,5 +1,7 @@
 			DATA
 MESSAGE:
 00			BYTE		48
+			ENDSEGMENT
+
 Undefined label '@MESSAGE2'
 exit status 1

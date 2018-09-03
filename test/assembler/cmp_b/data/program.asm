@@ -1,10 +1,10 @@
-MAIN	PUSH.B	1
-	PUSH.B	64
-	CMP.B
-	Z:JUMP	equal
-	PUSH.B	65
+MAIN:	PUSH BYTE	1
+	PUSH BYTE	64
+	CMP BYTE
+	ZERO JUMP	equal
+	PUSH BYTE	65
 	OUT
-	JUMP.R 	exit
-equal	PUSH.B	66
+	JUMP 	exit
+equal:	PUSH BYTE	66
 	OUT
-exit	EXIT
+exit:	EXIT

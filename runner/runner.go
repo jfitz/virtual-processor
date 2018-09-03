@@ -80,6 +80,7 @@ func defineOpcodes() opcodeTable {
 	opcodeDefinitions[0x00] = opcodeDefinition{"NOP", "", ""}
 	opcodeDefinitions[0x04] = opcodeDefinition{"EXIT", "", ""}
 	opcodeDefinitions[0x05] = opcodeDefinition{"KCALL", "", ""}
+	opcodeDefinitions[0x08] = opcodeDefinition{"OUT", "", "S"}
 
 	opcodeDefinitions[0x60] = opcodeDefinition{"PUSH", "B", "V"}
 	opcodeDefinitions[0x61] = opcodeDefinition{"PUSH", "B", "D"}
@@ -91,9 +92,9 @@ func defineOpcodes() opcodeTable {
 
 	opcodeDefinitions[0x79] = opcodeDefinition{"PUSH", "STR", "D"}
 
-	opcodeDefinitions[0x80] = opcodeDefinition{"POP", "B", "V"}
 	opcodeDefinitions[0x81] = opcodeDefinition{"POP", "B", "D"}
-	opcodeDefinitions[0x08] = opcodeDefinition{"OUT", "", "S"}
+	opcodeDefinitions[0x82] = opcodeDefinition{"POP", "B", "I"}
+	opcodeDefinitions[0x83] = opcodeDefinition{"POP", "B", "S"}
 
 	opcodeDefinitions[0x11] = opcodeDefinition{"FLAGS", "B", "D"}
 	opcodeDefinitions[0x12] = opcodeDefinition{"FLAGS", "B", "I"}

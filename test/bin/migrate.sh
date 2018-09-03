@@ -6,8 +6,10 @@ echo Migrating all tests...
 ECODE=0
 
 for F in "$TESTROOT/$SRCGROUP"/*; do
-    if [ -e "$TESTROOT/$SRCGROUP/${F##*/}/ref/program.module" ]
+    FILENAME=${F##*/}
+    if [ -e "$TESTROOT/$SRCGROUP/$FILENAME/ref/program.module" ] && [ -e "$TESTROOT/$DESTGROUP/$FILENAME/data/program.module" ]
     then
-	cp "$TESTROOT/$SRCGROUP/${F##*/}/ref/program.module" "$TESTROOT/$DESTGROUP/${F##*/}/data"
+	echo Copying "$TESTROOT/$SRCGROUP/$FILENAME/ref/program.module" to "$TESTROOT/$DESTGROUP/$FILENAME/data"
+	cp "$TESTROOT/$SRCGROUP/$FILENAME/ref/program.module" "$TESTROOT/$DESTGROUP/$FILENAME/data"
     fi
 done
