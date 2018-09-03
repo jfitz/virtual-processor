@@ -272,7 +272,7 @@ func (mod *Module) TopPop() (vputils.Address, error) {
 	return address, err
 }
 
-// GetConditionals
+// GetConditionals - get the conditionals for instruction at PC
 func (mod *Module) GetConditionals() (Conditionals, error) {
 	conditionals := Conditionals{}
 	err := errors.New("")
@@ -294,7 +294,7 @@ func (mod *Module) GetConditionals() (Conditionals, error) {
 	return conditionals, err
 }
 
-// GetOpcode
+// GetOpcode - get the opcode at PC
 func (mod Module) GetOpcode() (byte, error) {
 	return mod.CodePage.Contents.GetByte(mod.pc)
 }
