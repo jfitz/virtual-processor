@@ -236,7 +236,7 @@ func WriteString(f *os.File, text string) {
 }
 
 // ReadBinaryBlock - read a binary block from a module file
-func ReadBinaryBlock(f *os.File, width int) []byte {
+func ReadBinaryBlock(f *os.File, width int) ([]byte, error) {
 	checkWidth(width)
 
 	countBytes := 0
@@ -260,10 +260,10 @@ func ReadBinaryBlock(f *os.File, width int) []byte {
 	}
 
 	if checkCountBytes != countBytes {
-		CheckAndExit(errors.New("Block count error"))
+		return code, errors.New("Block count error")
 	}
 
-	return code
+	return code, nil
 }
 
 // WriteBinaryBlock - write a binary block to a module file
@@ -290,7 +290,7 @@ func WriteBinaryBlock(name string, bytes []byte, f *os.File, width int) {
 }
 
 // ReadTextTable - read a text table from a module file
-func ReadTextTable(f *os.File) []NameValue {
+func ReadTextTable(f *os.File) ([]NameValue, error) {
 	stxByte := []byte{0x02}
 	etxByte := []byte{0x03}
 	fsByte := []byte{0x1c}
@@ -298,12 +298,16 @@ func ReadTextTable(f *os.File) []NameValue {
 
 	oneByte := make([]byte, 1)
 
+	nameValues := []NameValue{}
+
 	// read STX
 	_, err := f.Read(oneByte)
-	CheckAndPanic(err)
+	if err != nil {
+		return nameValues, errors.New("Could not read byte")
+	}
 
 	if oneByte[0] != stxByte[0] {
-		CheckAndExit(errors.New("Did not find STX"))
+		return nameValues, errors.New("Did not find STX")
 	}
 
 	// read until ETX
@@ -311,7 +315,10 @@ func ReadTextTable(f *os.File) []NameValue {
 	oneByte[0] = 0
 	for oneByte[0] != etxByte[0] {
 		_, err := f.Read(oneByte)
-		CheckAndPanic(err)
+		if err != nil {
+			return nameValues, errors.New("Could not read byte")
+		}
+
 		if oneByte[0] != etxByte[0] {
 			bytes = append(bytes, oneByte...)
 		}
@@ -319,8 +326,6 @@ func ReadTextTable(f *os.File) []NameValue {
 
 	allText := string(bytes)
 	records := strings.Split(allText, string(rsByte))
-
-	nameValues := []NameValue{}
 
 	for _, record := range records {
 		fields := strings.Split(record, string(fsByte))
@@ -332,11 +337,11 @@ func ReadTextTable(f *os.File) []NameValue {
 		}
 	}
 
-	return nameValues
+	return nameValues, nil
 }
 
 // WriteTextTable - write a text table to a module file
-func WriteTextTable(name string, table []NameValue, f *os.File) {
+func WriteTextTable(name string, table []NameValue, f *os.File) error {
 	WriteString(f, name)
 
 	stxByte := []byte{0x02}
@@ -354,31 +359,47 @@ func WriteTextTable(name string, table []NameValue, f *os.File) {
 
 		// write name
 		_, err = f.Write(name)
-		CheckAndPanic(err)
+		if err != nil {
+			return errors.New("Failed to write name")
+		}
+
 		// write FS
 		_, err = f.Write(fsByte)
-		CheckAndPanic(err)
+		if err != nil {
+			return errors.New("Failed to write FS")
+		}
+
 		// write value
 		_, err = f.Write(value)
-		CheckAndPanic(err)
+		if err != nil {
+			return errors.New("Failed to write bytes")
+		}
+
 		// write RS (0x1e)
 		_, err = f.Write(rsByte)
-		CheckAndPanic(err)
+		if err != nil {
+			return errors.New("Failed to write RS")
+		}
+
 	}
 	// write ETX
 	_, err = f.Write(etxByte)
-	CheckAndPanic(err)
+
+	return err
 }
 
 // ReadFile - read a text file
-func ReadFile(sourceFile string) []string {
+func ReadFile(sourceFile string) ([]string, error) {
 	b, err := ioutil.ReadFile(sourceFile)
-	CheckAndPanic(err)
+	if err != nil {
+		empty := make([]string, 0)
+		return empty, errors.New("Failed to read file")
+	}
 
 	source := string(b)
 	sourceLines := strings.Split(source, "\n")
 
-	return sourceLines
+	return sourceLines, nil
 }
 
 // Address --------------------------------

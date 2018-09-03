@@ -183,17 +183,23 @@ func decodeInstruction(opcode byte, def opcodeDefinition, mod module.Module) mod
 	instructionSize := def.opcodeSize()
 	targetSize := def.targetSize()
 
+	err := errors.New("")
+
 	// decode immediate value
 	if def.AddressMode == "V" {
 
 		switch def.Width {
 
 		case "BYTE":
-			workBytes = mod.ImmediateByte()
+			workBytes, err = mod.ImmediateByte()
+			vputils.CheckAndExit(err)
+
 			valueStr = fmt.Sprintf("%02X", workBytes[0])
 
 		case "I16":
-			workBytes = mod.ImmediateInt()
+			workBytes, err = mod.ImmediateInt()
+			vputils.CheckAndExit(err)
+
 			valueStr = fmt.Sprintf("%02X%02X", workBytes[1], workBytes[0])
 
 		}
@@ -204,9 +210,14 @@ func decodeInstruction(opcode byte, def opcodeDefinition, mod module.Module) mod
 
 	// decode memory target
 	if def.AddressMode == "D" {
-		dataAddress = mod.DirectAddress()
+		dataAddress, err = mod.DirectAddress()
+		vputils.CheckAndExit(err)
+
 		fullOpcode = append(fullOpcode, dataAddress.Bytes...)
-		buffer, _ := mod.DirectByte()
+
+		buffer, err := mod.DirectByte()
+		vputils.CheckAndExit(err)
+
 		workBytes = append(workBytes, buffer)
 		valueStr = fmt.Sprintf("%02X", buffer)
 
@@ -214,11 +225,18 @@ func decodeInstruction(opcode byte, def opcodeDefinition, mod module.Module) mod
 	}
 
 	if def.AddressMode == "I" {
-		dataAddress1 = mod.DirectAddress()
+		dataAddress1, err = mod.DirectAddress()
+		vputils.CheckAndExit(err)
+
 		fullOpcode = append(fullOpcode, dataAddress1.Bytes...)
 		workBytes = append(workBytes, dataAddress.Bytes...)
-		dataAddress = mod.IndirectAddress()
-		buffer, _ := mod.IndirectByte()
+
+		dataAddress, err = mod.IndirectAddress()
+		vputils.CheckAndExit(err)
+
+		buffer, err := mod.IndirectByte()
+		vputils.CheckAndExit(err)
+
 		workBytes = append(workBytes, buffer)
 		valueStr = fmt.Sprintf("%02X", buffer)
 
@@ -227,9 +245,10 @@ func decodeInstruction(opcode byte, def opcodeDefinition, mod module.Module) mod
 
 	// decode jump/call target
 	if opcode == 0xD0 || opcode == 0xD1 {
-		jumpAddress = mod.DirectAddress()
-		fullOpcode = append(fullOpcode, jumpAddress.Bytes...)
+		jumpAddress, err = mod.DirectAddress()
+		vputils.CheckAndExit(err)
 
+		fullOpcode = append(fullOpcode, jumpAddress.Bytes...)
 		instructionSize += jumpAddress.NumBytes()
 	}
 

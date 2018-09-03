@@ -1026,7 +1026,8 @@ func main() {
 
 	// read source
 	sourceFile := args[0]
-	source := vputils.ReadFile(sourceFile)
+	source, err := vputils.ReadFile(sourceFile)
+	vputils.CheckAndExit(err)
 
 	// store output module file name
 	moduleFile := ""
