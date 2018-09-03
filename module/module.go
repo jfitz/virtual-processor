@@ -506,7 +506,10 @@ func (mod *Module) ExecuteOpcode(opcode byte, vStack vputils.ByteStack, instruct
 
 			for b != 0 {
 				b, err = mod.DataPage.Contents.GetByte(address)
-				vputils.CheckAndExit(err)
+				if err != nil {
+					return vStack, flags, syscall, err
+				}
+
 				c := string(b)
 				s += c
 				address = address.AddByte(1)
@@ -521,7 +524,9 @@ func (mod *Module) ExecuteOpcode(opcode byte, vStack vputils.ByteStack, instruct
 		// POP.B direct address
 		if execute {
 			bytes, vStack, err = vStack.PopByte(1)
-			vputils.CheckAndExit(err)
+			if err != nil {
+				return vStack, flags, syscall, err
+			}
 
 			err = mod.DataPage.Contents.PutByte(dataAddress, bytes[0])
 			vputils.CheckAndPanic(err)
@@ -533,7 +538,9 @@ func (mod *Module) ExecuteOpcode(opcode byte, vStack vputils.ByteStack, instruct
 		// POP.B value (to nowhere)
 		if execute {
 			bytes, vStack, err = vStack.PopByte(1)
-			vputils.CheckAndExit(err)
+			if err != nil {
+				return vStack, flags, syscall, err
+			}
 		}
 
 		newpc = pc.AddByte(instructionSize)
@@ -542,10 +549,14 @@ func (mod *Module) ExecuteOpcode(opcode byte, vStack vputils.ByteStack, instruct
 		// ADD.B
 		if execute {
 			bytes1, vStack, err = vStack.PopByte(1)
-			vputils.CheckAndExit(err)
+			if err != nil {
+				return vStack, flags, syscall, err
+			}
 
 			bytes2, vStack, err = vStack.PopByte(1)
-			vputils.CheckAndExit(err)
+			if err != nil {
+				return vStack, flags, syscall, err
+			}
 
 			value := bytes1[0] + bytes2[0]
 			vStack = vStack.PushByte(value)
@@ -557,10 +568,14 @@ func (mod *Module) ExecuteOpcode(opcode byte, vStack vputils.ByteStack, instruct
 		// SUB.B
 		if execute {
 			bytes1, vStack, err = vStack.PopByte(1)
-			vputils.CheckAndExit(err)
+			if err != nil {
+				return vStack, flags, syscall, err
+			}
 
 			bytes2, vStack, err = vStack.PopByte(1)
-			vputils.CheckAndExit(err)
+			if err != nil {
+				return vStack, flags, syscall, err
+			}
 
 			value := bytes1[0] - bytes2[0]
 			vStack = vStack.PushByte(value)
@@ -572,10 +587,14 @@ func (mod *Module) ExecuteOpcode(opcode byte, vStack vputils.ByteStack, instruct
 		// MUL.B
 		if execute {
 			bytes1, vStack, err = vStack.PopByte(1)
-			vputils.CheckAndExit(err)
+			if err != nil {
+				return vStack, flags, syscall, err
+			}
 
 			bytes2, vStack, err = vStack.PopByte(1)
-			vputils.CheckAndExit(err)
+			if err != nil {
+				return vStack, flags, syscall, err
+			}
 
 			value := bytes1[0] * bytes2[0]
 			// TODO: push 2 bytes
@@ -588,10 +607,14 @@ func (mod *Module) ExecuteOpcode(opcode byte, vStack vputils.ByteStack, instruct
 		// DIV.B
 		if execute {
 			bytes1, vStack, err = vStack.PopByte(1)
-			vputils.CheckAndExit(err)
+			if err != nil {
+				return vStack, flags, syscall, err
+			}
 
 			bytes2, vStack, err = vStack.PopByte(1)
-			vputils.CheckAndExit(err)
+			if err != nil {
+				return vStack, flags, syscall, err
+			}
 
 			value := bytes1[0] / bytes2[0]
 			// TODO: push quotient and remainder (2 bytes)
@@ -604,10 +627,14 @@ func (mod *Module) ExecuteOpcode(opcode byte, vStack vputils.ByteStack, instruct
 		// AND.B
 		if execute {
 			bytes1, vStack, err = vStack.PopByte(1)
-			vputils.CheckAndExit(err)
+			if err != nil {
+				return vStack, flags, syscall, err
+			}
 
 			bytes2, vStack, err = vStack.PopByte(1)
-			vputils.CheckAndExit(err)
+			if err != nil {
+				return vStack, flags, syscall, err
+			}
 
 			value := bytes1[0] & bytes2[0]
 			vStack = vStack.PushByte(value)
@@ -619,10 +646,14 @@ func (mod *Module) ExecuteOpcode(opcode byte, vStack vputils.ByteStack, instruct
 		// OR.B
 		if execute {
 			bytes1, vStack, err = vStack.PopByte(1)
-			vputils.CheckAndExit(err)
+			if err != nil {
+				return vStack, flags, syscall, err
+			}
 
 			bytes2, vStack, err = vStack.PopByte(1)
-			vputils.CheckAndExit(err)
+			if err != nil {
+				return vStack, flags, syscall, err
+			}
 
 			value := bytes1[0] | bytes2[0]
 			vStack = vStack.PushByte(value)
@@ -634,10 +665,14 @@ func (mod *Module) ExecuteOpcode(opcode byte, vStack vputils.ByteStack, instruct
 		// CMP.B
 		if execute {
 			bytes1, vStack, err = vStack.PopByte(1)
-			vputils.CheckAndExit(err)
+			if err != nil {
+				return vStack, flags, syscall, err
+			}
 
 			bytes2, vStack, err = vStack.PopByte(1)
-			vputils.CheckAndExit(err)
+			if err != nil {
+				return vStack, flags, syscall, err
+			}
 
 			value := bytes1[0] - bytes2[0]
 
@@ -668,7 +703,9 @@ func (mod *Module) ExecuteOpcode(opcode byte, vStack vputils.ByteStack, instruct
 		// RET
 		if execute {
 			newpc, err = mod.TopPop()
-			vputils.CheckAndExit(err)
+			if err != nil {
+				return vStack, flags, syscall, err
+			}
 		} else {
 			newpc = pc.AddByte(instructionSize)
 		}
@@ -711,7 +748,9 @@ func (mod Module) Write(filename string) {
 // Read a file into a module
 func Read(moduleFile string) (Module, error) {
 	f, err := os.Open(moduleFile)
-	vputils.CheckAndExit(err)
+	if err != nil {
+		return Module{}, err
+	}
 
 	defer f.Close()
 
@@ -726,7 +765,9 @@ func Read(moduleFile string) (Module, error) {
 	}
 
 	properties, err := vputils.ReadTextTable(f)
-	vputils.CheckAndExit(err)
+	if err != nil {
+		return Module{}, err
+	}
 
 	codeAddressWidth := 1
 	dataAddressWidth := 1
@@ -737,7 +778,9 @@ func Read(moduleFile string) (Module, error) {
 	}
 
 	exports, err := vputils.ReadTextTable(f)
-	vputils.CheckAndExit(err)
+	if err != nil {
+		return Module{}, err
+	}
 
 	header = vputils.ReadString(f)
 	if header != "code_properties" {
@@ -745,7 +788,9 @@ func Read(moduleFile string) (Module, error) {
 	}
 
 	codeProperties, err := vputils.ReadTextTable(f)
-	vputils.CheckAndExit(err)
+	if err != nil {
+		return Module{}, err
+	}
 
 	header = vputils.ReadString(f)
 	if header != "code" {
@@ -753,7 +798,9 @@ func Read(moduleFile string) (Module, error) {
 	}
 
 	code, err := vputils.ReadBinaryBlock(f, codeAddressWidth)
-	vputils.CheckAndExit(err)
+	if err != nil {
+		return Module{}, err
+	}
 
 	codePage := Page{codeProperties, code}
 
@@ -763,7 +810,9 @@ func Read(moduleFile string) (Module, error) {
 	}
 
 	dataProperties, err := vputils.ReadTextTable(f)
-	vputils.CheckAndExit(err)
+	if err != nil {
+		return Module{}, err
+	}
 
 	header = vputils.ReadString(f)
 	if header != "data" {
@@ -771,7 +820,9 @@ func Read(moduleFile string) (Module, error) {
 	}
 
 	data, err := vputils.ReadBinaryBlock(f, dataAddressWidth)
-	vputils.CheckAndExit(err)
+	if err != nil {
+		return Module{}, err
+	}
 
 	dataPage := Page{dataProperties, data}
 
