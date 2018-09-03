@@ -1,9 +1,9 @@
 Execution started at  00
-00: 60 PUSH.B =02 p z n
+00: 60 02 PUSH BYTE =02 p z n
 Value stack: 02
-02: 60 PUSH.B =90 p z n
+02: 60 90 PUSH BYTE =90 p z n
 Value stack: 02 90
-04: A3 DIV.B p z n
+04: A3 DIV BYTE p z n
 Value stack: 48
 05: 08 OUT p z n
 H

@@ -50,7 +50,7 @@ func decodeConditional(conditional byte) string {
 
 	switch conditional {
 	case 0xE0:
-		condiString = "Z"
+		condiString = "ZERO"
 	case 0xE8:
 		condiString = "NOT"
 	default:
@@ -72,14 +72,14 @@ func (conditionals Conditionals) ToString() string {
 		ss = append(ss, s)
 	}
 
-	result := strings.Join(ss, ".")
+	result := strings.Join(ss, " ")
 
 	return result
 }
 
 // ToByteString - convert to string of byte representations
 func (conditionals Conditionals) ToByteString() string {
-	return fmt.Sprintf("% 02X", conditionals)
+	return fmt.Sprintf("%02X ", conditionals)
 }
 
 // Evaluate - evaluate as true or false
@@ -121,12 +121,24 @@ func (conditionals Conditionals) Evaluate(flags FlagsGroup) (bool, error) {
 
 // InstructionDefinition ---------
 type InstructionDefinition struct {
+	FullOpcode  []byte
 	Address1    vputils.Address
 	Address     vputils.Address
 	Size        int
 	JumpAddress vputils.Address
 	Bytes       []byte
 	ValueStr    string
+}
+
+// ToByteString - convert full opcode to printable
+func (def InstructionDefinition) ToByteString() string {
+	s := ""
+
+	for _, b := range def.FullOpcode {
+		s += fmt.Sprintf("%02X ", b)
+	}
+
+	return s
 }
 
 // Page --------------------------
@@ -352,10 +364,10 @@ func (mod *Module) ExecuteOpcode(opcode byte, vStack vputils.ByteStack, instruct
 	case 0x13:
 		// FLAGS.B (implied stack)
 		if execute {
-			bytes[0], err = vStack.TopByte()
+			buffer, err := vStack.TopByte()
 			vputils.CheckAndPanic(err)
 
-			flags.Zero = bytes[0] == 0
+			flags.Zero = buffer == 0
 		}
 
 		newpc = pc.AddByte(instructionSize)

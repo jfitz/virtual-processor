@@ -1,130 +1,130 @@
 Execution started at  00
-00: 79 PUSH.STR @00 =48 p z n
+00: 79 00 PUSH STRING @00 =48 p z n
 Value stack: 00 21 64 6C 72 6F 77 20 2C 6F 6C 6C 65 48 0E
-02: 81 POP.B @0E =00 p z n
+02: 81 0E POP BYTE @0E =00 p z n
 Value stack: 00 21 64 6C 72 6F 77 20 2C 6F 6C 6C 65 48
-04: 13 FLAGS.B p z n
+04: 13 FLAGS BYTE p z n
 Value stack: 00 21 64 6C 72 6F 77 20 2C 6F 6C 6C 65 48
-05: E0 D0 Z:JUMP >0B p z n
+05: E0 D0 0B ZERO JUMP >0B p z n
 Value stack: 00 21 64 6C 72 6F 77 20 2C 6F 6C 6C 65 48
 08: 08 OUT p z n
 H
 Value stack: 00 21 64 6C 72 6F 77 20 2C 6F 6C 6C 65
-09: D0 JUMP >04 p z n
+09: D0 04 JUMP >04 p z n
 Value stack: 00 21 64 6C 72 6F 77 20 2C 6F 6C 6C 65
-04: 13 FLAGS.B p z n
+04: 13 FLAGS BYTE p z n
 Value stack: 00 21 64 6C 72 6F 77 20 2C 6F 6C 6C 65
-05: E0 D0 Z:JUMP >0B p z n
+05: E0 D0 0B ZERO JUMP >0B p z n
 Value stack: 00 21 64 6C 72 6F 77 20 2C 6F 6C 6C 65
 08: 08 OUT p z n
 e
 Value stack: 00 21 64 6C 72 6F 77 20 2C 6F 6C 6C
-09: D0 JUMP >04 p z n
+09: D0 04 JUMP >04 p z n
 Value stack: 00 21 64 6C 72 6F 77 20 2C 6F 6C 6C
-04: 13 FLAGS.B p z n
+04: 13 FLAGS BYTE p z n
 Value stack: 00 21 64 6C 72 6F 77 20 2C 6F 6C 6C
-05: E0 D0 Z:JUMP >0B p z n
+05: E0 D0 0B ZERO JUMP >0B p z n
 Value stack: 00 21 64 6C 72 6F 77 20 2C 6F 6C 6C
 08: 08 OUT p z n
 l
 Value stack: 00 21 64 6C 72 6F 77 20 2C 6F 6C
-09: D0 JUMP >04 p z n
+09: D0 04 JUMP >04 p z n
 Value stack: 00 21 64 6C 72 6F 77 20 2C 6F 6C
-04: 13 FLAGS.B p z n
+04: 13 FLAGS BYTE p z n
 Value stack: 00 21 64 6C 72 6F 77 20 2C 6F 6C
-05: E0 D0 Z:JUMP >0B p z n
+05: E0 D0 0B ZERO JUMP >0B p z n
 Value stack: 00 21 64 6C 72 6F 77 20 2C 6F 6C
 08: 08 OUT p z n
 l
 Value stack: 00 21 64 6C 72 6F 77 20 2C 6F
-09: D0 JUMP >04 p z n
+09: D0 04 JUMP >04 p z n
 Value stack: 00 21 64 6C 72 6F 77 20 2C 6F
-04: 13 FLAGS.B p z n
+04: 13 FLAGS BYTE p z n
 Value stack: 00 21 64 6C 72 6F 77 20 2C 6F
-05: E0 D0 Z:JUMP >0B p z n
+05: E0 D0 0B ZERO JUMP >0B p z n
 Value stack: 00 21 64 6C 72 6F 77 20 2C 6F
 08: 08 OUT p z n
 o
 Value stack: 00 21 64 6C 72 6F 77 20 2C
-09: D0 JUMP >04 p z n
+09: D0 04 JUMP >04 p z n
 Value stack: 00 21 64 6C 72 6F 77 20 2C
-04: 13 FLAGS.B p z n
+04: 13 FLAGS BYTE p z n
 Value stack: 00 21 64 6C 72 6F 77 20 2C
-05: E0 D0 Z:JUMP >0B p z n
+05: E0 D0 0B ZERO JUMP >0B p z n
 Value stack: 00 21 64 6C 72 6F 77 20 2C
 08: 08 OUT p z n
 ,
 Value stack: 00 21 64 6C 72 6F 77 20
-09: D0 JUMP >04 p z n
+09: D0 04 JUMP >04 p z n
 Value stack: 00 21 64 6C 72 6F 77 20
-04: 13 FLAGS.B p z n
+04: 13 FLAGS BYTE p z n
 Value stack: 00 21 64 6C 72 6F 77 20
-05: E0 D0 Z:JUMP >0B p z n
+05: E0 D0 0B ZERO JUMP >0B p z n
 Value stack: 00 21 64 6C 72 6F 77 20
 08: 08 OUT p z n
  
 Value stack: 00 21 64 6C 72 6F 77
-09: D0 JUMP >04 p z n
+09: D0 04 JUMP >04 p z n
 Value stack: 00 21 64 6C 72 6F 77
-04: 13 FLAGS.B p z n
+04: 13 FLAGS BYTE p z n
 Value stack: 00 21 64 6C 72 6F 77
-05: E0 D0 Z:JUMP >0B p z n
+05: E0 D0 0B ZERO JUMP >0B p z n
 Value stack: 00 21 64 6C 72 6F 77
 08: 08 OUT p z n
 w
 Value stack: 00 21 64 6C 72 6F
-09: D0 JUMP >04 p z n
+09: D0 04 JUMP >04 p z n
 Value stack: 00 21 64 6C 72 6F
-04: 13 FLAGS.B p z n
+04: 13 FLAGS BYTE p z n
 Value stack: 00 21 64 6C 72 6F
-05: E0 D0 Z:JUMP >0B p z n
+05: E0 D0 0B ZERO JUMP >0B p z n
 Value stack: 00 21 64 6C 72 6F
 08: 08 OUT p z n
 o
 Value stack: 00 21 64 6C 72
-09: D0 JUMP >04 p z n
+09: D0 04 JUMP >04 p z n
 Value stack: 00 21 64 6C 72
-04: 13 FLAGS.B p z n
+04: 13 FLAGS BYTE p z n
 Value stack: 00 21 64 6C 72
-05: E0 D0 Z:JUMP >0B p z n
+05: E0 D0 0B ZERO JUMP >0B p z n
 Value stack: 00 21 64 6C 72
 08: 08 OUT p z n
 r
 Value stack: 00 21 64 6C
-09: D0 JUMP >04 p z n
+09: D0 04 JUMP >04 p z n
 Value stack: 00 21 64 6C
-04: 13 FLAGS.B p z n
+04: 13 FLAGS BYTE p z n
 Value stack: 00 21 64 6C
-05: E0 D0 Z:JUMP >0B p z n
+05: E0 D0 0B ZERO JUMP >0B p z n
 Value stack: 00 21 64 6C
 08: 08 OUT p z n
 l
 Value stack: 00 21 64
-09: D0 JUMP >04 p z n
+09: D0 04 JUMP >04 p z n
 Value stack: 00 21 64
-04: 13 FLAGS.B p z n
+04: 13 FLAGS BYTE p z n
 Value stack: 00 21 64
-05: E0 D0 Z:JUMP >0B p z n
+05: E0 D0 0B ZERO JUMP >0B p z n
 Value stack: 00 21 64
 08: 08 OUT p z n
 d
 Value stack: 00 21
-09: D0 JUMP >04 p z n
+09: D0 04 JUMP >04 p z n
 Value stack: 00 21
-04: 13 FLAGS.B p z n
+04: 13 FLAGS BYTE p z n
 Value stack: 00 21
-05: E0 D0 Z:JUMP >0B p z n
+05: E0 D0 0B ZERO JUMP >0B p z n
 Value stack: 00 21
 08: 08 OUT p z n
 !
 Value stack: 00
-09: D0 JUMP >04 p z n
+09: D0 04 JUMP >04 p z n
 Value stack: 00
-04: 13 FLAGS.B p z n
+04: 13 FLAGS BYTE p z n
 Value stack: 00
-05: E0 D0 Z:JUMP >0B p Z n
+05: E0 D0 0B ZERO JUMP >0B p Z n
 Value stack: 00
-0B: 60 PUSH.B =0A p Z n
+0B: 60 0A PUSH BYTE =0A p Z n
 Value stack: 00 0A
 0D: 08 OUT p Z n
 

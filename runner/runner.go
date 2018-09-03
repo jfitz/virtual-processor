@@ -18,7 +18,7 @@ import (
 // --------------------
 type opcodeDefinition struct {
 	Name        string
-	TargetType  string
+	Width       string
 	AddressMode string
 }
 
@@ -26,9 +26,9 @@ type opcodeDefinition struct {
 func (def opcodeDefinition) toString() string {
 	s := def.Name
 
-	if len(def.TargetType) > 0 {
-		s += "."
-		s += def.TargetType
+	if len(def.Width) > 0 {
+		s += " "
+		s += def.Width
 	}
 
 	return s
@@ -43,22 +43,22 @@ func (def opcodeDefinition) opcodeSize() int {
 func (def opcodeDefinition) targetSize() int {
 	targetSize := 0
 
-	if def.TargetType == "B" {
+	if def.Width == "BYTE" {
 		targetSize = 1
 	}
-	if def.TargetType == "I16" {
+	if def.Width == "I16" {
 		targetSize = 2
 	}
-	if def.TargetType == "I32" {
+	if def.Width == "I32" {
 		targetSize = 4
 	}
-	if def.TargetType == "I64" {
+	if def.Width == "I64" {
 		targetSize = 8
 	}
-	if def.TargetType == "F32" {
+	if def.Width == "F32" {
 		targetSize = 4
 	}
-	if def.TargetType == "F64" {
+	if def.Width == "F64" {
 		targetSize = 8
 	}
 
@@ -82,41 +82,41 @@ func defineOpcodes() opcodeTable {
 	opcodeDefinitions[0x05] = opcodeDefinition{"KCALL", "", ""}
 	opcodeDefinitions[0x08] = opcodeDefinition{"OUT", "", "S"}
 
-	opcodeDefinitions[0x60] = opcodeDefinition{"PUSH", "B", "V"}
-	opcodeDefinitions[0x61] = opcodeDefinition{"PUSH", "B", "D"}
-	opcodeDefinitions[0x62] = opcodeDefinition{"PUSH", "B", "I"}
+	opcodeDefinitions[0x60] = opcodeDefinition{"PUSH", "BYTE", "V"}
+	opcodeDefinitions[0x61] = opcodeDefinition{"PUSH", "BYTE", "D"}
+	opcodeDefinitions[0x62] = opcodeDefinition{"PUSH", "BYTE", "I"}
 
 	opcodeDefinitions[0x64] = opcodeDefinition{"PUSH", "I16", "V"}
 	opcodeDefinitions[0x65] = opcodeDefinition{"PUSH", "I16", "D"}
 	opcodeDefinitions[0x66] = opcodeDefinition{"PUSH", "I16", "I"}
 
-	opcodeDefinitions[0x79] = opcodeDefinition{"PUSH", "STR", "D"}
+	opcodeDefinitions[0x79] = opcodeDefinition{"PUSH", "STRING", "D"}
 
-	opcodeDefinitions[0x81] = opcodeDefinition{"POP", "B", "D"}
-	opcodeDefinitions[0x82] = opcodeDefinition{"POP", "B", "I"}
-	opcodeDefinitions[0x83] = opcodeDefinition{"POP", "B", "S"}
+	opcodeDefinitions[0x81] = opcodeDefinition{"POP", "BYTE", "D"}
+	opcodeDefinitions[0x82] = opcodeDefinition{"POP", "BYTE", "I"}
+	opcodeDefinitions[0x83] = opcodeDefinition{"POP", "BYTE", "S"}
 
-	opcodeDefinitions[0x11] = opcodeDefinition{"FLAGS", "B", "D"}
-	opcodeDefinitions[0x12] = opcodeDefinition{"FLAGS", "B", "I"}
-	opcodeDefinitions[0x13] = opcodeDefinition{"FLAGS", "B", "S"}
+	opcodeDefinitions[0x11] = opcodeDefinition{"FLAGS", "BYTE", "D"}
+	opcodeDefinitions[0x12] = opcodeDefinition{"FLAGS", "BYTE", "I"}
+	opcodeDefinitions[0x13] = opcodeDefinition{"FLAGS", "BYTE", "S"}
 
-	opcodeDefinitions[0x21] = opcodeDefinition{"INC", "B", "D"}
-	opcodeDefinitions[0x22] = opcodeDefinition{"INC", "B", "I"}
-	opcodeDefinitions[0x31] = opcodeDefinition{"DEC", "B", "D"}
-	opcodeDefinitions[0x32] = opcodeDefinition{"DEC", "B", "I"}
+	opcodeDefinitions[0x21] = opcodeDefinition{"INC", "BYTE", "D"}
+	opcodeDefinitions[0x22] = opcodeDefinition{"INC", "BYTE", "I"}
+	opcodeDefinitions[0x31] = opcodeDefinition{"DEC", "BYTE", "D"}
+	opcodeDefinitions[0x32] = opcodeDefinition{"DEC", "BYTE", "I"}
 
 	opcodeDefinitions[0xD0] = opcodeDefinition{"JUMP", "", ""}
 	opcodeDefinitions[0xD1] = opcodeDefinition{"CALL", "", ""}
 	opcodeDefinitions[0xD2] = opcodeDefinition{"RET", "", ""}
 
-	opcodeDefinitions[0xA0] = opcodeDefinition{"ADD", "B", ""}
-	opcodeDefinitions[0xA1] = opcodeDefinition{"SUB", "B", ""}
-	opcodeDefinitions[0xA2] = opcodeDefinition{"MUL", "B", ""}
-	opcodeDefinitions[0xA3] = opcodeDefinition{"DIV", "B", ""}
+	opcodeDefinitions[0xA0] = opcodeDefinition{"ADD", "BYTE", ""}
+	opcodeDefinitions[0xA1] = opcodeDefinition{"SUB", "BYTE", ""}
+	opcodeDefinitions[0xA2] = opcodeDefinition{"MUL", "BYTE", ""}
+	opcodeDefinitions[0xA3] = opcodeDefinition{"DIV", "BYTE", ""}
 
-	opcodeDefinitions[0xC0] = opcodeDefinition{"AND", "B", ""}
-	opcodeDefinitions[0xC1] = opcodeDefinition{"OR", "B", ""}
-	opcodeDefinitions[0xC3] = opcodeDefinition{"CMP", "B", ""}
+	opcodeDefinitions[0xC0] = opcodeDefinition{"AND", "BYTE", ""}
+	opcodeDefinitions[0xC1] = opcodeDefinition{"OR", "BYTE", ""}
+	opcodeDefinitions[0xC3] = opcodeDefinition{"CMP", "BYTE", ""}
 
 	return opcodeDefinitions
 }
@@ -169,8 +169,10 @@ func outCall(vStack vputils.ByteStack, trace bool) vputils.ByteStack {
 }
 
 func decodeInstruction(opcode byte, def opcodeDefinition, mod module.Module) module.InstructionDefinition {
-	// bytes for opcode
-	bytes := []byte{0}
+	fullOpcode := []byte{opcode}
+
+	// working bytes for opcode
+	workBytes := []byte{}
 
 	// addresses for opcode
 	dataAddress := vputils.Address{[]byte{}, 0}
@@ -184,35 +186,41 @@ func decodeInstruction(opcode byte, def opcodeDefinition, mod module.Module) mod
 	// decode immediate value
 	if def.AddressMode == "V" {
 
-		switch def.TargetType {
+		switch def.Width {
 
-		case "B":
-			bytes = mod.ImmediateByte()
-			valueStr = fmt.Sprintf("%02X", bytes[0])
+		case "BYTE":
+			workBytes = mod.ImmediateByte()
+			valueStr = fmt.Sprintf("%02X", workBytes[0])
 
 		case "I16":
-			bytes = mod.ImmediateInt()
-			valueStr = fmt.Sprintf("%02X%02X", bytes[1], bytes[0])
+			workBytes = mod.ImmediateInt()
+			valueStr = fmt.Sprintf("%02X%02X", workBytes[1], workBytes[0])
 
 		}
 
+		fullOpcode = append(fullOpcode, workBytes...)
 		instructionSize += targetSize
 	}
 
 	// decode memory target
 	if def.AddressMode == "D" {
 		dataAddress = mod.DirectAddress()
-		bytes[0], _ = mod.DirectByte()
-		valueStr = fmt.Sprintf("%02X", bytes[0])
+		fullOpcode = append(fullOpcode, dataAddress.Bytes...)
+		buffer, _ := mod.DirectByte()
+		workBytes = append(workBytes, buffer)
+		valueStr = fmt.Sprintf("%02X", buffer)
 
 		instructionSize += dataAddress.NumBytes()
 	}
 
 	if def.AddressMode == "I" {
 		dataAddress1 = mod.DirectAddress()
+		fullOpcode = append(fullOpcode, dataAddress1.Bytes...)
+		workBytes = append(workBytes, dataAddress.Bytes...)
 		dataAddress = mod.IndirectAddress()
-		bytes[0], _ = mod.IndirectByte()
-		valueStr = fmt.Sprintf("%02X", bytes[0])
+		buffer, _ := mod.IndirectByte()
+		workBytes = append(workBytes, buffer)
+		valueStr = fmt.Sprintf("%02X", buffer)
 
 		instructionSize += dataAddress1.NumBytes()
 	}
@@ -220,16 +228,17 @@ func decodeInstruction(opcode byte, def opcodeDefinition, mod module.Module) mod
 	// decode jump/call target
 	if opcode == 0xD0 || opcode == 0xD1 {
 		jumpAddress = mod.DirectAddress()
+		fullOpcode = append(fullOpcode, jumpAddress.Bytes...)
 
 		instructionSize += jumpAddress.NumBytes()
 	}
 
-	instruction := module.InstructionDefinition{dataAddress1, dataAddress, instructionSize, jumpAddress, bytes, valueStr}
+	instruction := module.InstructionDefinition{fullOpcode, dataAddress1, dataAddress, instructionSize, jumpAddress, workBytes, valueStr}
 
 	return instruction
 }
 
-func traceOpcode(pc vputils.Address, opcode byte, def opcodeDefinition, flags module.FlagsGroup, conditionals module.Conditionals, instruction module.InstructionDefinition) string {
+func traceOpcode(pc vputils.Address, opcode byte, opcodeDef opcodeDefinition, flags module.FlagsGroup, conditionals module.Conditionals, instruction module.InstructionDefinition) string {
 	dataAddress1 := instruction.Address1
 	dataAddress := instruction.Address
 	jumpAddress := instruction.JumpAddress
@@ -237,13 +246,15 @@ func traceOpcode(pc vputils.Address, opcode byte, def opcodeDefinition, flags mo
 
 	line := fmt.Sprintf("%s: ", pc.ToString())
 
-	text := def.toString()
+	opcodeStr := instruction.ToByteString()
+
+	text := opcodeDef.toString()
 	if len(conditionals) > 0 {
 		condiStr := conditionals.ToString()
 		condiByteStr := conditionals.ToByteString()
-		line += fmt.Sprintf("%s %02X %s:%s", condiByteStr, opcode, condiStr, text)
+		line += fmt.Sprintf("%s%s%s %s", condiByteStr, opcodeStr, condiStr, text)
 	} else {
-		line += fmt.Sprintf("%02X %s", opcode, text)
+		line += fmt.Sprintf("%s%s", opcodeStr, text)
 	}
 
 	if !dataAddress1.Empty() {

@@ -1,9 +1,9 @@
 Execution started at  00
-00: 60 PUSH.B =48 p z n
+00: 60 48 PUSH BYTE =48 p z n
 Value stack: 48
-02: 60 PUSH.B =0A p z n
+02: 60 0A PUSH BYTE =0A p z n
 Value stack: 48 0A
-04: A0 ADD.B p z n
+04: A0 ADD BYTE p z n
 Value stack: 52
 05: 08 OUT p z n
 R

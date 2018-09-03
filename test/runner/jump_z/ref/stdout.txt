@@ -1,196 +1,196 @@
 Execution started at  00
-00: 60 PUSH.B =00 p z n
+00: 60 00 PUSH BYTE =00 p z n
 Value stack: 00
-02: 13 FLAGS.B p z n
+02: 13 FLAGS BYTE p z n
 Value stack: 00
-03: 83 POP.B p Z n
+03: 83 POP BYTE p Z n
 Value stack:
-04: E0 D0 Z:JUMP >0F p Z n
+04: E0 D0 0F ZERO JUMP >0F p Z n
 Value stack:
-0F: 60 PUSH.B =00 p Z n
+0F: 60 00 PUSH BYTE =00 p Z n
 Value stack: 00
-11: D1 CALL >16 p Z n
+11: D1 16 CALL >16 p Z n
 Value stack: 00
-16: 81 POP.B @20 =00 p Z n
+16: 81 20 POP BYTE @20 =00 p Z n
 Value stack:
-18: 62 PUSH.B @@20 @00 =56 p Z n
+18: 62 20 PUSH BYTE @@20 @00 =56 p Z n
 Value stack: 56
-1A: 13 FLAGS.B p Z n
+1A: 13 FLAGS BYTE p Z n
 Value stack: 56
-1B: E0 D2 Z:RET p z n
+1B: E0 D2 ZERO RET p z n
 Value stack: 56
 1D: 08 OUT p z n
 V
 Value stack:
-1E: 21 INC.B @20 =00 p z n
+1E: 21 20 INC BYTE @20 =00 p z n
 Value stack:
-20: D0 JUMP >18 p z n
+20: D0 18 JUMP >18 p z n
 Value stack:
-18: 62 PUSH.B @@20 @01 =61 p z n
+18: 62 20 PUSH BYTE @@20 @01 =61 p z n
 Value stack: 61
-1A: 13 FLAGS.B p z n
+1A: 13 FLAGS BYTE p z n
 Value stack: 61
-1B: E0 D2 Z:RET p z n
+1B: E0 D2 ZERO RET p z n
 Value stack: 61
 1D: 08 OUT p z n
 a
 Value stack:
-1E: 21 INC.B @20 =01 p z n
+1E: 21 20 INC BYTE @20 =01 p z n
 Value stack:
-20: D0 JUMP >18 p z n
+20: D0 18 JUMP >18 p z n
 Value stack:
-18: 62 PUSH.B @@20 @02 =6C p z n
+18: 62 20 PUSH BYTE @@20 @02 =6C p z n
 Value stack: 6C
-1A: 13 FLAGS.B p z n
+1A: 13 FLAGS BYTE p z n
 Value stack: 6C
-1B: E0 D2 Z:RET p z n
+1B: E0 D2 ZERO RET p z n
 Value stack: 6C
 1D: 08 OUT p z n
 l
 Value stack:
-1E: 21 INC.B @20 =02 p z n
+1E: 21 20 INC BYTE @20 =02 p z n
 Value stack:
-20: D0 JUMP >18 p z n
+20: D0 18 JUMP >18 p z n
 Value stack:
-18: 62 PUSH.B @@20 @03 =75 p z n
+18: 62 20 PUSH BYTE @@20 @03 =75 p z n
 Value stack: 75
-1A: 13 FLAGS.B p z n
+1A: 13 FLAGS BYTE p z n
 Value stack: 75
-1B: E0 D2 Z:RET p z n
+1B: E0 D2 ZERO RET p z n
 Value stack: 75
 1D: 08 OUT p z n
 u
 Value stack:
-1E: 21 INC.B @20 =03 p z n
+1E: 21 20 INC BYTE @20 =03 p z n
 Value stack:
-20: D0 JUMP >18 p z n
+20: D0 18 JUMP >18 p z n
 Value stack:
-18: 62 PUSH.B @@20 @04 =65 p z n
+18: 62 20 PUSH BYTE @@20 @04 =65 p z n
 Value stack: 65
-1A: 13 FLAGS.B p z n
+1A: 13 FLAGS BYTE p z n
 Value stack: 65
-1B: E0 D2 Z:RET p z n
+1B: E0 D2 ZERO RET p z n
 Value stack: 65
 1D: 08 OUT p z n
 e
 Value stack:
-1E: 21 INC.B @20 =04 p z n
+1E: 21 20 INC BYTE @20 =04 p z n
 Value stack:
-20: D0 JUMP >18 p z n
+20: D0 18 JUMP >18 p z n
 Value stack:
-18: 62 PUSH.B @@20 @05 =20 p z n
+18: 62 20 PUSH BYTE @@20 @05 =20 p z n
 Value stack: 20
-1A: 13 FLAGS.B p z n
+1A: 13 FLAGS BYTE p z n
 Value stack: 20
-1B: E0 D2 Z:RET p z n
+1B: E0 D2 ZERO RET p z n
 Value stack: 20
 1D: 08 OUT p z n
  
 Value stack:
-1E: 21 INC.B @20 =05 p z n
+1E: 21 20 INC BYTE @20 =05 p z n
 Value stack:
-20: D0 JUMP >18 p z n
+20: D0 18 JUMP >18 p z n
 Value stack:
-18: 62 PUSH.B @@20 @06 =69 p z n
+18: 62 20 PUSH BYTE @@20 @06 =69 p z n
 Value stack: 69
-1A: 13 FLAGS.B p z n
+1A: 13 FLAGS BYTE p z n
 Value stack: 69
-1B: E0 D2 Z:RET p z n
+1B: E0 D2 ZERO RET p z n
 Value stack: 69
 1D: 08 OUT p z n
 i
 Value stack:
-1E: 21 INC.B @20 =06 p z n
+1E: 21 20 INC BYTE @20 =06 p z n
 Value stack:
-20: D0 JUMP >18 p z n
+20: D0 18 JUMP >18 p z n
 Value stack:
-18: 62 PUSH.B @@20 @07 =73 p z n
+18: 62 20 PUSH BYTE @@20 @07 =73 p z n
 Value stack: 73
-1A: 13 FLAGS.B p z n
+1A: 13 FLAGS BYTE p z n
 Value stack: 73
-1B: E0 D2 Z:RET p z n
+1B: E0 D2 ZERO RET p z n
 Value stack: 73
 1D: 08 OUT p z n
 s
 Value stack:
-1E: 21 INC.B @20 =07 p z n
+1E: 21 20 INC BYTE @20 =07 p z n
 Value stack:
-20: D0 JUMP >18 p z n
+20: D0 18 JUMP >18 p z n
 Value stack:
-18: 62 PUSH.B @@20 @08 =20 p z n
+18: 62 20 PUSH BYTE @@20 @08 =20 p z n
 Value stack: 20
-1A: 13 FLAGS.B p z n
+1A: 13 FLAGS BYTE p z n
 Value stack: 20
-1B: E0 D2 Z:RET p z n
+1B: E0 D2 ZERO RET p z n
 Value stack: 20
 1D: 08 OUT p z n
  
 Value stack:
-1E: 21 INC.B @20 =08 p z n
+1E: 21 20 INC BYTE @20 =08 p z n
 Value stack:
-20: D0 JUMP >18 p z n
+20: D0 18 JUMP >18 p z n
 Value stack:
-18: 62 PUSH.B @@20 @09 =7A p z n
+18: 62 20 PUSH BYTE @@20 @09 =7A p z n
 Value stack: 7A
-1A: 13 FLAGS.B p z n
+1A: 13 FLAGS BYTE p z n
 Value stack: 7A
-1B: E0 D2 Z:RET p z n
+1B: E0 D2 ZERO RET p z n
 Value stack: 7A
 1D: 08 OUT p z n
 z
 Value stack:
-1E: 21 INC.B @20 =09 p z n
+1E: 21 20 INC BYTE @20 =09 p z n
 Value stack:
-20: D0 JUMP >18 p z n
+20: D0 18 JUMP >18 p z n
 Value stack:
-18: 62 PUSH.B @@20 @0A =65 p z n
+18: 62 20 PUSH BYTE @@20 @0A =65 p z n
 Value stack: 65
-1A: 13 FLAGS.B p z n
+1A: 13 FLAGS BYTE p z n
 Value stack: 65
-1B: E0 D2 Z:RET p z n
+1B: E0 D2 ZERO RET p z n
 Value stack: 65
 1D: 08 OUT p z n
 e
 Value stack:
-1E: 21 INC.B @20 =0A p z n
+1E: 21 20 INC BYTE @20 =0A p z n
 Value stack:
-20: D0 JUMP >18 p z n
+20: D0 18 JUMP >18 p z n
 Value stack:
-18: 62 PUSH.B @@20 @0B =72 p z n
+18: 62 20 PUSH BYTE @@20 @0B =72 p z n
 Value stack: 72
-1A: 13 FLAGS.B p z n
+1A: 13 FLAGS BYTE p z n
 Value stack: 72
-1B: E0 D2 Z:RET p z n
+1B: E0 D2 ZERO RET p z n
 Value stack: 72
 1D: 08 OUT p z n
 r
 Value stack:
-1E: 21 INC.B @20 =0B p z n
+1E: 21 20 INC BYTE @20 =0B p z n
 Value stack:
-20: D0 JUMP >18 p z n
+20: D0 18 JUMP >18 p z n
 Value stack:
-18: 62 PUSH.B @@20 @0C =6F p z n
+18: 62 20 PUSH BYTE @@20 @0C =6F p z n
 Value stack: 6F
-1A: 13 FLAGS.B p z n
+1A: 13 FLAGS BYTE p z n
 Value stack: 6F
-1B: E0 D2 Z:RET p z n
+1B: E0 D2 ZERO RET p z n
 Value stack: 6F
 1D: 08 OUT p z n
 o
 Value stack:
-1E: 21 INC.B @20 =0C p z n
+1E: 21 20 INC BYTE @20 =0C p z n
 Value stack:
-20: D0 JUMP >18 p z n
+20: D0 18 JUMP >18 p z n
 Value stack:
-18: 62 PUSH.B @@20 @0D =00 p z n
+18: 62 20 PUSH BYTE @@20 @0D =00 p z n
 Value stack: 00
-1A: 13 FLAGS.B p z n
+1A: 13 FLAGS BYTE p z n
 Value stack: 00
-1B: E0 D2 Z:RET p Z n
+1B: E0 D2 ZERO RET p Z n
 Value stack: 00
-13: D1 CALL >22 p Z n
+13: D1 22 CALL >22 p Z n
 Value stack: 00
-22: 61 PUSH.B @21 =0A p Z n
+22: 61 21 PUSH BYTE @21 =0A p Z n
 Value stack: 00 0A
 24: 08 OUT p Z n
 

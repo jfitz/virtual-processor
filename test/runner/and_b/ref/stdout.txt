@@ -1,9 +1,9 @@
 Execution started at  00
-00: 60 PUSH.B =7F p z n
+00: 60 7F PUSH BYTE =7F p z n
 Value stack: 7F
-02: 60 PUSH.B =41 p z n
+02: 60 41 PUSH BYTE =41 p z n
 Value stack: 7F 41
-04: C0 AND.B p z n
+04: C0 AND BYTE p z n
 Value stack: 41
 05: 08 OUT p z n
 A

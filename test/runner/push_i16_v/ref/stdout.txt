@@ -1,5 +1,5 @@
 Execution started at  00
-00: 64 PUSH.I16 =3A48 p z n
+00: 64 48 3A PUSH I16 =3A48 p z n
 Value stack: 3A 48
 03: 08 OUT p z n
 H

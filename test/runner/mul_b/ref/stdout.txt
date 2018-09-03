@@ -1,9 +1,9 @@
 Execution started at  00
-00: 60 PUSH.B =09 p z n
+00: 60 09 PUSH BYTE =09 p z n
 Value stack: 09
-02: 60 PUSH.B =08 p z n
+02: 60 08 PUSH BYTE =08 p z n
 Value stack: 09 08
-04: A2 MUL.B p z n
+04: A2 MUL BYTE p z n
 Value stack: 48
 05: 08 OUT p z n
 H

@@ -1,18 +1,18 @@
 Execution started at  00
-00: 60 PUSH.B =01 p z n
+00: 60 01 PUSH BYTE =01 p z n
 Value stack: 01
-02: 60 PUSH.B =40 p z n
+02: 60 40 PUSH BYTE =40 p z n
 Value stack: 01 40
-04: C3 CMP.B p z n
+04: C3 CMP BYTE p z n
 Value stack:
-05: E0 D0 Z:JUMP >0D p z n
+05: E0 D0 0D ZERO JUMP >0D p z n
 Value stack:
-08: 60 PUSH.B =41 p z n
+08: 60 41 PUSH BYTE =41 p z n
 Value stack: 41
 0A: 08 OUT p z n
 A
 Value stack:
-0B: D0 JUMP >10 p z n
+0B: D0 10 JUMP >10 p z n
 Value stack:
 10: 04 EXIT p z n
 Value stack:
