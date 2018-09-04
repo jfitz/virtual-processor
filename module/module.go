@@ -118,6 +118,114 @@ func (conditionals Conditionals) Evaluate(flags FlagsGroup) (bool, error) {
 }
 
 // -------------------------------
+// -------------------------------
+
+// OpcodeDefinition --------------
+type OpcodeDefinition struct {
+	Name        string
+	Width       string
+	AddressMode string
+}
+
+// ToString ----------------------
+func (def OpcodeDefinition) ToString() string {
+	s := def.Name
+
+	if len(def.Width) > 0 {
+		s += " "
+		s += def.Width
+	}
+
+	return s
+}
+
+// OpcodeSize --------------------
+func (def OpcodeDefinition) OpcodeSize() int {
+	return 1
+}
+
+// TargetSize --------------------
+func (def OpcodeDefinition) TargetSize() int {
+	targetSize := 0
+
+	if def.Width == "BYTE" {
+		targetSize = 1
+	}
+	if def.Width == "I16" {
+		targetSize = 2
+	}
+	if def.Width == "I32" {
+		targetSize = 4
+	}
+	if def.Width == "I64" {
+		targetSize = 8
+	}
+	if def.Width == "F32" {
+		targetSize = 4
+	}
+	if def.Width == "F64" {
+		targetSize = 8
+	}
+
+	return targetSize
+}
+
+// -------------------------------
+// -------------------------------
+
+// OpcodeTable --------
+type OpcodeTable map[byte]OpcodeDefinition
+
+// DefineOpcodes - define the table of opcodes
+func DefineOpcodes() OpcodeTable {
+	opcodeDefinitions := make(OpcodeTable)
+
+	opcodeDefinitions[0x00] = OpcodeDefinition{"NOP", "", ""}
+	opcodeDefinitions[0x04] = OpcodeDefinition{"EXIT", "", ""}
+	opcodeDefinitions[0x05] = OpcodeDefinition{"KCALL", "", ""}
+	opcodeDefinitions[0x08] = OpcodeDefinition{"OUT", "", "S"}
+
+	opcodeDefinitions[0x60] = OpcodeDefinition{"PUSH", "BYTE", "V"}
+	opcodeDefinitions[0x61] = OpcodeDefinition{"PUSH", "BYTE", "D"}
+	opcodeDefinitions[0x62] = OpcodeDefinition{"PUSH", "BYTE", "I"}
+
+	opcodeDefinitions[0x64] = OpcodeDefinition{"PUSH", "I16", "V"}
+	opcodeDefinitions[0x65] = OpcodeDefinition{"PUSH", "I16", "D"}
+	opcodeDefinitions[0x66] = OpcodeDefinition{"PUSH", "I16", "I"}
+
+	opcodeDefinitions[0x79] = OpcodeDefinition{"PUSH", "STRING", "D"}
+
+	opcodeDefinitions[0x81] = OpcodeDefinition{"POP", "BYTE", "D"}
+	opcodeDefinitions[0x82] = OpcodeDefinition{"POP", "BYTE", "I"}
+	opcodeDefinitions[0x83] = OpcodeDefinition{"POP", "BYTE", "S"}
+
+	opcodeDefinitions[0x11] = OpcodeDefinition{"FLAGS", "BYTE", "D"}
+	opcodeDefinitions[0x12] = OpcodeDefinition{"FLAGS", "BYTE", "I"}
+	opcodeDefinitions[0x13] = OpcodeDefinition{"FLAGS", "BYTE", "S"}
+
+	opcodeDefinitions[0x21] = OpcodeDefinition{"INC", "BYTE", "D"}
+	opcodeDefinitions[0x22] = OpcodeDefinition{"INC", "BYTE", "I"}
+	opcodeDefinitions[0x31] = OpcodeDefinition{"DEC", "BYTE", "D"}
+	opcodeDefinitions[0x32] = OpcodeDefinition{"DEC", "BYTE", "I"}
+
+	opcodeDefinitions[0xD0] = OpcodeDefinition{"JUMP", "", ""}
+	opcodeDefinitions[0xD1] = OpcodeDefinition{"CALL", "", ""}
+	opcodeDefinitions[0xD2] = OpcodeDefinition{"RET", "", ""}
+
+	opcodeDefinitions[0xA0] = OpcodeDefinition{"ADD", "BYTE", ""}
+	opcodeDefinitions[0xA1] = OpcodeDefinition{"SUB", "BYTE", ""}
+	opcodeDefinitions[0xA2] = OpcodeDefinition{"MUL", "BYTE", ""}
+	opcodeDefinitions[0xA3] = OpcodeDefinition{"DIV", "BYTE", ""}
+
+	opcodeDefinitions[0xC0] = OpcodeDefinition{"AND", "BYTE", ""}
+	opcodeDefinitions[0xC1] = OpcodeDefinition{"OR", "BYTE", ""}
+	opcodeDefinitions[0xC3] = OpcodeDefinition{"CMP", "BYTE", ""}
+
+	return opcodeDefinitions
+}
+
+// --------------------
+// --------------------
 
 // InstructionDefinition ---------
 type InstructionDefinition struct {

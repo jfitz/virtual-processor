@@ -13,117 +13,6 @@ import (
 	"strconv"
 )
 
-// --------------------
-// opcode definition
-// --------------------
-type opcodeDefinition struct {
-	Name        string
-	Width       string
-	AddressMode string
-}
-
-// --------------------
-func (def opcodeDefinition) toString() string {
-	s := def.Name
-
-	if len(def.Width) > 0 {
-		s += " "
-		s += def.Width
-	}
-
-	return s
-}
-
-// --------------------
-func (def opcodeDefinition) opcodeSize() int {
-	return 1
-}
-
-// --------------------
-func (def opcodeDefinition) targetSize() int {
-	targetSize := 0
-
-	if def.Width == "BYTE" {
-		targetSize = 1
-	}
-	if def.Width == "I16" {
-		targetSize = 2
-	}
-	if def.Width == "I32" {
-		targetSize = 4
-	}
-	if def.Width == "I64" {
-		targetSize = 8
-	}
-	if def.Width == "F32" {
-		targetSize = 4
-	}
-	if def.Width == "F64" {
-		targetSize = 8
-	}
-
-	return targetSize
-}
-
-// --------------------
-// --------------------
-
-// --------------------
-// opcodeTable
-// --------------------
-type opcodeTable map[byte]opcodeDefinition
-
-// --------------------
-func defineOpcodes() opcodeTable {
-	opcodeDefinitions := make(opcodeTable)
-
-	opcodeDefinitions[0x00] = opcodeDefinition{"NOP", "", ""}
-	opcodeDefinitions[0x04] = opcodeDefinition{"EXIT", "", ""}
-	opcodeDefinitions[0x05] = opcodeDefinition{"KCALL", "", ""}
-	opcodeDefinitions[0x08] = opcodeDefinition{"OUT", "", "S"}
-
-	opcodeDefinitions[0x60] = opcodeDefinition{"PUSH", "BYTE", "V"}
-	opcodeDefinitions[0x61] = opcodeDefinition{"PUSH", "BYTE", "D"}
-	opcodeDefinitions[0x62] = opcodeDefinition{"PUSH", "BYTE", "I"}
-
-	opcodeDefinitions[0x64] = opcodeDefinition{"PUSH", "I16", "V"}
-	opcodeDefinitions[0x65] = opcodeDefinition{"PUSH", "I16", "D"}
-	opcodeDefinitions[0x66] = opcodeDefinition{"PUSH", "I16", "I"}
-
-	opcodeDefinitions[0x79] = opcodeDefinition{"PUSH", "STRING", "D"}
-
-	opcodeDefinitions[0x81] = opcodeDefinition{"POP", "BYTE", "D"}
-	opcodeDefinitions[0x82] = opcodeDefinition{"POP", "BYTE", "I"}
-	opcodeDefinitions[0x83] = opcodeDefinition{"POP", "BYTE", "S"}
-
-	opcodeDefinitions[0x11] = opcodeDefinition{"FLAGS", "BYTE", "D"}
-	opcodeDefinitions[0x12] = opcodeDefinition{"FLAGS", "BYTE", "I"}
-	opcodeDefinitions[0x13] = opcodeDefinition{"FLAGS", "BYTE", "S"}
-
-	opcodeDefinitions[0x21] = opcodeDefinition{"INC", "BYTE", "D"}
-	opcodeDefinitions[0x22] = opcodeDefinition{"INC", "BYTE", "I"}
-	opcodeDefinitions[0x31] = opcodeDefinition{"DEC", "BYTE", "D"}
-	opcodeDefinitions[0x32] = opcodeDefinition{"DEC", "BYTE", "I"}
-
-	opcodeDefinitions[0xD0] = opcodeDefinition{"JUMP", "", ""}
-	opcodeDefinitions[0xD1] = opcodeDefinition{"CALL", "", ""}
-	opcodeDefinitions[0xD2] = opcodeDefinition{"RET", "", ""}
-
-	opcodeDefinitions[0xA0] = opcodeDefinition{"ADD", "BYTE", ""}
-	opcodeDefinitions[0xA1] = opcodeDefinition{"SUB", "BYTE", ""}
-	opcodeDefinitions[0xA2] = opcodeDefinition{"MUL", "BYTE", ""}
-	opcodeDefinitions[0xA3] = opcodeDefinition{"DIV", "BYTE", ""}
-
-	opcodeDefinitions[0xC0] = opcodeDefinition{"AND", "BYTE", ""}
-	opcodeDefinitions[0xC1] = opcodeDefinition{"OR", "BYTE", ""}
-	opcodeDefinitions[0xC3] = opcodeDefinition{"CMP", "BYTE", ""}
-
-	return opcodeDefinitions
-}
-
-// --------------------
-// --------------------
-
 func kernelCall(vStack vputils.ByteStack) vputils.ByteStack {
 	fname, vStack := vStack.PopString()
 
@@ -168,7 +57,7 @@ func outCall(vStack vputils.ByteStack, trace bool) vputils.ByteStack {
 	return vStack
 }
 
-func decodeInstruction(opcode byte, def opcodeDefinition, mod module.Module) module.InstructionDefinition {
+func decodeInstruction(opcode byte, def module.OpcodeDefinition, mod module.Module) module.InstructionDefinition {
 	fullOpcode := []byte{opcode}
 
 	// working bytes for opcode
@@ -180,8 +69,8 @@ func decodeInstruction(opcode byte, def opcodeDefinition, mod module.Module) mod
 	jumpAddress := vputils.Address{[]byte{}, 0}
 	valueStr := ""
 
-	instructionSize := def.opcodeSize()
-	targetSize := def.targetSize()
+	instructionSize := def.OpcodeSize()
+	targetSize := def.TargetSize()
 
 	err := errors.New("")
 
@@ -257,7 +146,7 @@ func decodeInstruction(opcode byte, def opcodeDefinition, mod module.Module) mod
 	return instruction
 }
 
-func traceOpcode(pc vputils.Address, opcode byte, opcodeDef opcodeDefinition, flags module.FlagsGroup, conditionals module.Conditionals, instruction module.InstructionDefinition) string {
+func traceOpcode(pc vputils.Address, opcode byte, opcodeDef module.OpcodeDefinition, flags module.FlagsGroup, conditionals module.Conditionals, instruction module.InstructionDefinition) string {
 	dataAddress1 := instruction.Address1
 	dataAddress := instruction.Address
 	jumpAddress := instruction.JumpAddress
@@ -267,7 +156,7 @@ func traceOpcode(pc vputils.Address, opcode byte, opcodeDef opcodeDefinition, fl
 
 	opcodeStr := instruction.ToByteString()
 
-	text := opcodeDef.toString()
+	text := opcodeDef.ToString()
 	if len(conditionals) > 0 {
 		condiStr := conditionals.ToString()
 		condiByteStr := conditionals.ToByteString()
@@ -314,7 +203,7 @@ func traceHalt(pc vputils.Address) string {
 	return line
 }
 
-func executeCode(mod module.Module, startAddress vputils.Address, trace bool, opcodeDefinitions opcodeTable) error {
+func executeCode(mod module.Module, startAddress vputils.Address, trace bool, opcodeDefinitions module.OpcodeTable) error {
 	// initialize virtual processor
 	flags := module.FlagsGroup{false, false, false}
 	vStack := make(vputils.ByteStack, 0) // value stack
@@ -440,7 +329,7 @@ func main() {
 	startAddress, err := vputils.MakeAddress(startAddressInt, codeAddressWidth, len(mod.CodePage.Contents))
 	vputils.CheckAndExit(err)
 
-	opcodeDefinitions := defineOpcodes()
+	opcodeDefinitions := module.DefineOpcodes()
 
 	err = executeCode(mod, startAddress, trace, opcodeDefinitions)
 	vputils.CheckAndExit(err)
