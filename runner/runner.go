@@ -57,7 +57,7 @@ func outCall(vStack vputils.ByteStack, trace bool) vputils.ByteStack {
 	return vStack
 }
 
-func decodeInstruction(opcode byte, def module.OpcodeDefinition, mod module.Module) module.InstructionDefinition {
+func decodeInstruction(opcode byte, def module.OpcodeDefinition, mod module.Module, proc module.Processor) module.InstructionDefinition {
 	fullOpcode := []byte{opcode}
 
 	// working bytes for opcode
@@ -73,7 +73,7 @@ func decodeInstruction(opcode byte, def module.OpcodeDefinition, mod module.Modu
 	targetSize := def.TargetSize()
 
 	err := errors.New("")
-	pc := mod.PC()
+	pc := proc.PC()
 
 	// decode immediate value
 	if def.AddressMode == "V" {
@@ -204,13 +204,13 @@ func traceHalt(pc vputils.Address) string {
 	return line
 }
 
-func executeCode(mod module.Module, startAddress vputils.Address, trace bool, opcodeDefinitions module.OpcodeTable) error {
+func executeCode(mod module.Module, proc module.Processor, startAddress vputils.Address, trace bool, opcodeDefinitions module.OpcodeTable) error {
 	// initialize virtual processor
 	flags := module.FlagsGroup{false, false, false}
 	vStack := make(vputils.ByteStack, 0) // value stack
 
 	// initialize module
-	err := mod.SetPC(startAddress)
+	err := proc.SetPC(startAddress)
 	if err != nil {
 		s := fmt.Sprintf("Invalid start address %s for main: %s", startAddress.ToString(), err.Error())
 		return errors.New(s)
@@ -224,7 +224,7 @@ func executeCode(mod module.Module, startAddress vputils.Address, trace bool, op
 	halt := false
 
 	for !halt {
-		pc1 := mod.PC()
+		pc1 := proc.PC()
 
 		// get conditionals (if any)
 		conditionals, err := mod.GetConditionals(pc1)
@@ -238,7 +238,7 @@ func executeCode(mod module.Module, startAddress vputils.Address, trace bool, op
 
 		// step PC over conditionals
 		pc2 := pc1.AddByte(len(conditionals))
-		mod.SetPC(pc2)
+		proc.SetPC(pc2)
 
 		// get the opcode
 		opcode, err := mod.GetOpcode(pc2)
@@ -248,7 +248,7 @@ func executeCode(mod module.Module, startAddress vputils.Address, trace bool, op
 		def := opcodeDefinitions[opcode]
 
 		// get instruction definition (opcode and arguments)
-		instruction := decodeInstruction(opcode, def, mod)
+		instruction := decodeInstruction(opcode, def, mod, proc)
 
 		// display instruction
 		if trace {
@@ -258,8 +258,16 @@ func executeCode(mod module.Module, startAddress vputils.Address, trace bool, op
 
 		// execute instruction
 		syscall := byte(0)
+		newpc := vputils.Address{}
 
-		vStack, flags, syscall, err = mod.ExecuteOpcode(pc2, opcode, vStack, instruction, execute, flags)
+		newpc, vStack, flags, syscall, err = mod.ExecuteOpcode(pc2, opcode, vStack, instruction, execute, flags)
+
+		// advance to next instruction
+		err = proc.SetPC(newpc)
+		if err != nil {
+			s := fmt.Sprintf("Invalid address %s for PC in main: %s", newpc.ToString(), err.Error())
+			return errors.New(s)
+		}
 
 		// process the requested runner call
 		// these are handled here, not in the opcode processor
@@ -285,7 +293,7 @@ func executeCode(mod module.Module, startAddress vputils.Address, trace bool, op
 
 	// display halt information
 	if trace {
-		line := traceHalt(mod.PC())
+		line := traceHalt(proc.PC())
 		fmt.Println(line)
 	}
 
@@ -336,6 +344,7 @@ func main() {
 
 	opcodeDefinitions := module.DefineOpcodes()
 
-	err = executeCode(mod, startAddress, trace, opcodeDefinitions)
+	proc := module.Processor{}
+	err = executeCode(mod, proc, startAddress, trace, opcodeDefinitions)
 	vputils.CheckAndExit(err)
 }

@@ -249,6 +249,27 @@ func (def InstructionDefinition) ToByteString() string {
 	return s
 }
 
+// Processor ---------------------
+type Processor struct {
+	pc vputils.Address
+}
+
+// SetPC - set the PC
+func (proc *Processor) SetPC(address vputils.Address) error {
+	proc.pc = address
+	return nil
+}
+
+// PC - return current PC
+func (proc Processor) PC() vputils.Address {
+	return proc.pc
+}
+
+// IncPC - increment the PC
+func (proc *Processor) IncPC() {
+	proc.pc = proc.pc.AddByte(1)
+}
+
 // Page --------------------------
 type Page struct {
 	Properties []vputils.NameValue
@@ -263,32 +284,11 @@ type Module struct {
 	DataPage         Page
 	CodeAddressWidth int
 	DataAddressWidth int
-	pc               vputils.Address
 	RetStack         vputils.AddressStack
 }
 
 // Init - initialize
 func (mod *Module) Init() {
-}
-
-// SetPC - set the PC
-func (mod *Module) SetPC(address vputils.Address) error {
-	if int(address.ByteValue()) >= len(mod.CodePage.Contents) {
-		return errors.New("Address out of range")
-	}
-
-	mod.pc = address
-	return nil
-}
-
-// PC - return current PC
-func (mod Module) PC() vputils.Address {
-	return mod.pc
-}
-
-// IncPC - increment the PC
-func (mod *Module) IncPC() {
-	mod.pc = mod.pc.AddByte(1)
 }
 
 // ImmediateByte - get a byte
@@ -437,7 +437,7 @@ func (mod Module) GetOpcode(pc vputils.Address) (byte, error) {
 }
 
 // ExecuteOpcode - execute one opcode
-func (mod *Module) ExecuteOpcode(pc vputils.Address, opcode byte, vStack vputils.ByteStack, instruction InstructionDefinition, execute bool, flags FlagsGroup) (vputils.ByteStack, FlagsGroup, byte, error) {
+func (mod *Module) ExecuteOpcode(pc vputils.Address, opcode byte, vStack vputils.ByteStack, instruction InstructionDefinition, execute bool, flags FlagsGroup) (vputils.Address, vputils.ByteStack, FlagsGroup, byte, error) {
 	dataAddress := instruction.Address
 	instructionSize := instruction.Size
 	jumpAddress := instruction.JumpAddress
@@ -611,7 +611,7 @@ func (mod *Module) ExecuteOpcode(pc vputils.Address, opcode byte, vStack vputils
 			for b != 0 {
 				b, err = mod.DataPage.Contents.GetByte(address)
 				if err != nil {
-					return vStack, flags, syscall, err
+					return newpc, vStack, flags, syscall, err
 				}
 
 				c := string(b)
@@ -629,7 +629,7 @@ func (mod *Module) ExecuteOpcode(pc vputils.Address, opcode byte, vStack vputils
 		if execute {
 			bytes, vStack, err = vStack.PopByte(1)
 			if err != nil {
-				return vStack, flags, syscall, err
+				return newpc, vStack, flags, syscall, err
 			}
 
 			err = mod.DataPage.Contents.PutByte(dataAddress, bytes[0])
@@ -643,7 +643,7 @@ func (mod *Module) ExecuteOpcode(pc vputils.Address, opcode byte, vStack vputils
 		if execute {
 			bytes, vStack, err = vStack.PopByte(1)
 			if err != nil {
-				return vStack, flags, syscall, err
+				return newpc, vStack, flags, syscall, err
 			}
 		}
 
@@ -654,12 +654,12 @@ func (mod *Module) ExecuteOpcode(pc vputils.Address, opcode byte, vStack vputils
 		if execute {
 			bytes1, vStack, err = vStack.PopByte(1)
 			if err != nil {
-				return vStack, flags, syscall, err
+				return newpc, vStack, flags, syscall, err
 			}
 
 			bytes2, vStack, err = vStack.PopByte(1)
 			if err != nil {
-				return vStack, flags, syscall, err
+				return newpc, vStack, flags, syscall, err
 			}
 
 			value := bytes1[0] + bytes2[0]
@@ -673,12 +673,12 @@ func (mod *Module) ExecuteOpcode(pc vputils.Address, opcode byte, vStack vputils
 		if execute {
 			bytes1, vStack, err = vStack.PopByte(1)
 			if err != nil {
-				return vStack, flags, syscall, err
+				return newpc, vStack, flags, syscall, err
 			}
 
 			bytes2, vStack, err = vStack.PopByte(1)
 			if err != nil {
-				return vStack, flags, syscall, err
+				return newpc, vStack, flags, syscall, err
 			}
 
 			value := bytes1[0] - bytes2[0]
@@ -692,12 +692,12 @@ func (mod *Module) ExecuteOpcode(pc vputils.Address, opcode byte, vStack vputils
 		if execute {
 			bytes1, vStack, err = vStack.PopByte(1)
 			if err != nil {
-				return vStack, flags, syscall, err
+				return newpc, vStack, flags, syscall, err
 			}
 
 			bytes2, vStack, err = vStack.PopByte(1)
 			if err != nil {
-				return vStack, flags, syscall, err
+				return newpc, vStack, flags, syscall, err
 			}
 
 			value := bytes1[0] * bytes2[0]
@@ -712,12 +712,12 @@ func (mod *Module) ExecuteOpcode(pc vputils.Address, opcode byte, vStack vputils
 		if execute {
 			bytes1, vStack, err = vStack.PopByte(1)
 			if err != nil {
-				return vStack, flags, syscall, err
+				return newpc, vStack, flags, syscall, err
 			}
 
 			bytes2, vStack, err = vStack.PopByte(1)
 			if err != nil {
-				return vStack, flags, syscall, err
+				return newpc, vStack, flags, syscall, err
 			}
 
 			value := bytes1[0] / bytes2[0]
@@ -732,12 +732,12 @@ func (mod *Module) ExecuteOpcode(pc vputils.Address, opcode byte, vStack vputils
 		if execute {
 			bytes1, vStack, err = vStack.PopByte(1)
 			if err != nil {
-				return vStack, flags, syscall, err
+				return newpc, vStack, flags, syscall, err
 			}
 
 			bytes2, vStack, err = vStack.PopByte(1)
 			if err != nil {
-				return vStack, flags, syscall, err
+				return newpc, vStack, flags, syscall, err
 			}
 
 			value := bytes1[0] & bytes2[0]
@@ -751,12 +751,12 @@ func (mod *Module) ExecuteOpcode(pc vputils.Address, opcode byte, vStack vputils
 		if execute {
 			bytes1, vStack, err = vStack.PopByte(1)
 			if err != nil {
-				return vStack, flags, syscall, err
+				return newpc, vStack, flags, syscall, err
 			}
 
 			bytes2, vStack, err = vStack.PopByte(1)
 			if err != nil {
-				return vStack, flags, syscall, err
+				return newpc, vStack, flags, syscall, err
 			}
 
 			value := bytes1[0] | bytes2[0]
@@ -770,12 +770,12 @@ func (mod *Module) ExecuteOpcode(pc vputils.Address, opcode byte, vStack vputils
 		if execute {
 			bytes1, vStack, err = vStack.PopByte(1)
 			if err != nil {
-				return vStack, flags, syscall, err
+				return newpc, vStack, flags, syscall, err
 			}
 
 			bytes2, vStack, err = vStack.PopByte(1)
 			if err != nil {
-				return vStack, flags, syscall, err
+				return newpc, vStack, flags, syscall, err
 			}
 
 			value := bytes1[0] - bytes2[0]
@@ -808,7 +808,7 @@ func (mod *Module) ExecuteOpcode(pc vputils.Address, opcode byte, vStack vputils
 		if execute {
 			newpc, err = mod.TopPop()
 			if err != nil {
-				return vStack, flags, syscall, err
+				return newpc, vStack, flags, syscall, err
 			}
 		} else {
 			newpc = pc.AddByte(instructionSize)
@@ -817,17 +817,10 @@ func (mod *Module) ExecuteOpcode(pc vputils.Address, opcode byte, vStack vputils
 	default:
 		// invalid opcode
 		s := fmt.Sprintf("Invalid opcode %02x at %s\n", opcode, pc.ToString())
-		return vStack, flags, 0, errors.New(s)
+		return newpc, vStack, flags, 0, errors.New(s)
 	}
 
-	// advance to next instruction
-	err = mod.SetPC(newpc)
-	if err != nil {
-		s := fmt.Sprintf("Invalid address %s for PC in main: %s", newpc.ToString(), err.Error())
-		err = errors.New(s)
-	}
-
-	return vStack, flags, syscall, err
+	return newpc, vStack, flags, syscall, err
 }
 
 // Write a module to a file
