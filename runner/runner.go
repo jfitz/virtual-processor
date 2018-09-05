@@ -73,6 +73,7 @@ func decodeInstruction(opcode byte, def module.OpcodeDefinition, mod module.Modu
 	targetSize := def.TargetSize()
 
 	err := errors.New("")
+	pc := mod.PC()
 
 	// decode immediate value
 	if def.AddressMode == "V" {
@@ -80,13 +81,13 @@ func decodeInstruction(opcode byte, def module.OpcodeDefinition, mod module.Modu
 		switch def.Width {
 
 		case "BYTE":
-			workBytes, err = mod.ImmediateByte()
+			workBytes, err = mod.ImmediateByte(pc)
 			vputils.CheckAndExit(err)
 
 			valueStr = fmt.Sprintf("%02X", workBytes[0])
 
 		case "I16":
-			workBytes, err = mod.ImmediateInt()
+			workBytes, err = mod.ImmediateInt(pc)
 			vputils.CheckAndExit(err)
 
 			valueStr = fmt.Sprintf("%02X%02X", workBytes[1], workBytes[0])
@@ -99,12 +100,12 @@ func decodeInstruction(opcode byte, def module.OpcodeDefinition, mod module.Modu
 
 	// decode memory target
 	if def.AddressMode == "D" {
-		dataAddress, err = mod.DirectAddress()
+		dataAddress, err = mod.DirectAddress(pc)
 		vputils.CheckAndExit(err)
 
 		fullOpcode = append(fullOpcode, dataAddress.Bytes...)
 
-		buffer, err := mod.DirectByte()
+		buffer, err := mod.DirectByte(pc)
 		vputils.CheckAndExit(err)
 
 		workBytes = append(workBytes, buffer)
@@ -114,16 +115,16 @@ func decodeInstruction(opcode byte, def module.OpcodeDefinition, mod module.Modu
 	}
 
 	if def.AddressMode == "I" {
-		dataAddress1, err = mod.DirectAddress()
+		dataAddress1, err = mod.DirectAddress(pc)
 		vputils.CheckAndExit(err)
 
 		fullOpcode = append(fullOpcode, dataAddress1.Bytes...)
 		workBytes = append(workBytes, dataAddress.Bytes...)
 
-		dataAddress, err = mod.IndirectAddress()
+		dataAddress, err = mod.IndirectAddress(pc)
 		vputils.CheckAndExit(err)
 
-		buffer, err := mod.IndirectByte()
+		buffer, err := mod.IndirectByte(pc)
 		vputils.CheckAndExit(err)
 
 		workBytes = append(workBytes, buffer)
@@ -134,7 +135,7 @@ func decodeInstruction(opcode byte, def module.OpcodeDefinition, mod module.Modu
 
 	// decode jump/call target
 	if opcode == 0xD0 || opcode == 0xD1 {
-		jumpAddress, err = mod.DirectAddress()
+		jumpAddress, err = mod.DirectAddress(pc)
 		vputils.CheckAndExit(err)
 
 		fullOpcode = append(fullOpcode, jumpAddress.Bytes...)
@@ -226,7 +227,7 @@ func executeCode(mod module.Module, startAddress vputils.Address, trace bool, op
 		pc1 := mod.PC()
 
 		// get conditionals (if any)
-		conditionals, err := mod.GetConditionals()
+		conditionals, err := mod.GetConditionals(pc1)
 		vputils.CheckPrintAndExit(err, "at PC "+pc1.ToString())
 
 		// evaluate conditionals
@@ -235,9 +236,12 @@ func executeCode(mod module.Module, startAddress vputils.Address, trace bool, op
 			return err
 		}
 
+		// step PC over conditionals
+		pc2 := pc1.AddByte(len(conditionals))
+		mod.SetPC(pc2)
+
 		// get the opcode
-		pc2 := mod.PC()
-		opcode, err := mod.GetOpcode()
+		opcode, err := mod.GetOpcode(pc2)
 		vputils.CheckPrintAndExit(err, "at PC "+pc2.ToString())
 
 		// get opcode definition
@@ -254,7 +258,8 @@ func executeCode(mod module.Module, startAddress vputils.Address, trace bool, op
 
 		// execute instruction
 		syscall := byte(0)
-		vStack, flags, syscall, err = mod.ExecuteOpcode(opcode, vStack, instruction, execute, flags)
+
+		vStack, flags, syscall, err = mod.ExecuteOpcode(pc2, opcode, vStack, instruction, execute, flags)
 
 		// process the requested runner call
 		// these are handled here, not in the opcode processor
