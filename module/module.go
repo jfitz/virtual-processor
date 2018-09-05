@@ -281,11 +281,6 @@ func (mod *Module) SetPC(address vputils.Address) error {
 	return nil
 }
 
-// PCByteValue - deprecated
-func (mod Module) PCByteValue() byte {
-	return mod.pc.ByteValue()
-}
-
 // PC - return current PC
 func (mod Module) PC() vputils.Address {
 	return mod.pc
