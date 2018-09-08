@@ -437,7 +437,7 @@ func (mod Module) GetOpcode(pc vputils.Address) (byte, error) {
 }
 
 // ExecuteOpcode - execute one opcode
-func (mod *Module) ExecuteOpcode(proc *Processor, opcode byte, vStack vputils.ByteStack, instruction InstructionDefinition, execute bool, flags FlagsGroup) (vputils.Address, vputils.ByteStack, FlagsGroup, byte, error) {
+func (proc *Processor) ExecuteOpcode(data *Page, opcode byte, vStack vputils.ByteStack, instruction InstructionDefinition, execute bool, flags FlagsGroup) (vputils.Address, vputils.ByteStack, FlagsGroup, byte, error) {
 	dataAddress := instruction.Address
 	instructionSize := instruction.Size
 	jumpAddress := instruction.JumpAddress
@@ -515,7 +515,7 @@ func (mod *Module) ExecuteOpcode(proc *Processor, opcode byte, vStack vputils.By
 		if execute {
 			bytes[0]++
 
-			err = mod.DataPage.Contents.PutByte(dataAddress, bytes[0])
+			err = data.Contents.PutByte(dataAddress, bytes[0])
 			vputils.CheckAndPanic(err)
 		}
 
@@ -526,7 +526,7 @@ func (mod *Module) ExecuteOpcode(proc *Processor, opcode byte, vStack vputils.By
 		if execute {
 			bytes[0]++
 
-			err = mod.DataPage.Contents.PutByte(dataAddress, bytes[0])
+			err = data.Contents.PutByte(dataAddress, bytes[0])
 			vputils.CheckAndPanic(err)
 		}
 
@@ -537,7 +537,7 @@ func (mod *Module) ExecuteOpcode(proc *Processor, opcode byte, vStack vputils.By
 		if execute {
 			bytes[0]--
 
-			err = mod.DataPage.Contents.PutByte(dataAddress, bytes[0])
+			err = data.Contents.PutByte(dataAddress, bytes[0])
 			vputils.CheckAndPanic(err)
 		}
 
@@ -548,7 +548,7 @@ func (mod *Module) ExecuteOpcode(proc *Processor, opcode byte, vStack vputils.By
 		if execute {
 			bytes[0]--
 
-			err = mod.DataPage.Contents.PutByte(dataAddress, bytes[0])
+			err = data.Contents.PutByte(dataAddress, bytes[0])
 			vputils.CheckAndPanic(err)
 		}
 
@@ -610,7 +610,7 @@ func (mod *Module) ExecuteOpcode(proc *Processor, opcode byte, vStack vputils.By
 			b := byte(1)
 
 			for b != 0 {
-				b, err = mod.DataPage.Contents.GetByte(address)
+				b, err = data.Contents.GetByte(address)
 				if err != nil {
 					return newpc, vStack, flags, syscall, err
 				}
@@ -633,7 +633,7 @@ func (mod *Module) ExecuteOpcode(proc *Processor, opcode byte, vStack vputils.By
 				return newpc, vStack, flags, syscall, err
 			}
 
-			err = mod.DataPage.Contents.PutByte(dataAddress, bytes[0])
+			err = data.Contents.PutByte(dataAddress, bytes[0])
 			vputils.CheckAndPanic(err)
 		}
 
