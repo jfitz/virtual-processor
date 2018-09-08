@@ -258,16 +258,8 @@ func executeCode(mod module.Module, proc module.Processor, startAddress vputils.
 
 		// execute instruction
 		syscall := byte(0)
-		newpc := vputils.Address{}
 
-		newpc, vStack, flags, syscall, err = proc.ExecuteOpcode(&mod.DataPage, opcode, vStack, instruction, execute, flags)
-
-		// advance to next instruction
-		err = proc.SetPC(newpc)
-		if err != nil {
-			s := fmt.Sprintf("Invalid address %s for PC in main: %s", newpc.ToString(), err.Error())
-			return errors.New(s)
-		}
+		vStack, flags, syscall, err = proc.ExecuteOpcode(&mod.DataPage, opcode, vStack, instruction, execute, flags)
 
 		// process the requested runner call
 		// these are handled here, not in the opcode processor

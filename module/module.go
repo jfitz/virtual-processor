@@ -284,160 +284,8 @@ func (proc *Processor) TopPop() (vputils.Address, error) {
 	return address, err
 }
 
-// Page --------------------------
-type Page struct {
-	Properties []vputils.NameValue
-	Contents   vputils.Vector
-}
-
-// Module ------------------------
-type Module struct {
-	Properties       []vputils.NameValue
-	CodePage         Page
-	Exports          []vputils.NameValue
-	DataPage         Page
-	CodeAddressWidth int
-	DataAddressWidth int
-}
-
-// Init - initialize
-func (mod *Module) Init() {
-}
-
-// ImmediateByte - get a byte
-func (mod Module) ImmediateByte(pc vputils.Address) ([]byte, error) {
-	codeAddress := pc.AddByte(1)
-
-	value, err := mod.CodePage.Contents.GetByte(codeAddress)
-	if err != nil {
-		return []byte{}, err
-	}
-
-	return []byte{value}, nil
-}
-
-// ImmediateInt - get an I16
-func (mod Module) ImmediateInt(pc vputils.Address) ([]byte, error) {
-	codeAddress := pc.AddByte(1)
-
-	values := []byte{}
-
-	value, err := mod.CodePage.Contents.GetByte(codeAddress)
-	if err != nil {
-		return []byte{}, err
-	}
-
-	values = append(values, value)
-
-	codeAddress = codeAddress.AddByte(1)
-
-	value, err = mod.CodePage.Contents.GetByte(codeAddress)
-	if err != nil {
-		return []byte{}, err
-	}
-
-	values = append(values, value)
-
-	return values, nil
-}
-
-// DirectAddress - get direct address
-func (mod Module) DirectAddress(pc vputils.Address) (vputils.Address, error) {
-	emptyAddress, _ := vputils.MakeAddress(0, 1, 0)
-
-	codeAddress := pc.AddByte(1)
-
-	dataAddr, err := mod.CodePage.Contents.GetByte(codeAddress)
-	if err != nil {
-		return emptyAddress, err
-	}
-
-	da := []byte{dataAddr}
-	dataAddress := vputils.Address{da, len(mod.DataPage.Contents)}
-
-	return dataAddress, nil
-}
-
-// DirectByte - get byte via direct address
-func (mod Module) DirectByte(pc vputils.Address) (byte, error) {
-	dataAddress, err := mod.DirectAddress(pc)
-	if err != nil {
-		return 0, err
-	}
-
-	value, err := mod.DataPage.Contents.GetByte(dataAddress)
-	if err != nil {
-		return 0, err
-	}
-
-	return value, nil
-}
-
-// IndirectAddress - get indirect address
-func (mod Module) IndirectAddress(pc vputils.Address) (vputils.Address, error) {
-	emptyAddress, _ := vputils.MakeAddress(0, 1, 0)
-
-	dataAddress, err := mod.DirectAddress(pc)
-	if err != nil {
-		return emptyAddress, err
-	}
-
-	dataAddr, err := mod.DataPage.Contents.GetByte(dataAddress)
-	if err != nil {
-		return emptyAddress, err
-	}
-
-	da := []byte{dataAddr}
-	dataAddress = vputils.Address{da, len(mod.DataPage.Contents)}
-
-	return dataAddress, nil
-}
-
-// IndirectByte - get byte via indirect address
-func (mod Module) IndirectByte(pc vputils.Address) (byte, error) {
-	dataAddress, err := mod.IndirectAddress(pc)
-	if err != nil {
-		return 0, err
-	}
-
-	value, err := mod.DataPage.Contents.GetByte(dataAddress)
-	if err != nil {
-		return 0, err
-	}
-
-	return value, nil
-}
-
-// GetConditionals - get the conditionals for instruction at PC
-func (mod *Module) GetConditionals(pc vputils.Address) (Conditionals, error) {
-	conditionals := Conditionals{}
-	err := errors.New("")
-
-	codeAddress := pc
-	myByte, err := mod.CodePage.Contents.GetByte(codeAddress)
-
-	hasConditional := true
-
-	for hasConditional {
-		if myByte >= 0xE0 && myByte <= 0xEF {
-			conditionals = append(conditionals, myByte)
-			codeAddress = codeAddress.AddByte(1)
-			myByte, err = mod.CodePage.Contents.GetByte(codeAddress)
-		} else {
-			hasConditional = false
-		}
-	}
-
-	return conditionals, err
-}
-
-// GetOpcode - get the opcode at PC
-func (mod Module) GetOpcode(pc vputils.Address) (byte, error) {
-	return mod.CodePage.Contents.GetByte(pc)
-}
-
 // ExecuteOpcode - execute one opcode
-func (proc *Processor) ExecuteOpcode(data *Page, opcode byte, vStack vputils.ByteStack, instruction InstructionDefinition, execute bool, flags FlagsGroup) (vputils.Address, vputils.ByteStack, FlagsGroup, byte, error) {
+func (proc *Processor) ExecuteOpcode(data *Page, opcode byte, vStack vputils.ByteStack, instruction InstructionDefinition, execute bool, flags FlagsGroup) (vputils.ByteStack, FlagsGroup, byte, error) {
 	dataAddress := instruction.Address
 	instructionSize := instruction.Size
 	jumpAddress := instruction.JumpAddress
@@ -612,7 +460,7 @@ func (proc *Processor) ExecuteOpcode(data *Page, opcode byte, vStack vputils.Byt
 			for b != 0 {
 				b, err = data.Contents.GetByte(address)
 				if err != nil {
-					return newpc, vStack, flags, syscall, err
+					return vStack, flags, syscall, err
 				}
 
 				c := string(b)
@@ -630,7 +478,7 @@ func (proc *Processor) ExecuteOpcode(data *Page, opcode byte, vStack vputils.Byt
 		if execute {
 			bytes, vStack, err = vStack.PopByte(1)
 			if err != nil {
-				return newpc, vStack, flags, syscall, err
+				return vStack, flags, syscall, err
 			}
 
 			err = data.Contents.PutByte(dataAddress, bytes[0])
@@ -644,7 +492,7 @@ func (proc *Processor) ExecuteOpcode(data *Page, opcode byte, vStack vputils.Byt
 		if execute {
 			bytes, vStack, err = vStack.PopByte(1)
 			if err != nil {
-				return newpc, vStack, flags, syscall, err
+				return vStack, flags, syscall, err
 			}
 		}
 
@@ -655,12 +503,12 @@ func (proc *Processor) ExecuteOpcode(data *Page, opcode byte, vStack vputils.Byt
 		if execute {
 			bytes1, vStack, err = vStack.PopByte(1)
 			if err != nil {
-				return newpc, vStack, flags, syscall, err
+				return vStack, flags, syscall, err
 			}
 
 			bytes2, vStack, err = vStack.PopByte(1)
 			if err != nil {
-				return newpc, vStack, flags, syscall, err
+				return vStack, flags, syscall, err
 			}
 
 			value := bytes1[0] + bytes2[0]
@@ -674,12 +522,12 @@ func (proc *Processor) ExecuteOpcode(data *Page, opcode byte, vStack vputils.Byt
 		if execute {
 			bytes1, vStack, err = vStack.PopByte(1)
 			if err != nil {
-				return newpc, vStack, flags, syscall, err
+				return vStack, flags, syscall, err
 			}
 
 			bytes2, vStack, err = vStack.PopByte(1)
 			if err != nil {
-				return newpc, vStack, flags, syscall, err
+				return vStack, flags, syscall, err
 			}
 
 			value := bytes1[0] - bytes2[0]
@@ -693,12 +541,12 @@ func (proc *Processor) ExecuteOpcode(data *Page, opcode byte, vStack vputils.Byt
 		if execute {
 			bytes1, vStack, err = vStack.PopByte(1)
 			if err != nil {
-				return newpc, vStack, flags, syscall, err
+				return vStack, flags, syscall, err
 			}
 
 			bytes2, vStack, err = vStack.PopByte(1)
 			if err != nil {
-				return newpc, vStack, flags, syscall, err
+				return vStack, flags, syscall, err
 			}
 
 			value := bytes1[0] * bytes2[0]
@@ -713,12 +561,12 @@ func (proc *Processor) ExecuteOpcode(data *Page, opcode byte, vStack vputils.Byt
 		if execute {
 			bytes1, vStack, err = vStack.PopByte(1)
 			if err != nil {
-				return newpc, vStack, flags, syscall, err
+				return vStack, flags, syscall, err
 			}
 
 			bytes2, vStack, err = vStack.PopByte(1)
 			if err != nil {
-				return newpc, vStack, flags, syscall, err
+				return vStack, flags, syscall, err
 			}
 
 			value := bytes1[0] / bytes2[0]
@@ -733,12 +581,12 @@ func (proc *Processor) ExecuteOpcode(data *Page, opcode byte, vStack vputils.Byt
 		if execute {
 			bytes1, vStack, err = vStack.PopByte(1)
 			if err != nil {
-				return newpc, vStack, flags, syscall, err
+				return vStack, flags, syscall, err
 			}
 
 			bytes2, vStack, err = vStack.PopByte(1)
 			if err != nil {
-				return newpc, vStack, flags, syscall, err
+				return vStack, flags, syscall, err
 			}
 
 			value := bytes1[0] & bytes2[0]
@@ -752,12 +600,12 @@ func (proc *Processor) ExecuteOpcode(data *Page, opcode byte, vStack vputils.Byt
 		if execute {
 			bytes1, vStack, err = vStack.PopByte(1)
 			if err != nil {
-				return newpc, vStack, flags, syscall, err
+				return vStack, flags, syscall, err
 			}
 
 			bytes2, vStack, err = vStack.PopByte(1)
 			if err != nil {
-				return newpc, vStack, flags, syscall, err
+				return vStack, flags, syscall, err
 			}
 
 			value := bytes1[0] | bytes2[0]
@@ -771,12 +619,12 @@ func (proc *Processor) ExecuteOpcode(data *Page, opcode byte, vStack vputils.Byt
 		if execute {
 			bytes1, vStack, err = vStack.PopByte(1)
 			if err != nil {
-				return newpc, vStack, flags, syscall, err
+				return vStack, flags, syscall, err
 			}
 
 			bytes2, vStack, err = vStack.PopByte(1)
 			if err != nil {
-				return newpc, vStack, flags, syscall, err
+				return vStack, flags, syscall, err
 			}
 
 			value := bytes1[0] - bytes2[0]
@@ -809,7 +657,7 @@ func (proc *Processor) ExecuteOpcode(data *Page, opcode byte, vStack vputils.Byt
 		if execute {
 			newpc, err = proc.TopPop()
 			if err != nil {
-				return newpc, vStack, flags, syscall, err
+				return vStack, flags, syscall, err
 			}
 		} else {
 			newpc = pc.AddByte(instructionSize)
@@ -818,10 +666,169 @@ func (proc *Processor) ExecuteOpcode(data *Page, opcode byte, vStack vputils.Byt
 	default:
 		// invalid opcode
 		s := fmt.Sprintf("Invalid opcode %02x at %s\n", opcode, pc.ToString())
-		return newpc, vStack, flags, 0, errors.New(s)
+		return vStack, flags, 0, errors.New(s)
 	}
 
-	return newpc, vStack, flags, syscall, err
+	// advance to next instruction
+	err = proc.SetPC(newpc)
+	if err != nil {
+		s := fmt.Sprintf("Invalid address %s for PC in main: %s", newpc.ToString(), err.Error())
+		return vStack, flags, 0, errors.New(s)
+	}
+
+	return vStack, flags, syscall, err
+}
+
+// Page --------------------------
+type Page struct {
+	Properties []vputils.NameValue
+	Contents   vputils.Vector
+}
+
+// Module ------------------------
+type Module struct {
+	Properties       []vputils.NameValue
+	CodePage         Page
+	Exports          []vputils.NameValue
+	DataPage         Page
+	CodeAddressWidth int
+	DataAddressWidth int
+}
+
+// Init - initialize
+func (mod *Module) Init() {
+}
+
+// ImmediateByte - get a byte
+func (mod Module) ImmediateByte(pc vputils.Address) ([]byte, error) {
+	codeAddress := pc.AddByte(1)
+
+	value, err := mod.CodePage.Contents.GetByte(codeAddress)
+	if err != nil {
+		return []byte{}, err
+	}
+
+	return []byte{value}, nil
+}
+
+// ImmediateInt - get an I16
+func (mod Module) ImmediateInt(pc vputils.Address) ([]byte, error) {
+	codeAddress := pc.AddByte(1)
+
+	values := []byte{}
+
+	value, err := mod.CodePage.Contents.GetByte(codeAddress)
+	if err != nil {
+		return []byte{}, err
+	}
+
+	values = append(values, value)
+
+	codeAddress = codeAddress.AddByte(1)
+
+	value, err = mod.CodePage.Contents.GetByte(codeAddress)
+	if err != nil {
+		return []byte{}, err
+	}
+
+	values = append(values, value)
+
+	return values, nil
+}
+
+// DirectAddress - get direct address
+func (mod Module) DirectAddress(pc vputils.Address) (vputils.Address, error) {
+	emptyAddress, _ := vputils.MakeAddress(0, 1, 0)
+
+	codeAddress := pc.AddByte(1)
+
+	dataAddr, err := mod.CodePage.Contents.GetByte(codeAddress)
+	if err != nil {
+		return emptyAddress, err
+	}
+
+	da := []byte{dataAddr}
+	dataAddress := vputils.Address{da, len(mod.DataPage.Contents)}
+
+	return dataAddress, nil
+}
+
+// DirectByte - get byte via direct address
+func (mod Module) DirectByte(pc vputils.Address) (byte, error) {
+	dataAddress, err := mod.DirectAddress(pc)
+	if err != nil {
+		return 0, err
+	}
+
+	value, err := mod.DataPage.Contents.GetByte(dataAddress)
+	if err != nil {
+		return 0, err
+	}
+
+	return value, nil
+}
+
+// IndirectAddress - get indirect address
+func (mod Module) IndirectAddress(pc vputils.Address) (vputils.Address, error) {
+	emptyAddress, _ := vputils.MakeAddress(0, 1, 0)
+
+	dataAddress, err := mod.DirectAddress(pc)
+	if err != nil {
+		return emptyAddress, err
+	}
+
+	dataAddr, err := mod.DataPage.Contents.GetByte(dataAddress)
+	if err != nil {
+		return emptyAddress, err
+	}
+
+	da := []byte{dataAddr}
+	dataAddress = vputils.Address{da, len(mod.DataPage.Contents)}
+
+	return dataAddress, nil
+}
+
+// IndirectByte - get byte via indirect address
+func (mod Module) IndirectByte(pc vputils.Address) (byte, error) {
+	dataAddress, err := mod.IndirectAddress(pc)
+	if err != nil {
+		return 0, err
+	}
+
+	value, err := mod.DataPage.Contents.GetByte(dataAddress)
+	if err != nil {
+		return 0, err
+	}
+
+	return value, nil
+}
+
+// GetConditionals - get the conditionals for instruction at PC
+func (mod *Module) GetConditionals(pc vputils.Address) (Conditionals, error) {
+	conditionals := Conditionals{}
+	err := errors.New("")
+
+	codeAddress := pc
+	myByte, err := mod.CodePage.Contents.GetByte(codeAddress)
+
+	hasConditional := true
+
+	for hasConditional {
+		if myByte >= 0xE0 && myByte <= 0xEF {
+			conditionals = append(conditionals, myByte)
+			codeAddress = codeAddress.AddByte(1)
+			myByte, err = mod.CodePage.Contents.GetByte(codeAddress)
+		} else {
+			hasConditional = false
+		}
+	}
+
+	return conditionals, err
+}
+
+// GetOpcode - get the opcode at PC
+func (mod Module) GetOpcode(pc vputils.Address) (byte, error) {
+	return mod.CodePage.Contents.GetByte(pc)
 }
 
 // Write a module to a file
