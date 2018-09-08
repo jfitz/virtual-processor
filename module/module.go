@@ -318,6 +318,113 @@ func (proc Processor) GetOpcode(code Page) (byte, error) {
 	return code.Contents.GetByte(proc.PC())
 }
 
+// ImmediateByte - get a byte
+func (proc Processor) ImmediateByte(code Page) ([]byte, error) {
+	pc := proc.PC()
+	codeAddress := pc.AddByte(1)
+
+	value, err := code.Contents.GetByte(codeAddress)
+	if err != nil {
+		return []byte{}, err
+	}
+
+	return []byte{value}, nil
+}
+
+// ImmediateInt - get an I16
+func (proc Processor) ImmediateInt(code Page) ([]byte, error) {
+	pc := proc.PC()
+	codeAddress := pc.AddByte(1)
+
+	values := []byte{}
+
+	value, err := code.Contents.GetByte(codeAddress)
+	if err != nil {
+		return []byte{}, err
+	}
+
+	values = append(values, value)
+
+	codeAddress = codeAddress.AddByte(1)
+
+	value, err = code.Contents.GetByte(codeAddress)
+	if err != nil {
+		return []byte{}, err
+	}
+
+	values = append(values, value)
+
+	return values, nil
+}
+
+// DirectAddress - get direct address
+func (proc Processor) DirectAddress(code Page, data Page) (vputils.Address, error) {
+	emptyAddress, _ := vputils.MakeAddress(0, 1, 0)
+
+	pc := proc.PC()
+	codeAddress := pc.AddByte(1)
+
+	dataAddr, err := code.Contents.GetByte(codeAddress)
+	if err != nil {
+		return emptyAddress, err
+	}
+
+	da := []byte{dataAddr}
+	dataAddress := vputils.Address{da, len(data.Contents)}
+
+	return dataAddress, nil
+}
+
+// DirectByte - get byte via direct address
+func (proc Processor) DirectByte(code Page, data Page) (byte, error) {
+	dataAddress, err := proc.DirectAddress(code, data)
+	if err != nil {
+		return 0, err
+	}
+
+	value, err := data.Contents.GetByte(dataAddress)
+	if err != nil {
+		return 0, err
+	}
+
+	return value, nil
+}
+
+// IndirectAddress - get indirect address
+func (proc Processor) IndirectAddress(code Page, data Page) (vputils.Address, error) {
+	emptyAddress, _ := vputils.MakeAddress(0, 1, 0)
+
+	dataAddress, err := proc.DirectAddress(code, data)
+	if err != nil {
+		return emptyAddress, err
+	}
+
+	dataAddr, err := data.Contents.GetByte(dataAddress)
+	if err != nil {
+		return emptyAddress, err
+	}
+
+	da := []byte{dataAddr}
+	dataAddress = vputils.Address{da, len(data.Contents)}
+
+	return dataAddress, nil
+}
+
+// IndirectByte - get byte via indirect address
+func (proc Processor) IndirectByte(code Page, data Page) (byte, error) {
+	dataAddress, err := proc.IndirectAddress(code, data)
+	if err != nil {
+		return 0, err
+	}
+
+	value, err := data.Contents.GetByte(dataAddress)
+	if err != nil {
+		return 0, err
+	}
+
+	return value, nil
+}
+
 // ExecuteOpcode - execute one opcode
 func (proc *Processor) ExecuteOpcode(data *Page, opcode byte, vStack vputils.ByteStack, instruction InstructionDefinition, execute bool, flags FlagsGroup) (vputils.ByteStack, FlagsGroup, byte, error) {
 	dataAddress := instruction.Address
@@ -731,110 +838,6 @@ type Module struct {
 
 // Init - initialize
 func (mod *Module) Init() {
-}
-
-// ImmediateByte - get a byte
-func (mod Module) ImmediateByte(pc vputils.Address) ([]byte, error) {
-	codeAddress := pc.AddByte(1)
-
-	value, err := mod.CodePage.Contents.GetByte(codeAddress)
-	if err != nil {
-		return []byte{}, err
-	}
-
-	return []byte{value}, nil
-}
-
-// ImmediateInt - get an I16
-func (mod Module) ImmediateInt(pc vputils.Address) ([]byte, error) {
-	codeAddress := pc.AddByte(1)
-
-	values := []byte{}
-
-	value, err := mod.CodePage.Contents.GetByte(codeAddress)
-	if err != nil {
-		return []byte{}, err
-	}
-
-	values = append(values, value)
-
-	codeAddress = codeAddress.AddByte(1)
-
-	value, err = mod.CodePage.Contents.GetByte(codeAddress)
-	if err != nil {
-		return []byte{}, err
-	}
-
-	values = append(values, value)
-
-	return values, nil
-}
-
-// DirectAddress - get direct address
-func (mod Module) DirectAddress(pc vputils.Address) (vputils.Address, error) {
-	emptyAddress, _ := vputils.MakeAddress(0, 1, 0)
-
-	codeAddress := pc.AddByte(1)
-
-	dataAddr, err := mod.CodePage.Contents.GetByte(codeAddress)
-	if err != nil {
-		return emptyAddress, err
-	}
-
-	da := []byte{dataAddr}
-	dataAddress := vputils.Address{da, len(mod.DataPage.Contents)}
-
-	return dataAddress, nil
-}
-
-// DirectByte - get byte via direct address
-func (mod Module) DirectByte(pc vputils.Address) (byte, error) {
-	dataAddress, err := mod.DirectAddress(pc)
-	if err != nil {
-		return 0, err
-	}
-
-	value, err := mod.DataPage.Contents.GetByte(dataAddress)
-	if err != nil {
-		return 0, err
-	}
-
-	return value, nil
-}
-
-// IndirectAddress - get indirect address
-func (mod Module) IndirectAddress(pc vputils.Address) (vputils.Address, error) {
-	emptyAddress, _ := vputils.MakeAddress(0, 1, 0)
-
-	dataAddress, err := mod.DirectAddress(pc)
-	if err != nil {
-		return emptyAddress, err
-	}
-
-	dataAddr, err := mod.DataPage.Contents.GetByte(dataAddress)
-	if err != nil {
-		return emptyAddress, err
-	}
-
-	da := []byte{dataAddr}
-	dataAddress = vputils.Address{da, len(mod.DataPage.Contents)}
-
-	return dataAddress, nil
-}
-
-// IndirectByte - get byte via indirect address
-func (mod Module) IndirectByte(pc vputils.Address) (byte, error) {
-	dataAddress, err := mod.IndirectAddress(pc)
-	if err != nil {
-		return 0, err
-	}
-
-	value, err := mod.DataPage.Contents.GetByte(dataAddress)
-	if err != nil {
-		return 0, err
-	}
-
-	return value, nil
 }
 
 // Write a module to a file

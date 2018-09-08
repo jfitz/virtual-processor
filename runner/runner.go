@@ -73,7 +73,6 @@ func decodeInstruction(opcode byte, def module.OpcodeDefinition, mod module.Modu
 	targetSize := def.TargetSize()
 
 	err := errors.New("")
-	pc := proc.PC()
 
 	// decode immediate value
 	if def.AddressMode == "V" {
@@ -81,13 +80,13 @@ func decodeInstruction(opcode byte, def module.OpcodeDefinition, mod module.Modu
 		switch def.Width {
 
 		case "BYTE":
-			workBytes, err = mod.ImmediateByte(pc)
+			workBytes, err = proc.ImmediateByte(mod.CodePage)
 			vputils.CheckAndExit(err)
 
 			valueStr = fmt.Sprintf("%02X", workBytes[0])
 
 		case "I16":
-			workBytes, err = mod.ImmediateInt(pc)
+			workBytes, err = proc.ImmediateInt(mod.CodePage)
 			vputils.CheckAndExit(err)
 
 			valueStr = fmt.Sprintf("%02X%02X", workBytes[1], workBytes[0])
@@ -100,12 +99,12 @@ func decodeInstruction(opcode byte, def module.OpcodeDefinition, mod module.Modu
 
 	// decode memory target
 	if def.AddressMode == "D" {
-		dataAddress, err = mod.DirectAddress(pc)
+		dataAddress, err = proc.DirectAddress(mod.CodePage, mod.DataPage)
 		vputils.CheckAndExit(err)
 
 		fullOpcode = append(fullOpcode, dataAddress.Bytes...)
 
-		buffer, err := mod.DirectByte(pc)
+		buffer, err := proc.DirectByte(mod.CodePage, mod.DataPage)
 		vputils.CheckAndExit(err)
 
 		workBytes = append(workBytes, buffer)
@@ -115,16 +114,16 @@ func decodeInstruction(opcode byte, def module.OpcodeDefinition, mod module.Modu
 	}
 
 	if def.AddressMode == "I" {
-		dataAddress1, err = mod.DirectAddress(pc)
+		dataAddress1, err = proc.DirectAddress(mod.CodePage, mod.DataPage)
 		vputils.CheckAndExit(err)
 
 		fullOpcode = append(fullOpcode, dataAddress1.Bytes...)
 		workBytes = append(workBytes, dataAddress.Bytes...)
 
-		dataAddress, err = mod.IndirectAddress(pc)
+		dataAddress, err = proc.IndirectAddress(mod.CodePage, mod.DataPage)
 		vputils.CheckAndExit(err)
 
-		buffer, err := mod.IndirectByte(pc)
+		buffer, err := proc.IndirectByte(mod.CodePage, mod.DataPage)
 		vputils.CheckAndExit(err)
 
 		workBytes = append(workBytes, buffer)
@@ -135,7 +134,7 @@ func decodeInstruction(opcode byte, def module.OpcodeDefinition, mod module.Modu
 
 	// decode jump/call target
 	if opcode == 0xD0 || opcode == 0xD1 {
-		jumpAddress, err = mod.DirectAddress(pc)
+		jumpAddress, err = proc.DirectAddress(mod.CodePage, mod.DataPage)
 		vputils.CheckAndExit(err)
 
 		fullOpcode = append(fullOpcode, jumpAddress.Bytes...)
