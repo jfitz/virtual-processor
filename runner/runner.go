@@ -227,7 +227,7 @@ func executeCode(mod module.Module, proc module.Processor, startAddress vputils.
 		pc1 := proc.PC()
 
 		// get conditionals (if any)
-		conditionals, err := mod.GetConditionals(pc1)
+		conditionals, err := proc.GetConditionals(mod.CodePage)
 		vputils.CheckPrintAndExit(err, "at PC "+pc1.ToString())
 
 		// evaluate conditionals

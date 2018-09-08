@@ -284,6 +284,35 @@ func (proc *Processor) TopPop() (vputils.Address, error) {
 	return address, err
 }
 
+// GetConditionals - get the conditionals for instruction at PC
+func (proc Processor) GetConditionals(code Page) (Conditionals, error) {
+	conditionals := Conditionals{}
+	err := errors.New("")
+
+	codeAddress := proc.PC()
+	myByte, err := code.Contents.GetByte(codeAddress)
+	if err != nil {
+		return conditionals, err
+	}
+
+	hasConditional := true
+
+	for hasConditional {
+		if myByte >= 0xE0 && myByte <= 0xEF {
+			conditionals = append(conditionals, myByte)
+			codeAddress = codeAddress.AddByte(1)
+			myByte, err = code.Contents.GetByte(codeAddress)
+			if err != nil {
+				return conditionals, err
+			}
+		} else {
+			hasConditional = false
+		}
+	}
+
+	return conditionals, nil
+}
+
 // ExecuteOpcode - execute one opcode
 func (proc *Processor) ExecuteOpcode(data *Page, opcode byte, vStack vputils.ByteStack, instruction InstructionDefinition, execute bool, flags FlagsGroup) (vputils.ByteStack, FlagsGroup, byte, error) {
 	dataAddress := instruction.Address
@@ -801,29 +830,6 @@ func (mod Module) IndirectByte(pc vputils.Address) (byte, error) {
 	}
 
 	return value, nil
-}
-
-// GetConditionals - get the conditionals for instruction at PC
-func (mod *Module) GetConditionals(pc vputils.Address) (Conditionals, error) {
-	conditionals := Conditionals{}
-	err := errors.New("")
-
-	codeAddress := pc
-	myByte, err := mod.CodePage.Contents.GetByte(codeAddress)
-
-	hasConditional := true
-
-	for hasConditional {
-		if myByte >= 0xE0 && myByte <= 0xEF {
-			conditionals = append(conditionals, myByte)
-			codeAddress = codeAddress.AddByte(1)
-			myByte, err = mod.CodePage.Contents.GetByte(codeAddress)
-		} else {
-			hasConditional = false
-		}
-	}
-
-	return conditionals, err
 }
 
 // GetOpcode - get the opcode at PC
