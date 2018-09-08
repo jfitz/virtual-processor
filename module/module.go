@@ -251,7 +251,8 @@ func (def InstructionDefinition) ToByteString() string {
 
 // Processor ---------------------
 type Processor struct {
-	pc vputils.Address
+	pc       vputils.Address
+	RetStack vputils.AddressStack
 }
 
 // SetPC - set the PC
@@ -270,6 +271,19 @@ func (proc *Processor) IncPC() {
 	proc.pc = proc.pc.AddByte(1)
 }
 
+// Push - push a value
+func (proc *Processor) Push(address vputils.Address) {
+	proc.RetStack = proc.RetStack.Push(address)
+}
+
+// TopPop - pop the top value
+func (proc *Processor) TopPop() (vputils.Address, error) {
+	address, retStack, err := proc.RetStack.TopPop()
+	proc.RetStack = retStack
+
+	return address, err
+}
+
 // Page --------------------------
 type Page struct {
 	Properties []vputils.NameValue
@@ -284,7 +298,6 @@ type Module struct {
 	DataPage         Page
 	CodeAddressWidth int
 	DataAddressWidth int
-	RetStack         vputils.AddressStack
 }
 
 // Init - initialize
@@ -395,19 +408,6 @@ func (mod Module) IndirectByte(pc vputils.Address) (byte, error) {
 	return value, nil
 }
 
-// Push - push a value
-func (mod *Module) Push(address vputils.Address) {
-	mod.RetStack = mod.RetStack.Push(address)
-}
-
-// TopPop - pop the top value
-func (mod *Module) TopPop() (vputils.Address, error) {
-	address, retStack, err := mod.RetStack.TopPop()
-	mod.RetStack = retStack
-
-	return address, err
-}
-
 // GetConditionals - get the conditionals for instruction at PC
 func (mod *Module) GetConditionals(pc vputils.Address) (Conditionals, error) {
 	conditionals := Conditionals{}
@@ -437,7 +437,7 @@ func (mod Module) GetOpcode(pc vputils.Address) (byte, error) {
 }
 
 // ExecuteOpcode - execute one opcode
-func (mod *Module) ExecuteOpcode(pc vputils.Address, opcode byte, vStack vputils.ByteStack, instruction InstructionDefinition, execute bool, flags FlagsGroup) (vputils.Address, vputils.ByteStack, FlagsGroup, byte, error) {
+func (mod *Module) ExecuteOpcode(proc *Processor, opcode byte, vStack vputils.ByteStack, instruction InstructionDefinition, execute bool, flags FlagsGroup) (vputils.Address, vputils.ByteStack, FlagsGroup, byte, error) {
 	dataAddress := instruction.Address
 	instructionSize := instruction.Size
 	jumpAddress := instruction.JumpAddress
@@ -447,6 +447,7 @@ func (mod *Module) ExecuteOpcode(pc vputils.Address, opcode byte, vStack vputils
 
 	syscall := byte(0)
 
+	pc := proc.PC()
 	newpc := pc
 
 	bytes1 := []byte{}
@@ -798,7 +799,7 @@ func (mod *Module) ExecuteOpcode(pc vputils.Address, opcode byte, vStack vputils
 		if execute {
 			newpc = jumpAddress
 			retpc := pc.AddByte(instructionSize)
-			mod.Push(retpc)
+			proc.Push(retpc)
 		} else {
 			newpc = pc.AddByte(instructionSize)
 		}
@@ -806,7 +807,7 @@ func (mod *Module) ExecuteOpcode(pc vputils.Address, opcode byte, vStack vputils
 	case 0xD2:
 		// RET
 		if execute {
-			newpc, err = mod.TopPop()
+			newpc, err = proc.TopPop()
 			if err != nil {
 				return newpc, vStack, flags, syscall, err
 			}

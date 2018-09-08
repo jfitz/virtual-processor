@@ -260,7 +260,7 @@ func executeCode(mod module.Module, proc module.Processor, startAddress vputils.
 		syscall := byte(0)
 		newpc := vputils.Address{}
 
-		newpc, vStack, flags, syscall, err = mod.ExecuteOpcode(pc2, opcode, vStack, instruction, execute, flags)
+		newpc, vStack, flags, syscall, err = mod.ExecuteOpcode(&proc, opcode, vStack, instruction, execute, flags)
 
 		// advance to next instruction
 		err = proc.SetPC(newpc)
