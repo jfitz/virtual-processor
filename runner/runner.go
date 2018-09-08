@@ -226,34 +226,30 @@ func executeCode(mod module.Module, proc module.Processor, startAddress vputils.
 	for !halt {
 		pc1 := proc.PC()
 
-		// get conditionals (if any)
 		conditionals, err := proc.GetConditionals(mod.CodePage)
-		vputils.CheckPrintAndExit(err, "at PC "+pc1.ToString())
+		if err != nil {
+			message := err.Error() + " at PC " + pc1.ToString()
+			return errors.New(message)
+		}
 
-		// evaluate conditionals
 		execute, err := conditionals.Evaluate(flags)
 		if err != nil {
 			return err
 		}
 
-		// step PC over conditionals
-		pc2 := pc1.AddByte(len(conditionals))
-		proc.SetPC(pc2)
+		pc2 := proc.PC()
 
-		// get the opcode
 		opcode, err := proc.GetOpcode(mod.CodePage)
 		if err != nil {
 			message := err.Error() + " at PC " + pc2.ToString()
 			return errors.New(message)
 		}
 
-		// get opcode definition
 		def := opcodeDefinitions[opcode]
 
 		// get instruction definition (opcode and arguments)
 		instruction := decodeInstruction(opcode, def, mod, proc)
 
-		// display instruction
 		if trace {
 			line := traceOpcode(pc1, opcode, def, flags, conditionals, instruction)
 			fmt.Println(line)

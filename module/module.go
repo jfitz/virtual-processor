@@ -285,12 +285,11 @@ func (proc *Processor) TopPop() (vputils.Address, error) {
 }
 
 // GetConditionals - get the conditionals for instruction at PC
-func (proc Processor) GetConditionals(code Page) (Conditionals, error) {
+func (proc *Processor) GetConditionals(code Page) (Conditionals, error) {
 	conditionals := Conditionals{}
 	err := errors.New("")
 
-	codeAddress := proc.PC()
-	myByte, err := code.Contents.GetByte(codeAddress)
+	myByte, err := code.Contents.GetByte(proc.PC())
 	if err != nil {
 		return conditionals, err
 	}
@@ -300,8 +299,9 @@ func (proc Processor) GetConditionals(code Page) (Conditionals, error) {
 	for hasConditional {
 		if myByte >= 0xE0 && myByte <= 0xEF {
 			conditionals = append(conditionals, myByte)
-			codeAddress = codeAddress.AddByte(1)
-			myByte, err = code.Contents.GetByte(codeAddress)
+			// step PC over conditionals
+			proc.IncPC()
+			myByte, err = code.Contents.GetByte(proc.PC())
 			if err != nil {
 				return conditionals, err
 			}
