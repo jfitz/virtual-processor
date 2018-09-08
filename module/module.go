@@ -313,6 +313,11 @@ func (proc Processor) GetConditionals(code Page) (Conditionals, error) {
 	return conditionals, nil
 }
 
+// GetOpcode - get the opcode at PC
+func (proc Processor) GetOpcode(code Page) (byte, error) {
+	return code.Contents.GetByte(proc.PC())
+}
+
 // ExecuteOpcode - execute one opcode
 func (proc *Processor) ExecuteOpcode(data *Page, opcode byte, vStack vputils.ByteStack, instruction InstructionDefinition, execute bool, flags FlagsGroup) (vputils.ByteStack, FlagsGroup, byte, error) {
 	dataAddress := instruction.Address
@@ -830,11 +835,6 @@ func (mod Module) IndirectByte(pc vputils.Address) (byte, error) {
 	}
 
 	return value, nil
-}
-
-// GetOpcode - get the opcode at PC
-func (mod Module) GetOpcode(pc vputils.Address) (byte, error) {
-	return mod.CodePage.Contents.GetByte(pc)
 }
 
 // Write a module to a file

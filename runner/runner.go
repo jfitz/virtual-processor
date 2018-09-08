@@ -241,8 +241,11 @@ func executeCode(mod module.Module, proc module.Processor, startAddress vputils.
 		proc.SetPC(pc2)
 
 		// get the opcode
-		opcode, err := mod.GetOpcode(pc2)
-		vputils.CheckPrintAndExit(err, "at PC "+pc2.ToString())
+		opcode, err := proc.GetOpcode(mod.CodePage)
+		if err != nil {
+			message := err.Error() + " at PC " + pc2.ToString()
+			return errors.New(message)
+		}
 
 		// get opcode definition
 		def := opcodeDefinitions[opcode]
