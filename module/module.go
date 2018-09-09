@@ -357,6 +357,24 @@ func (proc Processor) ImmediateInt(code Page) ([]byte, error) {
 	return values, nil
 }
 
+// JumpAddress - get direct address
+func (proc Processor) JumpAddress(code Page) (vputils.Address, error) {
+	emptyAddress, _ := vputils.MakeAddress(0, 1, 0)
+
+	pc := proc.PC()
+	codeAddress := pc.AddByte(1)
+
+	jumpAddr, err := code.Contents.GetByte(codeAddress)
+	if err != nil {
+		return emptyAddress, err
+	}
+
+	da := []byte{jumpAddr}
+	jumpAddress := vputils.Address{da, len(code.Contents)}
+
+	return jumpAddress, nil
+}
+
 // DirectAddress - get direct address
 func (proc Processor) DirectAddress(code Page, data Page) (vputils.Address, error) {
 	emptyAddress, _ := vputils.MakeAddress(0, 1, 0)
@@ -423,6 +441,95 @@ func (proc Processor) IndirectByte(code Page, data Page) (byte, error) {
 	}
 
 	return value, nil
+}
+
+func (proc Processor) DecodeInstruction(opcode byte, def OpcodeDefinition, code Page, data Page) InstructionDefinition {
+	fullOpcode := []byte{opcode}
+
+	// working bytes for opcode
+	workBytes := []byte{}
+
+	// addresses for opcode
+	dataAddress := vputils.Address{[]byte{}, 0}
+	dataAddress1 := vputils.Address{[]byte{}, 0}
+	jumpAddress := vputils.Address{[]byte{}, 0}
+	valueStr := ""
+
+	instructionSize := def.OpcodeSize()
+	targetSize := def.TargetSize()
+
+	err := errors.New("")
+
+	// decode immediate value
+	if def.AddressMode == "V" {
+
+		switch def.Width {
+
+		case "BYTE":
+			workBytes, err = proc.ImmediateByte(code)
+			vputils.CheckAndExit(err)
+
+			valueStr = fmt.Sprintf("%02X", workBytes[0])
+
+		case "I16":
+			workBytes, err = proc.ImmediateInt(code)
+			vputils.CheckAndExit(err)
+
+			valueStr = fmt.Sprintf("%02X%02X", workBytes[1], workBytes[0])
+
+		}
+
+		fullOpcode = append(fullOpcode, workBytes...)
+		instructionSize += targetSize
+	}
+
+	// decode memory target
+	if def.AddressMode == "D" {
+		dataAddress, err = proc.DirectAddress(code, data)
+		vputils.CheckAndExit(err)
+
+		fullOpcode = append(fullOpcode, dataAddress.Bytes...)
+
+		buffer, err := proc.DirectByte(code, data)
+		vputils.CheckAndExit(err)
+
+		workBytes = append(workBytes, buffer)
+		valueStr = fmt.Sprintf("%02X", buffer)
+
+		instructionSize += dataAddress.NumBytes()
+	}
+
+	if def.AddressMode == "I" {
+		dataAddress1, err = proc.DirectAddress(code, data)
+		vputils.CheckAndExit(err)
+
+		fullOpcode = append(fullOpcode, dataAddress1.Bytes...)
+		workBytes = append(workBytes, dataAddress.Bytes...)
+
+		dataAddress, err = proc.IndirectAddress(code, data)
+		vputils.CheckAndExit(err)
+
+		buffer, err := proc.IndirectByte(code, data)
+		vputils.CheckAndExit(err)
+
+		workBytes = append(workBytes, buffer)
+		valueStr = fmt.Sprintf("%02X", buffer)
+
+		instructionSize += dataAddress1.NumBytes()
+	}
+
+	// decode jump/call target
+	if opcode == 0xD0 || opcode == 0xD1 {
+		jumpAddress, err = proc.JumpAddress(code)
+		vputils.CheckAndExit(err)
+
+		fullOpcode = append(fullOpcode, jumpAddress.Bytes...)
+		instructionSize += jumpAddress.NumBytes()
+	}
+
+	instruction := InstructionDefinition{fullOpcode, dataAddress1, dataAddress, instructionSize, jumpAddress, workBytes, valueStr}
+
+	return instruction
 }
 
 // ExecuteOpcode - execute one opcode

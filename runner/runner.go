@@ -57,95 +57,6 @@ func outCall(vStack vputils.ByteStack, trace bool) vputils.ByteStack {
 	return vStack
 }
 
-func decodeInstruction(opcode byte, def module.OpcodeDefinition, mod module.Module, proc module.Processor) module.InstructionDefinition {
-	fullOpcode := []byte{opcode}
-
-	// working bytes for opcode
-	workBytes := []byte{}
-
-	// addresses for opcode
-	dataAddress := vputils.Address{[]byte{}, 0}
-	dataAddress1 := vputils.Address{[]byte{}, 0}
-	jumpAddress := vputils.Address{[]byte{}, 0}
-	valueStr := ""
-
-	instructionSize := def.OpcodeSize()
-	targetSize := def.TargetSize()
-
-	err := errors.New("")
-
-	// decode immediate value
-	if def.AddressMode == "V" {
-
-		switch def.Width {
-
-		case "BYTE":
-			workBytes, err = proc.ImmediateByte(mod.CodePage)
-			vputils.CheckAndExit(err)
-
-			valueStr = fmt.Sprintf("%02X", workBytes[0])
-
-		case "I16":
-			workBytes, err = proc.ImmediateInt(mod.CodePage)
-			vputils.CheckAndExit(err)
-
-			valueStr = fmt.Sprintf("%02X%02X", workBytes[1], workBytes[0])
-
-		}
-
-		fullOpcode = append(fullOpcode, workBytes...)
-		instructionSize += targetSize
-	}
-
-	// decode memory target
-	if def.AddressMode == "D" {
-		dataAddress, err = proc.DirectAddress(mod.CodePage, mod.DataPage)
-		vputils.CheckAndExit(err)
-
-		fullOpcode = append(fullOpcode, dataAddress.Bytes...)
-
-		buffer, err := proc.DirectByte(mod.CodePage, mod.DataPage)
-		vputils.CheckAndExit(err)
-
-		workBytes = append(workBytes, buffer)
-		valueStr = fmt.Sprintf("%02X", buffer)
-
-		instructionSize += dataAddress.NumBytes()
-	}
-
-	if def.AddressMode == "I" {
-		dataAddress1, err = proc.DirectAddress(mod.CodePage, mod.DataPage)
-		vputils.CheckAndExit(err)
-
-		fullOpcode = append(fullOpcode, dataAddress1.Bytes...)
-		workBytes = append(workBytes, dataAddress.Bytes...)
-
-		dataAddress, err = proc.IndirectAddress(mod.CodePage, mod.DataPage)
-		vputils.CheckAndExit(err)
-
-		buffer, err := proc.IndirectByte(mod.CodePage, mod.DataPage)
-		vputils.CheckAndExit(err)
-
-		workBytes = append(workBytes, buffer)
-		valueStr = fmt.Sprintf("%02X", buffer)
-
-		instructionSize += dataAddress1.NumBytes()
-	}
-
-	// decode jump/call target
-	if opcode == 0xD0 || opcode == 0xD1 {
-		jumpAddress, err = proc.DirectAddress(mod.CodePage, mod.DataPage)
-		vputils.CheckAndExit(err)
-
-		fullOpcode = append(fullOpcode, jumpAddress.Bytes...)
-		instructionSize += jumpAddress.NumBytes()
-	}
-
-	instruction := module.InstructionDefinition{fullOpcode, dataAddress1, dataAddress, instructionSize, jumpAddress, workBytes, valueStr}
-
-	return instruction
-}
-
 func traceOpcode(pc vputils.Address, opcode byte, opcodeDef module.OpcodeDefinition, flags module.FlagsGroup, conditionals module.Conditionals, instruction module.InstructionDefinition) string {
 	dataAddress1 := instruction.Address1
 	dataAddress := instruction.Address
@@ -247,7 +158,7 @@ func executeCode(mod module.Module, proc module.Processor, startAddress vputils.
 		def := opcodeDefinitions[opcode]
 
 		// get instruction definition (opcode and arguments)
-		instruction := decodeInstruction(opcode, def, mod, proc)
+		instruction := proc.DecodeInstruction(opcode, def, mod.CodePage, mod.DataPage)
 
 		if trace {
 			line := traceOpcode(pc1, opcode, def, flags, conditionals, instruction)
