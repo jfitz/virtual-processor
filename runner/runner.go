@@ -158,7 +158,8 @@ func executeCode(mod module.Module, proc module.Processor, startAddress vputils.
 		def := opcodeDefinitions[opcode]
 
 		// get instruction definition (opcode and arguments)
-		instruction := proc.DecodeInstruction(opcode, def, mod.CodePage, mod.DataPage)
+		instruction, err := proc.DecodeInstruction(opcode, def, mod.CodePage, mod.DataPage)
+		vputils.CheckAndExit(err)
 
 		if trace {
 			line := traceOpcode(pc1, opcode, def, flags, conditionals, instruction)

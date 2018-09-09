@@ -1079,6 +1079,7 @@ func main() {
 
 	// if output specified, write module file
 	if len(moduleFile) > 0 {
-		mod.Write(moduleFile)
+		err = mod.Write(moduleFile)
+		vputils.CheckAndExit(err)
 	}
 }

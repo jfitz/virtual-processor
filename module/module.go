@@ -443,7 +443,7 @@ func (proc Processor) IndirectByte(code Page, data Page) (byte, error) {
 	return value, nil
 }
 
-func (proc Processor) DecodeInstruction(opcode byte, def OpcodeDefinition, code Page, data Page) InstructionDefinition {
+func (proc Processor) DecodeInstruction(opcode byte, def OpcodeDefinition, code Page, data Page) (InstructionDefinition, error) {
 	fullOpcode := []byte{opcode}
 
 	// working bytes for opcode
@@ -467,13 +467,17 @@ func (proc Processor) DecodeInstruction(opcode byte, def OpcodeDefinition, code 
 
 		case "BYTE":
 			workBytes, err = proc.ImmediateByte(code)
-			vputils.CheckAndExit(err)
+			if err != nil {
+				return InstructionDefinition{}, err
+			}
 
 			valueStr = fmt.Sprintf("%02X", workBytes[0])
 
 		case "I16":
 			workBytes, err = proc.ImmediateInt(code)
-			vputils.CheckAndExit(err)
+			if err != nil {
+				return InstructionDefinition{}, err
+			}
 
 			valueStr = fmt.Sprintf("%02X%02X", workBytes[1], workBytes[0])
 
@@ -486,12 +490,16 @@ func (proc Processor) DecodeInstruction(opcode byte, def OpcodeDefinition, code 
 	// decode memory target
 	if def.AddressMode == "D" {
 		dataAddress, err = proc.DirectAddress(code, data)
-		vputils.CheckAndExit(err)
+		if err != nil {
+			return InstructionDefinition{}, err
+		}
 
 		fullOpcode = append(fullOpcode, dataAddress.Bytes...)
 
 		buffer, err := proc.DirectByte(code, data)
-		vputils.CheckAndExit(err)
+		if err != nil {
+			return InstructionDefinition{}, err
+		}
 
 		workBytes = append(workBytes, buffer)
 		valueStr = fmt.Sprintf("%02X", buffer)
@@ -501,16 +509,22 @@ func (proc Processor) DecodeInstruction(opcode byte, def OpcodeDefinition, code 
 
 	if def.AddressMode == "I" {
 		dataAddress1, err = proc.DirectAddress(code, data)
-		vputils.CheckAndExit(err)
+		if err != nil {
+			return InstructionDefinition{}, err
+		}
 
 		fullOpcode = append(fullOpcode, dataAddress1.Bytes...)
 		workBytes = append(workBytes, dataAddress.Bytes...)
 
 		dataAddress, err = proc.IndirectAddress(code, data)
-		vputils.CheckAndExit(err)
+		if err != nil {
+			return InstructionDefinition{}, err
+		}
 
 		buffer, err := proc.IndirectByte(code, data)
-		vputils.CheckAndExit(err)
+		if err != nil {
+			return InstructionDefinition{}, err
+		}
 
 		workBytes = append(workBytes, buffer)
 		valueStr = fmt.Sprintf("%02X", buffer)
@@ -521,7 +535,9 @@ func (proc Processor) DecodeInstruction(opcode byte, def OpcodeDefinition, code 
 	// decode jump/call target
 	if opcode == 0xD0 || opcode == 0xD1 {
 		jumpAddress, err = proc.JumpAddress(code)
-		vputils.CheckAndExit(err)
+		if err != nil {
+			return InstructionDefinition{}, err
+		}
 
 		fullOpcode = append(fullOpcode, jumpAddress.Bytes...)
 		instructionSize += jumpAddress.NumBytes()
@@ -529,7 +545,7 @@ func (proc Processor) DecodeInstruction(opcode byte, def OpcodeDefinition, code 
 
 	instruction := InstructionDefinition{fullOpcode, dataAddress1, dataAddress, instructionSize, jumpAddress, workBytes, valueStr}
 
-	return instruction
+	return instruction, nil
 }
 
 // ExecuteOpcode - execute one opcode
@@ -599,7 +615,9 @@ func (proc *Processor) ExecuteOpcode(data *Page, opcode byte, vStack vputils.Byt
 		// FLAGS.B (implied stack)
 		if execute {
 			buffer, err := vStack.TopByte()
-			vputils.CheckAndPanic(err)
+			if err != nil {
+				return vStack, flags, syscall, err
+			}
 
 			flags.Zero = buffer == 0
 		}
@@ -612,7 +630,9 @@ func (proc *Processor) ExecuteOpcode(data *Page, opcode byte, vStack vputils.Byt
 			bytes[0]++
 
 			err = data.Contents.PutByte(dataAddress, bytes[0])
-			vputils.CheckAndPanic(err)
+			if err != nil {
+				return vStack, flags, syscall, err
+			}
 		}
 
 		newpc = pc.AddByte(instructionSize)
@@ -623,7 +643,9 @@ func (proc *Processor) ExecuteOpcode(data *Page, opcode byte, vStack vputils.Byt
 			bytes[0]++
 
 			err = data.Contents.PutByte(dataAddress, bytes[0])
-			vputils.CheckAndPanic(err)
+			if err != nil {
+				return vStack, flags, syscall, err
+			}
 		}
 
 		newpc = pc.AddByte(instructionSize)
@@ -634,7 +656,9 @@ func (proc *Processor) ExecuteOpcode(data *Page, opcode byte, vStack vputils.Byt
 			bytes[0]--
 
 			err = data.Contents.PutByte(dataAddress, bytes[0])
-			vputils.CheckAndPanic(err)
+			if err != nil {
+				return vStack, flags, syscall, err
+			}
 		}
 
 		newpc = pc.AddByte(instructionSize)
@@ -645,7 +669,9 @@ func (proc *Processor) ExecuteOpcode(data *Page, opcode byte, vStack vputils.Byt
 			bytes[0]--
 
 			err = data.Contents.PutByte(dataAddress, bytes[0])
-			vputils.CheckAndPanic(err)
+			if err != nil {
+				return vStack, flags, syscall, err
+			}
 		}
 
 		newpc = pc.AddByte(instructionSize)
@@ -730,7 +756,9 @@ func (proc *Processor) ExecuteOpcode(data *Page, opcode byte, vStack vputils.Byt
 			}
 
 			err = data.Contents.PutByte(dataAddress, bytes[0])
-			vputils.CheckAndPanic(err)
+			if err != nil {
+				return vStack, flags, syscall, err
+			}
 		}
 
 		newpc = pc.AddByte(instructionSize)
@@ -948,9 +976,11 @@ func (mod *Module) Init() {
 }
 
 // Write a module to a file
-func (mod Module) Write(filename string) {
+func (mod Module) Write(filename string) error {
 	f, err := os.Create(filename)
-	vputils.CheckAndPanic(err)
+	if err != nil {
+		return err
+	}
 
 	defer f.Close()
 
@@ -964,6 +994,8 @@ func (mod Module) Write(filename string) {
 	vputils.WriteBinaryBlock("data", mod.DataPage.Contents, f, mod.DataAddressWidth)
 
 	f.Sync()
+
+	return nil
 }
 
 // Read a file into a module
