@@ -268,7 +268,7 @@ func (proc Processor) PC() vputils.Address {
 
 // IncPC - increment the PC
 func (proc *Processor) IncPC() {
-	proc.pc = proc.pc.AddByte(1)
+	proc.pc = proc.pc.Increment(1)
 }
 
 // Push - push a value
@@ -321,7 +321,7 @@ func (proc Processor) GetOpcode(code Page) (byte, error) {
 // ImmediateByte - get a byte
 func (proc Processor) ImmediateByte(code Page) ([]byte, error) {
 	pc := proc.PC()
-	codeAddress := pc.AddByte(1)
+	codeAddress := pc.Increment(1)
 
 	value, err := code.Contents.GetByte(codeAddress)
 	if err != nil {
@@ -334,7 +334,7 @@ func (proc Processor) ImmediateByte(code Page) ([]byte, error) {
 // ImmediateInt - get an I16
 func (proc Processor) ImmediateInt(code Page) ([]byte, error) {
 	pc := proc.PC()
-	codeAddress := pc.AddByte(1)
+	codeAddress := pc.Increment(1)
 
 	values := []byte{}
 
@@ -345,7 +345,7 @@ func (proc Processor) ImmediateInt(code Page) ([]byte, error) {
 
 	values = append(values, value)
 
-	codeAddress = codeAddress.AddByte(1)
+	codeAddress = codeAddress.Increment(1)
 
 	value, err = code.Contents.GetByte(codeAddress)
 	if err != nil {
@@ -362,15 +362,14 @@ func (proc Processor) JumpAddress(code Page) (vputils.Address, error) {
 	emptyAddress, _ := vputils.MakeAddress(0, 1, 0)
 
 	pc := proc.PC()
-	codeAddress := pc.AddByte(1)
+	codeAddress := pc.Increment(1)
 
 	jumpAddr, err := code.Contents.GetByte(codeAddress)
 	if err != nil {
 		return emptyAddress, err
 	}
 
-	da := []byte{jumpAddr}
-	jumpAddress := vputils.Address{da, len(code.Contents)}
+	jumpAddress := vputils.Address{int(jumpAddr), 1, len(code.Contents)}
 
 	return jumpAddress, nil
 }
@@ -380,15 +379,14 @@ func (proc Processor) DirectAddress(code Page, data Page) (vputils.Address, erro
 	emptyAddress, _ := vputils.MakeAddress(0, 1, 0)
 
 	pc := proc.PC()
-	codeAddress := pc.AddByte(1)
+	codeAddress := pc.Increment(1)
 
 	dataAddr, err := code.Contents.GetByte(codeAddress)
 	if err != nil {
 		return emptyAddress, err
 	}
 
-	da := []byte{dataAddr}
-	dataAddress := vputils.Address{da, len(data.Contents)}
+	dataAddress := vputils.Address{int(dataAddr), 1, len(data.Contents)}
 
 	return dataAddress, nil
 }
@@ -422,8 +420,7 @@ func (proc Processor) IndirectAddress(code Page, data Page) (vputils.Address, er
 		return emptyAddress, err
 	}
 
-	da := []byte{dataAddr}
-	dataAddress = vputils.Address{da, len(data.Contents)}
+	dataAddress = vputils.Address{int(dataAddr), 1, len(data.Contents)}
 
 	return dataAddress, nil
 }
@@ -450,9 +447,9 @@ func (proc Processor) DecodeInstruction(opcode byte, def OpcodeDefinition, code 
 	workBytes := []byte{}
 
 	// addresses for opcode
-	dataAddress := vputils.Address{[]byte{}, 0}
-	dataAddress1 := vputils.Address{[]byte{}, 0}
-	jumpAddress := vputils.Address{[]byte{}, 0}
+	dataAddress := vputils.Address{0, 0, 0}
+	dataAddress1 := vputils.Address{0, 0, 0}
+	jumpAddress := vputils.Address{0, 0, 0}
 	valueStr := ""
 
 	instructionSize := def.OpcodeSize()
@@ -494,7 +491,8 @@ func (proc Processor) DecodeInstruction(opcode byte, def OpcodeDefinition, code 
 			return InstructionDefinition{}, err
 		}
 
-		fullOpcode = append(fullOpcode, dataAddress.Bytes...)
+		bytes := dataAddress.ToBytes()
+		fullOpcode = append(fullOpcode, bytes...)
 
 		buffer, err := proc.DirectByte(code, data)
 		if err != nil {
@@ -504,7 +502,7 @@ func (proc Processor) DecodeInstruction(opcode byte, def OpcodeDefinition, code 
 		workBytes = append(workBytes, buffer)
 		valueStr = fmt.Sprintf("%02X", buffer)
 
-		instructionSize += dataAddress.NumBytes()
+		instructionSize += dataAddress.Size
 	}
 
 	if def.AddressMode == "I" {
@@ -513,8 +511,10 @@ func (proc Processor) DecodeInstruction(opcode byte, def OpcodeDefinition, code 
 			return InstructionDefinition{}, err
 		}
 
-		fullOpcode = append(fullOpcode, dataAddress1.Bytes...)
-		workBytes = append(workBytes, dataAddress.Bytes...)
+		bytes1 := dataAddress1.ToBytes()
+		fullOpcode = append(fullOpcode, bytes1...)
+		bytes := dataAddress.ToBytes()
+		workBytes = append(workBytes, bytes...)
 
 		dataAddress, err = proc.IndirectAddress(code, data)
 		if err != nil {
@@ -529,7 +529,7 @@ func (proc Processor) DecodeInstruction(opcode byte, def OpcodeDefinition, code 
 		workBytes = append(workBytes, buffer)
 		valueStr = fmt.Sprintf("%02X", buffer)
 
-		instructionSize += dataAddress1.NumBytes()
+		instructionSize += dataAddress1.Size
 	}
 
 	// decode jump/call target
@@ -539,8 +539,9 @@ func (proc Processor) DecodeInstruction(opcode byte, def OpcodeDefinition, code 
 			return InstructionDefinition{}, err
 		}
 
-		fullOpcode = append(fullOpcode, jumpAddress.Bytes...)
-		instructionSize += jumpAddress.NumBytes()
+		bytes := jumpAddress.ToBytes()
+		fullOpcode = append(fullOpcode, bytes...)
+		instructionSize += jumpAddress.Size
 	}
 
 	instruction := InstructionDefinition{fullOpcode, dataAddress1, dataAddress, instructionSize, jumpAddress, workBytes, valueStr}
@@ -569,7 +570,7 @@ func (proc *Processor) ExecuteOpcode(data *Page, opcode byte, vStack vputils.Byt
 	switch opcode {
 	case 0x00:
 		// NOP
-		newpc = pc.AddByte(instructionSize)
+		newpc = pc.Increment(instructionSize)
 
 	case 0x04:
 		// EXIT
@@ -577,7 +578,7 @@ func (proc *Processor) ExecuteOpcode(data *Page, opcode byte, vStack vputils.Byt
 			syscall = opcode
 		}
 
-		// newpc = pc.AddByte(instructionSize)
+		// newpc = pc.Increment(instructionSize)
 
 	case 0x05:
 		// KCALL - kernel call
@@ -585,7 +586,7 @@ func (proc *Processor) ExecuteOpcode(data *Page, opcode byte, vStack vputils.Byt
 			syscall = opcode
 		}
 
-		newpc = pc.AddByte(instructionSize)
+		newpc = pc.Increment(instructionSize)
 
 	case 0x08:
 		// OUT (implied stack)
@@ -593,7 +594,7 @@ func (proc *Processor) ExecuteOpcode(data *Page, opcode byte, vStack vputils.Byt
 			syscall = opcode
 		}
 
-		newpc = pc.AddByte(instructionSize)
+		newpc = pc.Increment(instructionSize)
 
 	case 0x11:
 		// FLAGS.B direct address
@@ -601,7 +602,7 @@ func (proc *Processor) ExecuteOpcode(data *Page, opcode byte, vStack vputils.Byt
 			flags.Zero = bytes[0] == 0
 		}
 
-		newpc = pc.AddByte(instructionSize)
+		newpc = pc.Increment(instructionSize)
 
 	case 0x12:
 		// FLAGS.B indirect address
@@ -609,7 +610,7 @@ func (proc *Processor) ExecuteOpcode(data *Page, opcode byte, vStack vputils.Byt
 			flags.Zero = bytes[0] == 0
 		}
 
-		newpc = pc.AddByte(instructionSize)
+		newpc = pc.Increment(instructionSize)
 
 	case 0x13:
 		// FLAGS.B (implied stack)
@@ -622,7 +623,7 @@ func (proc *Processor) ExecuteOpcode(data *Page, opcode byte, vStack vputils.Byt
 			flags.Zero = buffer == 0
 		}
 
-		newpc = pc.AddByte(instructionSize)
+		newpc = pc.Increment(instructionSize)
 
 	case 0x21:
 		// INC.B direct address
@@ -635,7 +636,7 @@ func (proc *Processor) ExecuteOpcode(data *Page, opcode byte, vStack vputils.Byt
 			}
 		}
 
-		newpc = pc.AddByte(instructionSize)
+		newpc = pc.Increment(instructionSize)
 
 	case 0x22:
 		// INC.B indirect address
@@ -648,7 +649,7 @@ func (proc *Processor) ExecuteOpcode(data *Page, opcode byte, vStack vputils.Byt
 			}
 		}
 
-		newpc = pc.AddByte(instructionSize)
+		newpc = pc.Increment(instructionSize)
 
 	case 0x31:
 		// DEC.B direct address
@@ -661,7 +662,7 @@ func (proc *Processor) ExecuteOpcode(data *Page, opcode byte, vStack vputils.Byt
 			}
 		}
 
-		newpc = pc.AddByte(instructionSize)
+		newpc = pc.Increment(instructionSize)
 
 	case 0x32:
 		// DEC.B indirect address
@@ -674,7 +675,7 @@ func (proc *Processor) ExecuteOpcode(data *Page, opcode byte, vStack vputils.Byt
 			}
 		}
 
-		newpc = pc.AddByte(instructionSize)
+		newpc = pc.Increment(instructionSize)
 
 	case 0x60:
 		// PUSH.B immediate value
@@ -682,7 +683,7 @@ func (proc *Processor) ExecuteOpcode(data *Page, opcode byte, vStack vputils.Byt
 			vStack = vStack.PushBytes(bytes)
 		}
 
-		newpc = pc.AddByte(instructionSize)
+		newpc = pc.Increment(instructionSize)
 
 	case 0x61:
 		// PUSH.B direct address
@@ -690,7 +691,7 @@ func (proc *Processor) ExecuteOpcode(data *Page, opcode byte, vStack vputils.Byt
 			vStack = vStack.PushBytes(bytes)
 		}
 
-		newpc = pc.AddByte(instructionSize)
+		newpc = pc.Increment(instructionSize)
 
 	case 0x62:
 		// PUSH.B indirect address
@@ -698,7 +699,7 @@ func (proc *Processor) ExecuteOpcode(data *Page, opcode byte, vStack vputils.Byt
 			vStack = vStack.PushBytes(bytes)
 		}
 
-		newpc = pc.AddByte(instructionSize)
+		newpc = pc.Increment(instructionSize)
 
 	case 0x64:
 		// PUSH.I16 immediate value
@@ -706,7 +707,7 @@ func (proc *Processor) ExecuteOpcode(data *Page, opcode byte, vStack vputils.Byt
 			vStack = vStack.PushBytes(bytes)
 		}
 
-		newpc = pc.AddByte(instructionSize)
+		newpc = pc.Increment(instructionSize)
 
 	case 0x65:
 		// PUSH.I16 direct address
@@ -714,7 +715,7 @@ func (proc *Processor) ExecuteOpcode(data *Page, opcode byte, vStack vputils.Byt
 			vStack = vStack.PushBytes(bytes)
 		}
 
-		newpc = pc.AddByte(instructionSize)
+		newpc = pc.Increment(instructionSize)
 
 	case 0x66:
 		// PUSH.I16 indirect address
@@ -722,7 +723,7 @@ func (proc *Processor) ExecuteOpcode(data *Page, opcode byte, vStack vputils.Byt
 			vStack = vStack.PushBytes(bytes)
 		}
 
-		newpc = pc.AddByte(instructionSize)
+		newpc = pc.Increment(instructionSize)
 
 	case 0x79:
 		// PUSH.STR direct address
@@ -739,13 +740,13 @@ func (proc *Processor) ExecuteOpcode(data *Page, opcode byte, vStack vputils.Byt
 
 				c := string(b)
 				s += c
-				address = address.AddByte(1)
+				address = address.Increment(1)
 			}
 
 			vStack = vStack.PushString(s)
 		}
 
-		newpc = pc.AddByte(instructionSize)
+		newpc = pc.Increment(instructionSize)
 
 	case 0x81:
 		// POP.B direct address
@@ -761,7 +762,7 @@ func (proc *Processor) ExecuteOpcode(data *Page, opcode byte, vStack vputils.Byt
 			}
 		}
 
-		newpc = pc.AddByte(instructionSize)
+		newpc = pc.Increment(instructionSize)
 
 	case 0x83:
 		// POP.B value (to nowhere)
@@ -772,7 +773,7 @@ func (proc *Processor) ExecuteOpcode(data *Page, opcode byte, vStack vputils.Byt
 			}
 		}
 
-		newpc = pc.AddByte(instructionSize)
+		newpc = pc.Increment(instructionSize)
 
 	case 0xA0:
 		// ADD.B
@@ -791,7 +792,7 @@ func (proc *Processor) ExecuteOpcode(data *Page, opcode byte, vStack vputils.Byt
 			vStack = vStack.PushByte(value)
 		}
 
-		newpc = pc.AddByte(instructionSize)
+		newpc = pc.Increment(instructionSize)
 
 	case 0xA1:
 		// SUB.B
@@ -810,7 +811,7 @@ func (proc *Processor) ExecuteOpcode(data *Page, opcode byte, vStack vputils.Byt
 			vStack = vStack.PushByte(value)
 		}
 
-		newpc = pc.AddByte(instructionSize)
+		newpc = pc.Increment(instructionSize)
 
 	case 0xA2:
 		// MUL.B
@@ -830,7 +831,7 @@ func (proc *Processor) ExecuteOpcode(data *Page, opcode byte, vStack vputils.Byt
 			vStack = vStack.PushByte(value)
 		}
 
-		newpc = pc.AddByte(instructionSize)
+		newpc = pc.Increment(instructionSize)
 
 	case 0xA3:
 		// DIV.B
@@ -850,7 +851,7 @@ func (proc *Processor) ExecuteOpcode(data *Page, opcode byte, vStack vputils.Byt
 			vStack = vStack.PushByte(value)
 		}
 
-		newpc = pc.AddByte(instructionSize)
+		newpc = pc.Increment(instructionSize)
 
 	case 0xC0:
 		// AND.B
@@ -869,7 +870,7 @@ func (proc *Processor) ExecuteOpcode(data *Page, opcode byte, vStack vputils.Byt
 			vStack = vStack.PushByte(value)
 		}
 
-		newpc = pc.AddByte(instructionSize)
+		newpc = pc.Increment(instructionSize)
 
 	case 0xC1:
 		// OR.B
@@ -888,7 +889,7 @@ func (proc *Processor) ExecuteOpcode(data *Page, opcode byte, vStack vputils.Byt
 			vStack = vStack.PushByte(value)
 		}
 
-		newpc = pc.AddByte(instructionSize)
+		newpc = pc.Increment(instructionSize)
 
 	case 0xC3:
 		// CMP.B
@@ -908,24 +909,24 @@ func (proc *Processor) ExecuteOpcode(data *Page, opcode byte, vStack vputils.Byt
 			flags.Zero = value == 0
 		}
 
-		newpc = pc.AddByte(instructionSize)
+		newpc = pc.Increment(instructionSize)
 
 	case 0xD0:
 		// JUMP
 		if execute {
 			newpc = jumpAddress
 		} else {
-			newpc = pc.AddByte(instructionSize)
+			newpc = pc.Increment(instructionSize)
 		}
 
 	case 0xD1:
 		// CALL
 		if execute {
 			newpc = jumpAddress
-			retpc := pc.AddByte(instructionSize)
+			retpc := pc.Increment(instructionSize)
 			proc.Push(retpc)
 		} else {
-			newpc = pc.AddByte(instructionSize)
+			newpc = pc.Increment(instructionSize)
 		}
 
 	case 0xD2:
@@ -936,7 +937,7 @@ func (proc *Processor) ExecuteOpcode(data *Page, opcode byte, vStack vputils.Byt
 				return vStack, flags, syscall, err
 			}
 		} else {
-			newpc = pc.AddByte(instructionSize)
+			newpc = pc.Increment(instructionSize)
 		}
 
 	default:

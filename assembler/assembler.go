@@ -101,7 +101,8 @@ func buildInstructionByAddressMode(opcodemap opcodeList, width string, value str
 			err := errors.New("Undefined data label '" + dataTarget + "'")
 			vputils.CheckAndExit(err)
 		}
-		instruction := append(opcode, address.Bytes...)
+		bytes := address.ToBytes()
+		instruction := append(opcode, bytes...)
 		return instruction, nil
 	}
 
@@ -113,7 +114,8 @@ func buildInstructionByAddressMode(opcodemap opcodeList, width string, value str
 			err := errors.New("Undefined data label '" + target + "'")
 			vputils.CheckAndExit(err)
 		}
-		instruction := append(opcode, address.Bytes...)
+		bytes := address.ToBytes()
+		instruction := append(opcode, bytes...)
 		return instruction, nil
 	}
 
@@ -125,7 +127,8 @@ func buildInstructionByAddressMode(opcodemap opcodeList, width string, value str
 			err := errors.New("Undefined label '" + dataTarget + "'")
 			vputils.CheckAndExit(err)
 		}
-		instruction := append(opcode, address.Bytes...)
+		bytes := address.ToBytes()
+		instruction := append(opcode, bytes...)
 		return instruction, nil
 	}
 
@@ -137,7 +140,8 @@ func buildInstructionByAddressMode(opcodemap opcodeList, width string, value str
 			err := errors.New("Undefined label '" + dataTarget + "'")
 			vputils.CheckAndExit(err)
 		}
-		instruction := append(opcode, address.Bytes...)
+		bytes := address.ToBytes()
+		instruction := append(opcode, bytes...)
 		return instruction, nil
 	}
 
@@ -165,7 +169,8 @@ func buildJumpCallInstruction(opcode byte, target string, dataLabels labelTable,
 		}
 
 		// TODO: check address is within code address width
-		instruction := append(instruction, address.Bytes...)
+		bytes := address.ToBytes()
+		instruction := append(instruction, bytes...)
 		return instruction, nil
 	}
 
@@ -184,7 +189,8 @@ func buildJumpCallInstruction(opcode byte, target string, dataLabels labelTable,
 	}
 
 	// TODO: check address is within data address width
-	instruction = append(instruction, address.Bytes...)
+	bytes := address.ToBytes()
+	instruction = append(instruction, bytes...)
 	return instruction, nil
 }
 
@@ -615,7 +621,7 @@ func makeExports(codeLabels labelTable) []vputils.NameValue {
 
 	for label, address := range codeLabels {
 		if vputils.IsUpper(label[0]) {
-			i := address.ToInt()
+			i := address.Value
 			s := strconv.Itoa(i)
 			nv := vputils.NameValue{label, s}
 			exports = append(exports, nv)

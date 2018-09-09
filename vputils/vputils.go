@@ -404,74 +404,59 @@ func ReadFile(sourceFile string) ([]string, error) {
 
 // Address --------------------------------
 type Address struct {
-	Bytes   []byte
+	Value   int
+	Size    int
 	Maximum int
 }
 
 // MakeAddress - create an address
 func MakeAddress(value int, size int, maximum int) (Address, error) {
 	if value < 0 {
-		return Address{[]byte{}, 0}, errors.New("Negative address")
+		return Address{0, 0, 0}, errors.New("Negative address")
 	}
 
 	if value > maximum {
-		return Address{[]byte{}, 0}, errors.New("Address exceeds maximum")
+		return Address{0, 0, 0}, errors.New("Address exceeds maximum")
 	}
 
-	addressBytes := []byte{}
-
-	for i := 0; i < size; i++ {
-		b := byte(value & 0xff)
-		addressBytes = append(addressBytes, b)
-		value = value / 256
-	}
-
-	return Address{addressBytes, maximum}, nil
+	return Address{value, size, maximum}, nil
 }
 
 // Empty - is address empty
 func (address Address) Empty() bool {
-	return len(address.Bytes) == 0
-}
-
-// NumBytes - number of bytes for address
-func (address Address) NumBytes() int {
-	return len(address.Bytes)
-}
-
-// ToInt - convert to int
-func (address Address) ToInt() int {
-	value := 0
-	for _, b := range address.Bytes {
-		// should shift here
-		// little-endian or big-endian?
-		value += int(b)
-	}
-
-	return value
+	return address.Size == 0
 }
 
 // ToString - convert to string
 func (address Address) ToString() string {
-	s := ""
-	for _, b := range address.Bytes {
-		s += fmt.Sprintf("%02X", b)
+	bytes := address.ToBytes()
+	ss := []string{}
+	for _, b := range bytes {
+		s := fmt.Sprintf("%02X", b)
+		ss = append(ss, s)
 	}
-
-	return s
+	result := strings.Join(ss, " ")
+	return result
 }
 
-// ByteValue - get byte
-func (address Address) ByteValue() byte {
-	return address.Bytes[0]
+// ToBytes - convert to array of bytes
+func (address Address) ToBytes() []byte {
+	v := address.Value
+	bytes := []byte{}
+
+	for i := 0; i < address.Size; i++ {
+		b1 := byte(v & 0xff)
+		bytes = append(bytes, b1)
+		v = v / 256
+	}
+
+	return bytes
 }
 
 // AddByte - increase
-func (address Address) AddByte(i int) Address {
-	increment := byte(i)
-	a := address.ByteValue() + increment
-	as := []byte{a}
-	return Address{as, address.Maximum}
+func (address Address) Increment(i int) Address {
+	a := address.Value + i
+	return Address{a, address.Size, address.Maximum}
 }
 
 // Vector --------------------
@@ -480,11 +465,11 @@ type Vector []byte
 // GetByte - get byte
 func (v Vector) GetByte(address Address) (byte, error) {
 	max := len(v) - 1
-	offset := address.ToInt()
+	offset := address.Value
 	if offset < 0 || offset > max {
-		off := strconv.Itoa(offset)
+		offs := strconv.Itoa(offset)
 		maxs := strconv.Itoa(max)
-		return 0, errors.New("Index " + off + " out of range [0.." + maxs + "]")
+		return 0, errors.New("Index " + offs + " out of range [0.." + maxs + "]")
 	}
 
 	value := v[offset]
@@ -494,11 +479,11 @@ func (v Vector) GetByte(address Address) (byte, error) {
 // PutByte - put byte
 func (v Vector) PutByte(address Address, value byte) error {
 	max := len(v) - 1
-	offset := address.ToInt()
+	offset := address.Value
 	if offset < 0 || offset > max {
-		off := strconv.Itoa(offset)
+		offs := strconv.Itoa(offset)
 		maxs := strconv.Itoa(max)
-		return errors.New("Index " + off + " out of range [0.." + maxs + "]")
+		return errors.New("Index " + offs + " out of range [0.." + maxs + "]")
 	}
 
 	v[offset] = value
@@ -639,7 +624,7 @@ func (stack AddressStack) Push(address Address) AddressStack {
 func (stack AddressStack) Top() (Address, error) {
 	count := 1
 	if len(stack) < count {
-		return Address{[]byte{}, 0}, errors.New("Stack underflow")
+		return Address{0, 0, 0}, errors.New("Stack underflow")
 	}
 
 	last := len(stack) - count
@@ -661,7 +646,7 @@ func (stack AddressStack) Pop() (AddressStack, error) {
 func (stack AddressStack) TopPop() (Address, AddressStack, error) {
 	count := 1
 	if len(stack) < count {
-		return Address{[]byte{}, 0}, stack, errors.New("Stack underflow")
+		return Address{0, 0, 0}, stack, errors.New("Stack underflow")
 	}
 
 	last := len(stack) - count
