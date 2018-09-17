@@ -422,6 +422,21 @@ func MakeAddress(value int, size int, maximum int) (Address, error) {
 	return Address{value, size, maximum}, nil
 }
 
+// BytesToAddress - create an address
+func BytesToAddress(bytes []byte, maximum int) (Address, error) {
+	size := len(bytes)
+
+	value := 0
+	// convert bytes to int
+	for i := size; i > 0; i-- {
+		value *= 256
+		value += int(bytes[i-1])
+	}
+
+	// built Address
+	return Address{value, size, maximum}, nil
+}
+
 // Empty - is address empty
 func (address Address) Empty() bool {
 	return address.Size == 0

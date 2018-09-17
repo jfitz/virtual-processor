@@ -359,36 +359,22 @@ func (proc Processor) ImmediateInt(code Page) ([]byte, error) {
 
 // JumpAddress - get direct address
 func (proc Processor) JumpAddress(code Page) (vputils.Address, error) {
-	emptyAddress, _ := vputils.MakeAddress(0, 1, 0)
-
 	pc := proc.PC()
 	codeAddress := pc.Increment(1)
 
-	jumpAddr, err := code.Contents.GetByte(codeAddress)
-	if err != nil {
-		return emptyAddress, err
-	}
+	jumpAddress, err := code.GetAddress(codeAddress)
 
-	jumpAddress := vputils.Address{int(jumpAddr), 1, len(code.Contents)}
-
-	return jumpAddress, nil
+	return jumpAddress, err
 }
 
 // DirectAddress - get direct address
 func (proc Processor) DirectAddress(code Page, data Page) (vputils.Address, error) {
-	emptyAddress, _ := vputils.MakeAddress(0, 1, 0)
-
 	pc := proc.PC()
 	codeAddress := pc.Increment(1)
 
-	dataAddr, err := code.Contents.GetByte(codeAddress)
-	if err != nil {
-		return emptyAddress, err
-	}
+	dataAddress, err := code.GetAddress(codeAddress)
 
-	dataAddress := vputils.Address{int(dataAddr), 1, len(data.Contents)}
-
-	return dataAddress, nil
+	return dataAddress, err
 }
 
 // DirectByte - get byte via direct address
@@ -408,21 +394,17 @@ func (proc Processor) DirectByte(code Page, data Page) (byte, error) {
 
 // IndirectAddress - get indirect address
 func (proc Processor) IndirectAddress(code Page, data Page) (vputils.Address, error) {
-	emptyAddress, _ := vputils.MakeAddress(0, 1, 0)
+	pc := proc.PC()
+	codeAddress := pc.Increment(1)
 
-	dataAddress, err := proc.DirectAddress(code, data)
+	dataAddress1, err := code.GetAddress(codeAddress)
 	if err != nil {
-		return emptyAddress, err
+		return dataAddress1, err
 	}
 
-	dataAddr, err := data.Contents.GetByte(dataAddress)
-	if err != nil {
-		return emptyAddress, err
-	}
+	dataAddress, err := data.GetAddress(dataAddress1)
 
-	dataAddress = vputils.Address{int(dataAddr), 1, len(data.Contents)}
-
-	return dataAddress, nil
+	return dataAddress, err
 }
 
 // IndirectByte - get byte via indirect address
@@ -447,9 +429,9 @@ func (proc Processor) DecodeInstruction(opcode byte, def OpcodeDefinition, code 
 	workBytes := []byte{}
 
 	// addresses for opcode
-	dataAddress := vputils.Address{0, 0, 0}
-	dataAddress1 := vputils.Address{0, 0, 0}
-	jumpAddress := vputils.Address{0, 0, 0}
+	dataAddress, _ := vputils.MakeAddress(0, 0, 0)
+	dataAddress1, _ := vputils.MakeAddress(0, 0, 0)
+	jumpAddress, _ := vputils.MakeAddress(0, 0, 0)
 	valueStr := ""
 
 	instructionSize := def.OpcodeSize()
@@ -960,6 +942,23 @@ func (proc *Processor) ExecuteOpcode(data *Page, opcode byte, vStack vputils.Byt
 type Page struct {
 	Properties []vputils.NameValue
 	Contents   vputils.Vector
+}
+
+func (page Page) GetAddress(address vputils.Address) (vputils.Address, error) {
+	emptyAddress, _ := vputils.MakeAddress(0, 1, 0)
+
+	addr, err := page.Contents.GetByte(address)
+	if err != nil {
+		return emptyAddress, err
+	}
+
+	addrBytes := []byte{addr}
+	resultAddress, err := vputils.BytesToAddress(addrBytes, len(page.Contents))
+	if err != nil {
+		return emptyAddress, err
+	}
+
+	return resultAddress, nil
 }
 
 // Module ------------------------
