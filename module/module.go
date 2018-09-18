@@ -249,6 +249,30 @@ func (def InstructionDefinition) ToByteString() string {
 	return s
 }
 
+// Page --------------------------
+type Page struct {
+	Properties   []vputils.NameValue
+	Contents     vputils.Vector
+	AddressWidth int
+}
+
+func (page Page) GetAddress(address vputils.Address, addressWidth int, maximum int) (vputils.Address, error) {
+	emptyAddress, _ := vputils.MakeAddress(0, addressWidth, 0)
+
+	addrBytes, err := page.Contents.GetBytes(address, addressWidth)
+	if err != nil {
+		return emptyAddress, err
+	}
+
+	resultAddress, err := vputils.BytesToAddress(addrBytes, maximum)
+	if err != nil {
+		message := "Cannot get address: " + err.Error()
+		return emptyAddress, errors.New(message)
+	}
+
+	return resultAddress, nil
+}
+
 // Processor ---------------------
 type Processor struct {
 	pc       vputils.Address
@@ -362,7 +386,7 @@ func (proc Processor) JumpAddress(code Page) (vputils.Address, error) {
 	pc := proc.PC()
 	codeAddress := pc.Increment(1)
 
-	jumpAddress, err := code.GetAddress(codeAddress)
+	jumpAddress, err := code.GetAddress(codeAddress, code.AddressWidth, len(code.Contents))
 
 	return jumpAddress, err
 }
@@ -372,7 +396,7 @@ func (proc Processor) DirectAddress(code Page, data Page) (vputils.Address, erro
 	pc := proc.PC()
 	codeAddress := pc.Increment(1)
 
-	dataAddress, err := code.GetAddress(codeAddress)
+	dataAddress, err := code.GetAddress(codeAddress, data.AddressWidth, len(data.Contents))
 
 	return dataAddress, err
 }
@@ -397,12 +421,13 @@ func (proc Processor) IndirectAddress(code Page, data Page) (vputils.Address, er
 	pc := proc.PC()
 	codeAddress := pc.Increment(1)
 
-	dataAddress1, err := code.GetAddress(codeAddress)
+	addressWidth := data.AddressWidth
+	dataAddress1, err := code.GetAddress(codeAddress, addressWidth, len(data.Contents))
 	if err != nil {
 		return dataAddress1, err
 	}
 
-	dataAddress, err := data.GetAddress(dataAddress1)
+	dataAddress, err := data.GetAddress(dataAddress1, addressWidth, len(data.Contents))
 
 	return dataAddress, err
 }
@@ -938,29 +963,6 @@ func (proc *Processor) ExecuteOpcode(data *Page, opcode byte, vStack vputils.Byt
 	return vStack, flags, syscall, err
 }
 
-// Page --------------------------
-type Page struct {
-	Properties []vputils.NameValue
-	Contents   vputils.Vector
-}
-
-func (page Page) GetAddress(address vputils.Address) (vputils.Address, error) {
-	emptyAddress, _ := vputils.MakeAddress(0, 1, 0)
-
-	addr, err := page.Contents.GetByte(address)
-	if err != nil {
-		return emptyAddress, err
-	}
-
-	addrBytes := []byte{addr}
-	resultAddress, err := vputils.BytesToAddress(addrBytes, len(page.Contents))
-	if err != nil {
-		return emptyAddress, err
-	}
-
-	return resultAddress, nil
-}
-
 // Module ------------------------
 type Module struct {
 	Properties       []vputils.NameValue
@@ -1022,9 +1024,6 @@ func Read(moduleFile string) (Module, error) {
 		return Module{}, err
 	}
 
-	codeAddressWidth := 1
-	dataAddressWidth := 1
-
 	header = vputils.ReadString(f)
 	if header != "exports" {
 		return Module{}, errors.New("Did not find exports header")
@@ -1045,6 +1044,8 @@ func Read(moduleFile string) (Module, error) {
 		return Module{}, err
 	}
 
+	codeAddressWidth := 1
+
 	header = vputils.ReadString(f)
 	if header != "code" {
 		return Module{}, errors.New("Did not find code header")
@@ -1055,7 +1056,7 @@ func Read(moduleFile string) (Module, error) {
 		return Module{}, err
 	}
 
-	codePage := Page{codeProperties, code}
+	codePage := Page{codeProperties, code, codeAddressWidth}
 
 	header = vputils.ReadString(f)
 	if header != "data_properties" {
@@ -1067,6 +1068,8 @@ func Read(moduleFile string) (Module, error) {
 		return Module{}, err
 	}
 
+	dataAddressWidth := 1
+
 	header = vputils.ReadString(f)
 	if header != "data" {
 		return Module{}, errors.New("Did not find data header")
@@ -1077,7 +1080,7 @@ func Read(moduleFile string) (Module, error) {
 		return Module{}, err
 	}
 
-	dataPage := Page{dataProperties, data}
+	dataPage := Page{dataProperties, data, dataAddressWidth}
 
 	// TODO: check data page datawidth is the same as code page datawidth
 

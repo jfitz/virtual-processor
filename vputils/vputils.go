@@ -409,14 +409,32 @@ type Address struct {
 	Maximum int
 }
 
+func addressSpecification(size int) string {
+	spec := "%X"
+
+	if size == 1 {
+		spec = "%02X"
+	}
+	if size == 2 {
+		spec = "%04X"
+	}
+
+	return spec
+}
+
 // MakeAddress - create an address
 func MakeAddress(value int, size int, maximum int) (Address, error) {
 	if value < 0 {
-		return Address{0, 0, 0}, errors.New("Negative address")
+		message := fmt.Sprintf("Negative address %d", value)
+		return Address{0, 0, 0}, errors.New(message)
 	}
 
 	if value > maximum {
-		return Address{0, 0, 0}, errors.New("Address exceeds maximum")
+		spec := addressSpecification(size)
+		template := "Address %X exceeds maximum " + spec
+		message := fmt.Sprintf(template, value, maximum)
+
+		return Address{0, 0, 0}, errors.New(message)
 	}
 
 	return Address{value, size, maximum}, nil
@@ -434,7 +452,7 @@ func BytesToAddress(bytes []byte, maximum int) (Address, error) {
 	}
 
 	// built Address
-	return Address{value, size, maximum}, nil
+	return MakeAddress(value, size, maximum)
 }
 
 // Empty - is address empty
@@ -489,6 +507,31 @@ func (v Vector) GetByte(address Address) (byte, error) {
 
 	value := v[offset]
 	return value, nil
+}
+
+// GetBytes - get bytes
+func (v Vector) GetBytes(address Address, count int) ([]byte, error) {
+	max := len(v) - 1
+
+	offset := address.Value
+
+	bytes := make([]byte, 0)
+
+	for i := 0; i < count; i++ {
+		if offset < 0 || offset > max {
+			offs := strconv.Itoa(offset)
+			maxs := strconv.Itoa(max)
+			message := "Index " + offs + " out of range [0.." + maxs + "]"
+			return bytes, errors.New(message)
+		}
+
+		b := v[offset]
+		bytes = append(bytes, b)
+
+		offset += 1
+	}
+
+	return bytes, nil
 }
 
 // PutByte - put byte
