@@ -966,7 +966,7 @@ func main() {
 	}
 
 	// create opcode definitions
-	opcodeDefs := module.MakeOpcodeDefinitions()
+	opcodeDefs := module.MakeMnemonicTargetWidthAddressModes()
 	instructionSetVersion := "1"
 
 	codeAddressWidth := 1
