@@ -415,13 +415,12 @@ func (proc *Processor) GetConditionals(code Page) (Conditionals, error) {
 }
 
 // GetOpcode - get the opcode at PC
-func (proc Processor) GetOpcode(code Page) (byte, error) {
-	return code.Contents.GetByte(proc.PC())
+func (code Page) GetOpcode(pc vputils.Address) (byte, error) {
+	return code.Contents.GetByte(pc)
 }
 
 // ImmediateByte - get a byte
-func (proc Processor) ImmediateByte(code Page) ([]byte, error) {
-	pc := proc.PC()
+func (code Page) ImmediateByte(pc vputils.Address) ([]byte, error) {
 	codeAddress := pc.Increment(1)
 
 	value, err := code.Contents.GetByte(codeAddress)
@@ -433,8 +432,7 @@ func (proc Processor) ImmediateByte(code Page) ([]byte, error) {
 }
 
 // ImmediateInt - get an I16
-func (proc Processor) ImmediateInt(code Page) ([]byte, error) {
-	pc := proc.PC()
+func (code Page) ImmediateInt(pc vputils.Address) ([]byte, error) {
 	codeAddress := pc.Increment(1)
 
 	values := []byte{}
@@ -459,8 +457,7 @@ func (proc Processor) ImmediateInt(code Page) ([]byte, error) {
 }
 
 // JumpAddress - get direct address
-func (proc Processor) JumpAddress(code Page) (vputils.Address, error) {
-	pc := proc.PC()
+func (code Page) JumpAddress(pc vputils.Address) (vputils.Address, error) {
 	codeAddress := pc.Increment(1)
 
 	jumpAddress, err := code.GetAddress(codeAddress, code.AddressWidth, len(code.Contents))
@@ -469,8 +466,7 @@ func (proc Processor) JumpAddress(code Page) (vputils.Address, error) {
 }
 
 // DirectAddress - get direct address
-func (proc Processor) DirectAddress(code Page, data Page) (vputils.Address, error) {
-	pc := proc.PC()
+func (code Page) DirectAddress(pc vputils.Address, data Page) (vputils.Address, error) {
 	codeAddress := pc.Increment(1)
 
 	dataAddress, err := code.GetAddress(codeAddress, data.AddressWidth, len(data.Contents))
@@ -479,8 +475,8 @@ func (proc Processor) DirectAddress(code Page, data Page) (vputils.Address, erro
 }
 
 // DirectByte - get byte via direct address
-func (proc Processor) DirectByte(code Page, data Page) (byte, error) {
-	dataAddress, err := proc.DirectAddress(code, data)
+func (code Page) DirectByte(pc vputils.Address, data Page) (byte, error) {
+	dataAddress, err := code.DirectAddress(pc, data)
 	if err != nil {
 		return 0, err
 	}
@@ -494,8 +490,7 @@ func (proc Processor) DirectByte(code Page, data Page) (byte, error) {
 }
 
 // IndirectAddress - get indirect address
-func (proc Processor) IndirectAddress(code Page, data Page) (vputils.Address, error) {
-	pc := proc.PC()
+func (code Page) IndirectAddress(pc vputils.Address, data Page) (vputils.Address, error) {
 	codeAddress := pc.Increment(1)
 
 	addressWidth := data.AddressWidth
@@ -510,8 +505,8 @@ func (proc Processor) IndirectAddress(code Page, data Page) (vputils.Address, er
 }
 
 // IndirectByte - get byte via indirect address
-func (proc Processor) IndirectByte(code Page, data Page) (byte, error) {
-	dataAddress, err := proc.IndirectAddress(code, data)
+func (code Page) IndirectByte(pc vputils.Address, data Page) (byte, error) {
+	dataAddress, err := code.IndirectAddress(pc, data)
 	if err != nil {
 		return 0, err
 	}
@@ -547,7 +542,7 @@ func (proc Processor) DecodeInstruction(opcode byte, def MnemonicTargetWidthAddr
 		switch def.Width {
 
 		case "BYTE":
-			workBytes, err = proc.ImmediateByte(code)
+			workBytes, err = code.ImmediateByte(proc.PC())
 			if err != nil {
 				return InstructionDefinition{}, err
 			}
@@ -555,7 +550,7 @@ func (proc Processor) DecodeInstruction(opcode byte, def MnemonicTargetWidthAddr
 			valueStr = fmt.Sprintf("%02X", workBytes[0])
 
 		case "I16":
-			workBytes, err = proc.ImmediateInt(code)
+			workBytes, err = code.ImmediateInt(proc.PC())
 			if err != nil {
 				return InstructionDefinition{}, err
 			}
@@ -570,7 +565,7 @@ func (proc Processor) DecodeInstruction(opcode byte, def MnemonicTargetWidthAddr
 
 	// decode memory target
 	if def.AddressMode == "D" {
-		dataAddress, err = proc.DirectAddress(code, data)
+		dataAddress, err = code.DirectAddress(proc.PC(), data)
 		if err != nil {
 			return InstructionDefinition{}, err
 		}
@@ -578,7 +573,7 @@ func (proc Processor) DecodeInstruction(opcode byte, def MnemonicTargetWidthAddr
 		bytes := dataAddress.ToBytes()
 		fullOpcode = append(fullOpcode, bytes...)
 
-		buffer, err := proc.DirectByte(code, data)
+		buffer, err := code.DirectByte(proc.PC(), data)
 		if err != nil {
 			return InstructionDefinition{}, err
 		}
@@ -590,7 +585,7 @@ func (proc Processor) DecodeInstruction(opcode byte, def MnemonicTargetWidthAddr
 	}
 
 	if def.AddressMode == "I" {
-		dataAddress1, err = proc.DirectAddress(code, data)
+		dataAddress1, err = code.DirectAddress(proc.PC(), data)
 		if err != nil {
 			return InstructionDefinition{}, err
 		}
@@ -600,12 +595,12 @@ func (proc Processor) DecodeInstruction(opcode byte, def MnemonicTargetWidthAddr
 		bytes := dataAddress.ToBytes()
 		workBytes = append(workBytes, bytes...)
 
-		dataAddress, err = proc.IndirectAddress(code, data)
+		dataAddress, err = code.IndirectAddress(proc.PC(), data)
 		if err != nil {
 			return InstructionDefinition{}, err
 		}
 
-		buffer, err := proc.IndirectByte(code, data)
+		buffer, err := code.IndirectByte(proc.PC(), data)
 		if err != nil {
 			return InstructionDefinition{}, err
 		}
@@ -618,7 +613,7 @@ func (proc Processor) DecodeInstruction(opcode byte, def MnemonicTargetWidthAddr
 
 	// decode jump/call target
 	if opcode == 0xD0 || opcode == 0xD1 {
-		jumpAddress, err = proc.JumpAddress(code)
+		jumpAddress, err = code.JumpAddress(proc.PC())
 		if err != nil {
 			return InstructionDefinition{}, err
 		}
@@ -1098,7 +1093,7 @@ func (proc *Processor) ExecuteInstruction(vStack vputils.ByteStack, codePage Pag
 
 	pc2 := proc.PC()
 
-	opcode, err := proc.GetOpcode(codePage)
+	opcode, err := codePage.GetOpcode(pc2)
 	if err != nil {
 		message := err.Error() + " at PC " + pc2.ToString()
 		return vStack, 0, errors.New(message)
