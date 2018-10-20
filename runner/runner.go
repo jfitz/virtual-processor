@@ -114,7 +114,7 @@ func traceHalt(pc vputils.Address) string {
 	return line
 }
 
-func executeCode(mod module.Module, proc module.Processor, startAddress vputils.Address, trace bool, opcodeDefinitions module.ByteToMnemonic) error {
+func executeCode(mod module.Module, proc module.Processor, startAddress vputils.Address, trace bool) error {
 	// initialize virtual processor
 	flags := module.FlagsGroup{false, false, false}
 	vStack := make(vputils.ByteStack, 0) // value stack
@@ -130,6 +130,8 @@ func executeCode(mod module.Module, proc module.Processor, startAddress vputils.
 	if trace {
 		fmt.Println("Execution started at ", startAddress.ToString())
 	}
+
+	opcodeDefinitions := module.DefineOpcodes()
 
 	halt := false
 
@@ -244,9 +246,7 @@ func main() {
 	startAddress, err := vputils.MakeAddress(startAddressInt, codeAddressWidth, len(mod.CodePage.Contents))
 	vputils.CheckAndExit(err)
 
-	opcodeDefinitions := module.DefineOpcodes()
-
 	proc := module.Processor{}
-	err = executeCode(mod, proc, startAddress, trace, opcodeDefinitions)
+	err = executeCode(mod, proc, startAddress, trace)
 	vputils.CheckAndExit(err)
 }
