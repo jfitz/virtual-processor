@@ -116,7 +116,6 @@ func traceHalt(pc vputils.Address) string {
 
 func executeCode(mod module.Module, proc module.Processor, startAddress vputils.Address, trace bool) error {
 	// initialize virtual processor
-	flags := module.FlagsGroup{false, false, false}
 	vStack := make(vputils.ByteStack, 0) // value stack
 
 	// initialize module
@@ -144,7 +143,7 @@ func executeCode(mod module.Module, proc module.Processor, startAddress vputils.
 			return errors.New(message)
 		}
 
-		execute, err := conditionals.Evaluate(flags)
+		execute, err := conditionals.Evaluate(proc.Flags)
 		if err != nil {
 			return err
 		}
@@ -164,14 +163,14 @@ func executeCode(mod module.Module, proc module.Processor, startAddress vputils.
 		vputils.CheckAndExit(err)
 
 		if trace {
-			line := traceOpcode(pc1, opcode, def, flags, conditionals, instruction)
+			line := traceOpcode(pc1, opcode, def, proc.Flags, conditionals, instruction)
 			fmt.Println(line)
 		}
 
 		// execute instruction
 		syscall := byte(0)
 
-		vStack, flags, syscall, err = proc.ExecuteOpcode(&mod.DataPage, opcode, vStack, instruction, execute, flags)
+		vStack, syscall, err = proc.ExecuteOpcode(&mod.DataPage, opcode, vStack, instruction, execute)
 
 		// process the requested runner call
 		// these are handled here, not in the opcode processor
