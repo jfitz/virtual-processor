@@ -57,45 +57,6 @@ func outCall(vStack vputils.ByteStack, trace bool) vputils.ByteStack {
 	return vStack
 }
 
-func traceOpcode(pc vputils.Address, opcode byte, opcodeDef module.MnemonicTargetWidthAddressMode, flags module.FlagsGroup, conditionals module.Conditionals, instruction module.InstructionDefinition) string {
-	dataAddress1 := instruction.Address1
-	dataAddress := instruction.Address
-	jumpAddress := instruction.JumpAddress
-	valueStr := instruction.ValueStr
-
-	line := fmt.Sprintf("%s: ", pc.ToString())
-
-	opcodeStr := instruction.ToByteString()
-
-	text := opcodeDef.ToString()
-	if len(conditionals) > 0 {
-		condiStr := conditionals.ToString()
-		condiByteStr := conditionals.ToByteString()
-		line += fmt.Sprintf("%s%s%s %s", condiByteStr, opcodeStr, condiStr, text)
-	} else {
-		line += fmt.Sprintf("%s%s", opcodeStr, text)
-	}
-
-	if !dataAddress1.Empty() {
-		line += " @@" + dataAddress1.ToString()
-	}
-	if !dataAddress.Empty() {
-		line += " @" + dataAddress.ToString()
-	}
-
-	if len(valueStr) > 0 {
-		line += " =" + valueStr
-	}
-
-	if !jumpAddress.Empty() {
-		line += " >" + jumpAddress.ToString()
-	}
-
-	line += flags.ToString()
-
-	return line
-}
-
 func traceValueStack(stack vputils.ByteStack) string {
 	line := "Value stack:"
 
@@ -130,47 +91,14 @@ func executeCode(mod module.Module, proc module.Processor, startAddress vputils.
 		fmt.Println("Execution started at ", startAddress.ToString())
 	}
 
-	opcodeDefinitions := module.DefineOpcodes()
-
 	halt := false
+	syscall := byte(0)
 
 	for !halt {
-		pc1 := proc.PC()
-
-		conditionals, err := proc.GetConditionals(mod.CodePage)
-		if err != nil {
-			message := err.Error() + " at PC " + pc1.ToString()
-			return errors.New(message)
-		}
-
-		execute, err := conditionals.Evaluate(proc.Flags)
+		vStack, syscall, err = proc.ExecuteInstruction(vStack, mod.CodePage, &mod.DataPage, trace)
 		if err != nil {
 			return err
 		}
-
-		pc2 := proc.PC()
-
-		opcode, err := proc.GetOpcode(mod.CodePage)
-		if err != nil {
-			message := err.Error() + " at PC " + pc2.ToString()
-			return errors.New(message)
-		}
-
-		def := opcodeDefinitions[opcode]
-
-		// get instruction definition (opcode and arguments)
-		instruction, err := proc.DecodeInstruction(opcode, def, mod.CodePage, mod.DataPage)
-		vputils.CheckAndExit(err)
-
-		if trace {
-			line := traceOpcode(pc1, opcode, def, proc.Flags, conditionals, instruction)
-			fmt.Println(line)
-		}
-
-		// execute instruction
-		syscall := byte(0)
-
-		vStack, syscall, err = proc.ExecuteOpcode(&mod.DataPage, opcode, vStack, instruction, execute)
 
 		// process the requested runner call
 		// these are handled here, not in the opcode processor

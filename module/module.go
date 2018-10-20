@@ -1040,6 +1040,89 @@ func (proc *Processor) ExecuteOpcode(data *Page, opcode byte, vStack vputils.Byt
 	return vStack, syscall, err
 }
 
+func traceOpcode(pc vputils.Address, opcode byte, opcodeDef MnemonicTargetWidthAddressMode, flags FlagsGroup, conditionals Conditionals, instruction InstructionDefinition) string {
+	dataAddress1 := instruction.Address1
+	dataAddress := instruction.Address
+	jumpAddress := instruction.JumpAddress
+	valueStr := instruction.ValueStr
+
+	line := fmt.Sprintf("%s: ", pc.ToString())
+
+	opcodeStr := instruction.ToByteString()
+
+	text := opcodeDef.ToString()
+	if len(conditionals) > 0 {
+		condiStr := conditionals.ToString()
+		condiByteStr := conditionals.ToByteString()
+		line += fmt.Sprintf("%s%s%s %s", condiByteStr, opcodeStr, condiStr, text)
+	} else {
+		line += fmt.Sprintf("%s%s", opcodeStr, text)
+	}
+
+	if !dataAddress1.Empty() {
+		line += " @@" + dataAddress1.ToString()
+	}
+	if !dataAddress.Empty() {
+		line += " @" + dataAddress.ToString()
+	}
+
+	if len(valueStr) > 0 {
+		line += " =" + valueStr
+	}
+
+	if !jumpAddress.Empty() {
+		line += " >" + jumpAddress.ToString()
+	}
+
+	line += flags.ToString()
+
+	return line
+}
+
+// ExecuteInstruction - execute an instruction
+func (proc *Processor) ExecuteInstruction(vStack vputils.ByteStack, codePage Page, dataPage *Page, trace bool) (vputils.ByteStack, byte, error) {
+	opcodeDefinitions := DefineOpcodes()
+
+	pc1 := proc.PC()
+
+	conditionals, err := proc.GetConditionals(codePage)
+	if err != nil {
+		message := err.Error() + " at PC " + pc1.ToString()
+		return vStack, 0, errors.New(message)
+	}
+
+	execute, err := conditionals.Evaluate(proc.Flags)
+	if err != nil {
+		return vStack, 0, err
+	}
+
+	pc2 := proc.PC()
+
+	opcode, err := proc.GetOpcode(codePage)
+	if err != nil {
+		message := err.Error() + " at PC " + pc2.ToString()
+		return vStack, 0, errors.New(message)
+	}
+
+	def := opcodeDefinitions[opcode]
+
+	// get instruction definition (opcode and arguments)
+	instruction, err := proc.DecodeInstruction(opcode, def, codePage, *dataPage)
+	vputils.CheckAndExit(err)
+
+	if trace {
+		line := traceOpcode(pc1, opcode, def, proc.Flags, conditionals, instruction)
+		fmt.Println(line)
+	}
+
+	// execute instruction
+	syscall := byte(0)
+
+	vStack, syscall, err = proc.ExecuteOpcode(dataPage, opcode, vStack, instruction, execute)
+
+	return vStack, syscall, err
+}
+
 // Module ------------------------
 type Module struct {
 	Properties       []vputils.NameValue
