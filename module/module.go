@@ -224,6 +224,82 @@ func DefineOpcodes() OpcodeTable {
 	return opcodeDefinitions
 }
 
+type TargetWidthToOpcodes map[string][]byte
+
+type OpcodeBytes struct {
+	Opcode         byte
+	AddressOpcodes TargetWidthToOpcodes
+}
+
+func MakeOpcodeDefinitions() map[string]OpcodeBytes {
+	opcodeDefs := map[string]OpcodeBytes{}
+
+	emptyOpcodes := make(TargetWidthToOpcodes)
+
+	opcodeDefs["NOP"] = OpcodeBytes{0x00, emptyOpcodes}
+	opcodeDefs["EXIT"] = OpcodeBytes{0x04, emptyOpcodes}
+	opcodeDefs["KCALL"] = OpcodeBytes{0x05, emptyOpcodes}
+	opcodeDefs["OUT"] = OpcodeBytes{0x08, emptyOpcodes}
+
+	opcodeDefs["JUMP"] = OpcodeBytes{0xD0, emptyOpcodes}
+
+	opcodeDefs["CALL"] = OpcodeBytes{0xD1, emptyOpcodes}
+
+	opcodeDefs["RET"] = OpcodeBytes{0xD2, emptyOpcodes}
+
+	pushOpcodes := make(TargetWidthToOpcodes)
+	pushOpcodes["BYTE"] = []byte{0x60, 0x61, 0x62, 0x0F}
+	pushOpcodes["I16"] = []byte{0x64, 0x65, 0x66, 0x0F}
+	pushOpcodes["STRING"] = []byte{0x0F, 0x79, 0x7A, 0x0F}
+	opcodeDefs["PUSH"] = OpcodeBytes{0x0F, pushOpcodes}
+
+	popOpcodes := make(TargetWidthToOpcodes)
+	popOpcodes["BYTE"] = []byte{0x0F, 0x81, 0x82, 0x83}
+	opcodeDefs["POP"] = OpcodeBytes{0x0F, popOpcodes}
+
+	flagsOpcodes := make(TargetWidthToOpcodes)
+	flagsOpcodes["BYTE"] = []byte{0x10, 0x11, 0x12, 0x13}
+	opcodeDefs["FLAGS"] = OpcodeBytes{0x0F, flagsOpcodes}
+
+	incOpcodes := make(TargetWidthToOpcodes)
+	incOpcodes["BYTE"] = []byte{0x0F, 0x21, 0x22, 0x23}
+	opcodeDefs["INC"] = OpcodeBytes{0x0F, incOpcodes}
+
+	decOpcodes := make(TargetWidthToOpcodes)
+	decOpcodes["BYTE"] = []byte{0x0F, 0x31, 0x32, 0x33}
+	opcodeDefs["DEC"] = OpcodeBytes{0x0F, decOpcodes}
+
+	addOpcodes := make(TargetWidthToOpcodes)
+	addOpcodes["BYTE"] = []byte{0x0F, 0x0F, 0x0F, 0xA0}
+	opcodeDefs["ADD"] = OpcodeBytes{0x0F, addOpcodes}
+
+	subOpcodes := make(TargetWidthToOpcodes)
+	subOpcodes["BYTE"] = []byte{0x0F, 0x0F, 0x0F, 0xA1}
+	opcodeDefs["SUB"] = OpcodeBytes{0x0F, subOpcodes}
+
+	mulOpcodes := make(TargetWidthToOpcodes)
+	mulOpcodes["BYTE"] = []byte{0x0F, 0x0F, 0x0F, 0xA2}
+	opcodeDefs["MUL"] = OpcodeBytes{0x0F, mulOpcodes}
+
+	divOpcodes := make(TargetWidthToOpcodes)
+	divOpcodes["BYTE"] = []byte{0x0F, 0x0F, 0x0F, 0xA3}
+	opcodeDefs["DIV"] = OpcodeBytes{0x0F, divOpcodes}
+
+	andOpcodes := make(TargetWidthToOpcodes)
+	andOpcodes["BYTE"] = []byte{0x0F, 0x0F, 0x0F, 0xC0}
+	opcodeDefs["AND"] = OpcodeBytes{0x0F, andOpcodes}
+
+	orOpcodes := make(TargetWidthToOpcodes)
+	orOpcodes["BYTE"] = []byte{0x0F, 0x0F, 0x0F, 0xC1}
+	opcodeDefs["OR"] = OpcodeBytes{0x0F, orOpcodes}
+
+	cmpOpcodes := make(TargetWidthToOpcodes)
+	cmpOpcodes["BYTE"] = []byte{0x0F, 0x0F, 0x0F, 0xC3}
+	opcodeDefs["CMP"] = OpcodeBytes{0x0F, cmpOpcodes}
+
+	return opcodeDefs
+}
+
 // --------------------
 // --------------------
 
