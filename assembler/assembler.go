@@ -1064,7 +1064,7 @@ func main() {
 
 	data, dataLabels := generateData(dataTokens)
 	dataProperties := makeDataProperties(dataAddressWidth)
-	dataPage := module.Page{dataProperties, data}
+	dataPage := module.Page{dataProperties, data, dataAddressWidth}
 
 	codeLabels := generateCode1(codeTokens, opcodeDefs, dataLabels)
 
@@ -1072,7 +1072,7 @@ func main() {
 
 	code := generateCode2(codeTokens, opcodeDefs, dataLabels, codeLabels)
 	codeProperties := makeCodeProperties(instructionSetVersion, codeAddressWidth, dataAddressWidth)
-	codePage := module.Page{codeProperties, code}
+	codePage := module.Page{codeProperties, code, codeAddressWidth}
 
 	mod := module.Module{
 		Properties:       moduleProperties,
