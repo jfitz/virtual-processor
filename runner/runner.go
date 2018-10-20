@@ -57,7 +57,7 @@ func outCall(vStack vputils.ByteStack, trace bool) vputils.ByteStack {
 	return vStack
 }
 
-func traceOpcode(pc vputils.Address, opcode byte, opcodeDef module.OpcodeDefinition, flags module.FlagsGroup, conditionals module.Conditionals, instruction module.InstructionDefinition) string {
+func traceOpcode(pc vputils.Address, opcode byte, opcodeDef module.MnemonicTargetWidthAddressMode, flags module.FlagsGroup, conditionals module.Conditionals, instruction module.InstructionDefinition) string {
 	dataAddress1 := instruction.Address1
 	dataAddress := instruction.Address
 	jumpAddress := instruction.JumpAddress
@@ -114,7 +114,7 @@ func traceHalt(pc vputils.Address) string {
 	return line
 }
 
-func executeCode(mod module.Module, proc module.Processor, startAddress vputils.Address, trace bool, opcodeDefinitions module.OpcodeTable) error {
+func executeCode(mod module.Module, proc module.Processor, startAddress vputils.Address, trace bool, opcodeDefinitions module.ByteToMnemonic) error {
 	// initialize virtual processor
 	flags := module.FlagsGroup{false, false, false}
 	vStack := make(vputils.ByteStack, 0) // value stack

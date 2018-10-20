@@ -120,15 +120,15 @@ func (conditionals Conditionals) Evaluate(flags FlagsGroup) (bool, error) {
 // -------------------------------
 // -------------------------------
 
-// OpcodeDefinition --------------
-type OpcodeDefinition struct {
+// MnemonicTargetWidthAddressMode
+type MnemonicTargetWidthAddressMode struct {
 	Name        string
 	Width       string
 	AddressMode string
 }
 
 // ToString ----------------------
-func (def OpcodeDefinition) ToString() string {
+func (def MnemonicTargetWidthAddressMode) ToString() string {
 	s := def.Name
 
 	if len(def.Width) > 0 {
@@ -140,12 +140,12 @@ func (def OpcodeDefinition) ToString() string {
 }
 
 // OpcodeSize --------------------
-func (def OpcodeDefinition) OpcodeSize() int {
+func (def MnemonicTargetWidthAddressMode) OpcodeSize() int {
 	return 1
 }
 
 // TargetSize --------------------
-func (def OpcodeDefinition) TargetSize() int {
+func (def MnemonicTargetWidthAddressMode) TargetSize() int {
 	targetSize := 0
 
 	if def.Width == "BYTE" {
@@ -173,55 +173,55 @@ func (def OpcodeDefinition) TargetSize() int {
 // -------------------------------
 // -------------------------------
 
-// OpcodeTable --------
-type OpcodeTable map[byte]OpcodeDefinition
+// ByteToMnemonic ----------------
+type ByteToMnemonic map[byte]MnemonicTargetWidthAddressMode
 
 // DefineOpcodes - define the table of opcodes
-func DefineOpcodes() OpcodeTable {
-	opcodeDefinitions := make(OpcodeTable)
+func DefineOpcodes() ByteToMnemonic {
+	bytesToMnemonics := make(ByteToMnemonic)
 
-	opcodeDefinitions[0x00] = OpcodeDefinition{"NOP", "", ""}
-	opcodeDefinitions[0x04] = OpcodeDefinition{"EXIT", "", ""}
-	opcodeDefinitions[0x05] = OpcodeDefinition{"KCALL", "", ""}
-	opcodeDefinitions[0x08] = OpcodeDefinition{"OUT", "", "S"}
+	bytesToMnemonics[0x00] = MnemonicTargetWidthAddressMode{"NOP", "", ""}
+	bytesToMnemonics[0x04] = MnemonicTargetWidthAddressMode{"EXIT", "", ""}
+	bytesToMnemonics[0x05] = MnemonicTargetWidthAddressMode{"KCALL", "", ""}
+	bytesToMnemonics[0x08] = MnemonicTargetWidthAddressMode{"OUT", "", "S"}
 
-	opcodeDefinitions[0x60] = OpcodeDefinition{"PUSH", "BYTE", "V"}
-	opcodeDefinitions[0x61] = OpcodeDefinition{"PUSH", "BYTE", "D"}
-	opcodeDefinitions[0x62] = OpcodeDefinition{"PUSH", "BYTE", "I"}
+	bytesToMnemonics[0x60] = MnemonicTargetWidthAddressMode{"PUSH", "BYTE", "V"}
+	bytesToMnemonics[0x61] = MnemonicTargetWidthAddressMode{"PUSH", "BYTE", "D"}
+	bytesToMnemonics[0x62] = MnemonicTargetWidthAddressMode{"PUSH", "BYTE", "I"}
 
-	opcodeDefinitions[0x64] = OpcodeDefinition{"PUSH", "I16", "V"}
-	opcodeDefinitions[0x65] = OpcodeDefinition{"PUSH", "I16", "D"}
-	opcodeDefinitions[0x66] = OpcodeDefinition{"PUSH", "I16", "I"}
+	bytesToMnemonics[0x64] = MnemonicTargetWidthAddressMode{"PUSH", "I16", "V"}
+	bytesToMnemonics[0x65] = MnemonicTargetWidthAddressMode{"PUSH", "I16", "D"}
+	bytesToMnemonics[0x66] = MnemonicTargetWidthAddressMode{"PUSH", "I16", "I"}
 
-	opcodeDefinitions[0x79] = OpcodeDefinition{"PUSH", "STRING", "D"}
+	bytesToMnemonics[0x79] = MnemonicTargetWidthAddressMode{"PUSH", "STRING", "D"}
 
-	opcodeDefinitions[0x81] = OpcodeDefinition{"POP", "BYTE", "D"}
-	opcodeDefinitions[0x82] = OpcodeDefinition{"POP", "BYTE", "I"}
-	opcodeDefinitions[0x83] = OpcodeDefinition{"POP", "BYTE", "S"}
+	bytesToMnemonics[0x81] = MnemonicTargetWidthAddressMode{"POP", "BYTE", "D"}
+	bytesToMnemonics[0x82] = MnemonicTargetWidthAddressMode{"POP", "BYTE", "I"}
+	bytesToMnemonics[0x83] = MnemonicTargetWidthAddressMode{"POP", "BYTE", "S"}
 
-	opcodeDefinitions[0x11] = OpcodeDefinition{"FLAGS", "BYTE", "D"}
-	opcodeDefinitions[0x12] = OpcodeDefinition{"FLAGS", "BYTE", "I"}
-	opcodeDefinitions[0x13] = OpcodeDefinition{"FLAGS", "BYTE", "S"}
+	bytesToMnemonics[0x11] = MnemonicTargetWidthAddressMode{"FLAGS", "BYTE", "D"}
+	bytesToMnemonics[0x12] = MnemonicTargetWidthAddressMode{"FLAGS", "BYTE", "I"}
+	bytesToMnemonics[0x13] = MnemonicTargetWidthAddressMode{"FLAGS", "BYTE", "S"}
 
-	opcodeDefinitions[0x21] = OpcodeDefinition{"INC", "BYTE", "D"}
-	opcodeDefinitions[0x22] = OpcodeDefinition{"INC", "BYTE", "I"}
-	opcodeDefinitions[0x31] = OpcodeDefinition{"DEC", "BYTE", "D"}
-	opcodeDefinitions[0x32] = OpcodeDefinition{"DEC", "BYTE", "I"}
+	bytesToMnemonics[0x21] = MnemonicTargetWidthAddressMode{"INC", "BYTE", "D"}
+	bytesToMnemonics[0x22] = MnemonicTargetWidthAddressMode{"INC", "BYTE", "I"}
+	bytesToMnemonics[0x31] = MnemonicTargetWidthAddressMode{"DEC", "BYTE", "D"}
+	bytesToMnemonics[0x32] = MnemonicTargetWidthAddressMode{"DEC", "BYTE", "I"}
 
-	opcodeDefinitions[0xD0] = OpcodeDefinition{"JUMP", "", ""}
-	opcodeDefinitions[0xD1] = OpcodeDefinition{"CALL", "", ""}
-	opcodeDefinitions[0xD2] = OpcodeDefinition{"RET", "", ""}
+	bytesToMnemonics[0xD0] = MnemonicTargetWidthAddressMode{"JUMP", "", ""}
+	bytesToMnemonics[0xD1] = MnemonicTargetWidthAddressMode{"CALL", "", ""}
+	bytesToMnemonics[0xD2] = MnemonicTargetWidthAddressMode{"RET", "", ""}
 
-	opcodeDefinitions[0xA0] = OpcodeDefinition{"ADD", "BYTE", ""}
-	opcodeDefinitions[0xA1] = OpcodeDefinition{"SUB", "BYTE", ""}
-	opcodeDefinitions[0xA2] = OpcodeDefinition{"MUL", "BYTE", ""}
-	opcodeDefinitions[0xA3] = OpcodeDefinition{"DIV", "BYTE", ""}
+	bytesToMnemonics[0xA0] = MnemonicTargetWidthAddressMode{"ADD", "BYTE", ""}
+	bytesToMnemonics[0xA1] = MnemonicTargetWidthAddressMode{"SUB", "BYTE", ""}
+	bytesToMnemonics[0xA2] = MnemonicTargetWidthAddressMode{"MUL", "BYTE", ""}
+	bytesToMnemonics[0xA3] = MnemonicTargetWidthAddressMode{"DIV", "BYTE", ""}
 
-	opcodeDefinitions[0xC0] = OpcodeDefinition{"AND", "BYTE", ""}
-	opcodeDefinitions[0xC1] = OpcodeDefinition{"OR", "BYTE", ""}
-	opcodeDefinitions[0xC3] = OpcodeDefinition{"CMP", "BYTE", ""}
+	bytesToMnemonics[0xC0] = MnemonicTargetWidthAddressMode{"AND", "BYTE", ""}
+	bytesToMnemonics[0xC1] = MnemonicTargetWidthAddressMode{"OR", "BYTE", ""}
+	bytesToMnemonics[0xC3] = MnemonicTargetWidthAddressMode{"CMP", "BYTE", ""}
 
-	return opcodeDefinitions
+	return bytesToMnemonics
 }
 
 type TargetWidthToOpcodes map[string][]byte
@@ -231,7 +231,7 @@ type OpcodeBytes struct {
 	AddressOpcodes TargetWidthToOpcodes
 }
 
-func MakeOpcodeDefinitions() map[string]OpcodeBytes {
+func MakeMnemonicTargetWidthAddressModes() map[string]OpcodeBytes {
 	opcodeDefs := map[string]OpcodeBytes{}
 
 	emptyOpcodes := make(TargetWidthToOpcodes)
@@ -523,7 +523,7 @@ func (proc Processor) IndirectByte(code Page, data Page) (byte, error) {
 	return value, nil
 }
 
-func (proc Processor) DecodeInstruction(opcode byte, def OpcodeDefinition, code Page, data Page) (InstructionDefinition, error) {
+func (proc Processor) DecodeInstruction(opcode byte, def MnemonicTargetWidthAddressMode, code Page, data Page) (InstructionDefinition, error) {
 	fullOpcode := []byte{opcode}
 
 	// working bytes for opcode
