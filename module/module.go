@@ -332,6 +332,7 @@ type Page struct {
 	AddressWidth int
 }
 
+// GetAddress - get bytes and convert to an address
 func (page Page) GetAddress(address vputils.Address, addressWidth int, maximum int) (vputils.Address, error) {
 	emptyAddress, _ := vputils.MakeAddress(0, addressWidth, 0)
 
@@ -347,71 +348,6 @@ func (page Page) GetAddress(address vputils.Address, addressWidth int, maximum i
 	}
 
 	return resultAddress, nil
-}
-
-// Processor ---------------------
-type Processor struct {
-	pc       vputils.Address
-	RetStack vputils.AddressStack
-	Flags    FlagsGroup
-}
-
-// SetPC - set the PC
-func (proc *Processor) SetPC(address vputils.Address) error {
-	proc.pc = address
-	return nil
-}
-
-// PC - return current PC
-func (proc Processor) PC() vputils.Address {
-	return proc.pc
-}
-
-// IncPC - increment the PC
-func (proc *Processor) IncPC() {
-	proc.pc = proc.pc.Increment(1)
-}
-
-// Push - push a value
-func (proc *Processor) Push(address vputils.Address) {
-	proc.RetStack = proc.RetStack.Push(address)
-}
-
-// TopPop - pop the top value
-func (proc *Processor) TopPop() (vputils.Address, error) {
-	address, retStack, err := proc.RetStack.TopPop()
-	proc.RetStack = retStack
-
-	return address, err
-}
-
-// GetConditionals - get the conditionals for instruction at PC
-func (proc *Processor) GetConditionals(code Page) (Conditionals, error) {
-	conditionals := Conditionals{}
-	err := errors.New("")
-
-	myByte, err := code.Contents.GetByte(proc.PC())
-	if err != nil {
-		return conditionals, err
-	}
-
-	hasConditional := true
-
-	for hasConditional {
-		if myByte >= 0xE0 && myByte <= 0xEF {
-			conditionals = append(conditionals, myByte)
-			// step PC over conditionals
-			proc.IncPC()
-			myByte, err = code.Contents.GetByte(proc.PC())
-			if err != nil {
-				return conditionals, err
-			}
-		} else {
-			hasConditional = false
-		}
-	}
-
-	return conditionals, nil
 }
 
 // GetOpcode - get the opcode at PC
@@ -517,6 +453,76 @@ func (code Page) IndirectByte(pc vputils.Address, data Page) (byte, error) {
 	}
 
 	return value, nil
+}
+
+// GetConditionals - get the conditionals for instruction at PC
+func (code Page) GetConditionals(pc vputils.Address) (Conditionals, error) {
+	conditionals := Conditionals{}
+	err := errors.New("")
+
+	myByte, err := code.Contents.GetByte(pc)
+	if err != nil {
+		return conditionals, err
+	}
+
+	hasConditional := true
+
+	for hasConditional {
+		if myByte >= 0xE0 && myByte <= 0xEF {
+			conditionals = append(conditionals, myByte)
+			// step PC over conditionals
+			pc = pc.Increment(1)
+			myByte, err = code.Contents.GetByte(pc)
+			if err != nil {
+				return conditionals, err
+			}
+		} else {
+			hasConditional = false
+		}
+	}
+
+	return conditionals, nil
+}
+
+// Processor ---------------------
+type Processor struct {
+	pc       vputils.Address
+	RetStack vputils.AddressStack
+	Flags    FlagsGroup
+}
+
+// SetPC - set the PC
+func (proc *Processor) SetPC(address vputils.Address) error {
+	proc.pc = address
+	return nil
+}
+
+// PC - return current PC
+func (proc Processor) PC() vputils.Address {
+	return proc.pc
+}
+
+// IncPC - increment the PC
+func (proc *Processor) IncPC() {
+	proc.pc = proc.pc.Increment(1)
+}
+
+// IncrementPC - increment the PC
+func (proc *Processor) IncrementPC(count int) {
+	proc.pc = proc.pc.Increment(count)
+}
+
+// Push - push a value
+func (proc *Processor) Push(address vputils.Address) {
+	proc.RetStack = proc.RetStack.Push(address)
+}
+
+// TopPop - pop the top value
+func (proc *Processor) TopPop() (vputils.Address, error) {
+	address, retStack, err := proc.RetStack.TopPop()
+	proc.RetStack = retStack
+
+	return address, err
 }
 
 func (proc Processor) DecodeInstruction(opcode byte, def MnemonicTargetWidthAddressMode, code Page, data Page) (InstructionDefinition, error) {
@@ -1080,11 +1086,13 @@ func (proc *Processor) ExecuteInstruction(vStack vputils.ByteStack, codePage Pag
 
 	pc1 := proc.PC()
 
-	conditionals, err := proc.GetConditionals(codePage)
+	conditionals, err := codePage.GetConditionals(pc1)
 	if err != nil {
 		message := err.Error() + " at PC " + pc1.ToString()
 		return vStack, 0, errors.New(message)
 	}
+
+	proc.IncrementPC(len(conditionals))
 
 	execute, err := conditionals.Evaluate(proc.Flags)
 	if err != nil {
